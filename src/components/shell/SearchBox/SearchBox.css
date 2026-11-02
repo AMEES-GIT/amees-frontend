@@ -1,0 +1,107 @@
+.amees-searchbox {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  border: var(--bw) solid var(--line);
+  background: var(--panel-2);
+  box-shadow: var(--sh-sm);
+  border-radius: 0;
+  min-width: 0;
+  padding: 0 var(--sp-2);
+}
+
+.amees-searchbox:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.amees-searchbox__icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg);
+  flex: none;
+}
+
+.amees-searchbox__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.amees-searchbox__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: var(--sp-2) 0;
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  outline: none;
+  border-radius: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.amees-searchbox__input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.amees-searchbox__input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  height: 1em;
+  width: 1em;
+  background: var(--muted);
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3 3l10 10M13 3L3 13' stroke='black' stroke-width='2' stroke-linecap='round'/></svg>") center / contain no-repeat;
+  cursor: pointer;
+}
+
+.amees-searchbox__kbd {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  border: var(--bw-sm) solid var(--line);
+  padding: 2px var(--sp-1);
+  white-space: nowrap;
+  flex: none;
+}
+
+/* Hide the shortcut hint on touch devices — nothing to press */
+@media (pointer: coarse) {
+  .amees-searchbox__kbd {
+    display: none;
+  }
+}
+
+/* Large variant: no chrome on the form, spacing comes from the parent */
+.amees-searchbox--large {
+  flex-wrap: wrap;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  gap: var(--sp-2);
+}
+
+.amees-searchbox--large:focus-within {
+  outline: none;
+}
+
+.amees-searchbox--large .amees-searchbox__input {
+  flex: 1 1 240px;
+  border: var(--bw) solid var(--line);
+  background: var(--panel-2);
+  box-shadow: var(--sh-sm);
+  padding: var(--sp-3);
+}
+
+.amees-searchbox--large .amees-searchbox__input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}

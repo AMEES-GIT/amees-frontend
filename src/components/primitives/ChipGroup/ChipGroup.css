@@ -1,0 +1,26 @@
+.amees-chips {
+  display: grid;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.amees-chips__label {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  color: var(--muted);
+}
+
+.amees-chips__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+@media (max-width: 560px), (pointer: coarse) {
+  .amees-chips__row > * {
+    min-height: 44px;
+  }
+}

@@ -1,0 +1,26 @@
+.admin-form-grid {
+  display: grid;
+  gap: var(--sp-5);
+  max-width: 700px;
+}
+
+.admin-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--sp-3) var(--sp-4);
+  border: var(--bw-sm) solid var(--line);
+  background: var(--panel-2);
+  margin-bottom: var(--sp-2);
+}
+
+/* Force the showcased button to be green when pressed */
+.btn-success[aria-pressed="true"] {
+  background: var(--c-ok) !important;
+  border-color: var(--c-ok) !important;
+  color: #FFFFFF !important;
+}
+
+.btn-success[aria-pressed="true"]:hover {
+  filter: brightness(1.1);
+}

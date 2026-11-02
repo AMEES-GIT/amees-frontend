@@ -1,0 +1,159 @@
+.hdr {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--bg);
+  border-bottom: var(--bw) solid var(--line);
+}
+
+.hdr__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  width: 100%;
+  padding: var(--sp-3) var(--sp-5);
+}
+
+.hdr__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: none;
+  color: var(--blue);
+  text-decoration: none;
+}
+
+.hdr__brand-text {
+  font: var(--fw-bold) var(--fs-xl) / var(--lh-none) var(--font);
+  letter-spacing: var(--ls-caps-sm);
+}
+
+.hdr__nav {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Centers the group */
+  flex: 1;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.hdr__tools {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: var(--sp-3);
+  margin-left: auto;
+}
+
+.hdr__search {
+  width: clamp(160px, 20vw, 260px);
+  min-width: 0;
+}
+
+/* Tab and button look: retro hard-shadow box */
+.hdr__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 var(--sp-3);
+  border: var(--bw-sm) solid var(--line);
+  background: var(--panel-2);
+  color: var(--fg);
+  box-shadow: var(--sh-sm);
+  font: var(--fw-bold) var(--fs-md) / var(--lh-none) var(--font);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast),
+    box-shadow var(--dur-fast),
+    background var(--dur-fast);
+}
+
+.hdr__link:hover {
+  background: var(--tint);
+}
+
+.hdr__link:active {
+  transform: translate(var(--bw), var(--bw));
+  box-shadow: none;
+}
+
+.hdr__link[aria-current='page'],
+.hdr__link[data-active='true'] {
+  background: var(--fill);
+  color: var(--on-fill);
+}
+
+.hdr__icon {
+  width: 36px;
+  padding: 0;
+}
+
+/* More dropdown */
+.hdr__more {
+  position: relative;
+}
+
+.hdr__dropdown {
+  position: absolute;
+  top: calc(100% + var(--sp-2));
+  left: 50%; /* Centered relative to the More button */
+  transform: translateX(-50%);
+  display: grid;
+  gap: var(--sp-2);
+  min-width: 100%;
+  padding: var(--sp-3);
+  background: var(--bg);
+  border: var(--bw) solid var(--line);
+  box-shadow: var(--sh-md);
+}
+
+.hdr__dropdown .hdr__link {
+  justify-content: flex-start;
+}
+
+/* Narrow: Menu button and full-width panel */
+.hdr__tools--narrow .hdr__link {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.hdr__panel {
+  display: grid;
+  gap: var(--sp-4);
+  max-height: calc(100dvh - 72px);
+  overflow-y: auto;
+  padding: var(--sp-4);
+  background: var(--bg);
+  border-top: var(--bw-sm) solid var(--line);
+}
+
+.hdr__panel-nav {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.hdr__panel-nav .hdr__link {
+  justify-content: flex-start;
+  min-height: 44px;
+}
+
+@media (max-width: 480px) {
+  .hdr__bar {
+    padding-inline: var(--sp-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hdr__link {
+    transition: none;
+  }
+}
+
+[data-motion='reduce'] .hdr__link {
+  transition: none;
+}

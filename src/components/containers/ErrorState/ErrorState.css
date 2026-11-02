@@ -1,0 +1,33 @@
+.amees-error-state {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border: var(--bw) solid var(--c-bad);
+  background: color-mix(in srgb, var(--c-bad) 8%, var(--panel-2));
+  border-radius: 0;
+  min-width: 0;
+}
+
+.amees-error-state__title {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  color: var(--c-bad);
+  margin: 0;
+  line-height: var(--lh-tight);
+}
+
+.amees-error-state__text {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.amees-error-state__actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}

@@ -1,0 +1,80 @@
+.amees-demo-checklist {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.amees-demo-checklist__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.amees-demo-checklist__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+
+.amees-demo-checklist__check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  flex: 1;
+}
+
+.amees-demo-checklist__box {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: var(--bw) solid var(--line);
+  background: var(--panel);
+  color: var(--on-fill);
+  font-weight: bold;
+  font-size: 12px;
+  flex: none;
+  margin-top: 3px;
+}
+
+.amees-demo-checklist__label {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg);
+}
+
+.is-checked .amees-demo-checklist__box {
+  background: var(--c-ok);
+  border-color: var(--c-ok);
+}
+
+.is-checked .amees-demo-checklist__label {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+/* FIX: Add button layout */
+.amees-demo-checklist__add {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  align-items: flex-start;
+}
+
+.amees-demo-checklist__add > input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto; /* Overrides the default 100% */
+}
+
+.amees-demo-checklist__add > button {
+  flex: 0 0 auto;
+}

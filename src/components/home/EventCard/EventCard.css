@@ -1,0 +1,18 @@
+.amees-event-card__body {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.amees-event-card__text {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg);
+  margin: 0;
+}
+
+.amees-event-card__tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}

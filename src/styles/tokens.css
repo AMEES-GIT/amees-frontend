@@ -1,0 +1,81 @@
+@layer tokens {
+  :root {
+    color-scheme: light;
+
+    /* surfaces */
+    --bg: #FBF2E1;  --grid: #D5DCF1;
+    --panel: #FCE6CB;  --panel-2: #FFF7EA;  --gray: #CBC9D2;  --tint: #E3E9FA;
+
+    /* text and lines */
+    --fg: #1B0F4B;  --muted: #5A5683;
+    --line: #1B0F4B;  --shadow: #1B0F4B;
+
+    /* brand */
+    --blue: #2F57D1;  --fill: #2F57D1;  --on-fill: #FFFFFF;
+    --bar: #1B0F4B;  --bar-fg: #FFFFFF;  --bar-blue: #2A2FD0;
+    --tape: #3E6BE6;  --tape-2: #1F3A9E;  --yellow: #F6D44B;
+
+    /* status */
+    --c-ok: #0D6F58;  --c-warn: #A04708;  --c-bad: #B42318;
+    --c-pur: #8A3FA0;  --c-inf: #2F57D1;
+    --ok: #1F7A4D;  --warn-bg: #FFF0A8;  --warn-fg: #4A3A00;
+
+    /* focus */
+    --focus: #A86400;
+
+    /* type */
+    --font: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+    --fs-xs: 11px;  --fs-sm: 12px;  --fs-md: 13px;  --fs-base: 14px;
+    --fs-body: 16px;  --fs-lg: 18px;  --fs-xl: 22px;  --fs-2xl: 24px;  --fs-stat: 54px;
+    --fs-h1: clamp(34px, 6.4vw, 64px);
+    --fs-hero: clamp(58px, 12.5vw, 148px);
+    --fw-regular: 400;  --fw-bold: 700;
+    --lh-body: 1.6;  --lh-tight: 1.1;  --lh-none: 1;
+    --ls-caps-sm: .04em;  --ls-caps: .05em;  --ls-caps-lg: .08em;
+
+    /* spacing (4-point) */
+    --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px;  --sp-4: 16px;  --sp-5: 24px;  --sp-6: 32px;
+
+    /* borders and shadows: hard offsets, no blur, no radius anywhere */
+    --bw-sm: 2px;  --bw: 3px;
+    --sh-sm: 3px 3px 0 var(--shadow);
+    --sh-md: 4px 4px 0 var(--shadow);
+    --sh-lg: 6px 6px 0 var(--shadow);
+    --sh-accent: 6px 6px 0 var(--fill);
+
+    /* layout and motion */
+    --wrap-max: 1120px;
+    --dur-fast: .15s;  --dur: .35s;
+
+        /* Illustration colours — component 3. */
+    --ill-bulb: #F6D44B;
+    --ill-bulb-glow: #FFF6B8;
+    --ill-bulb-base: #FFF3C4;
+    --ill-metal: #CBC9D2;
+    --ill-metal-dark: #B8B6C0;
+    --ill-chip-pin: #E5C24A;
+    --ill-chip-body: #2B3A9E;
+    --ill-chip-dot: #0E1560;
+    --ill-wire-red: #E24B4A;
+    --ill-wire-green: #1D9E75;
+    --ill-wire-orange: #EF9F27;
+    --ill-board: #F1EFE8;
+    --ill-board-stripe: #D3D1C7;
+    --ill-board-dots: #888780;
+  }
+
+  [data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #130F31;  --grid: #26236A;
+    --panel: #1E1950;  --panel-2: #262063;  --gray: #2F2B76;  --tint: #2B2A7A;
+    --fg: #EDEAFF;  --muted: #A9A5D8;
+    --line: #8A94F5;  --shadow: #06041A;
+    --blue: #93A8FF;  --fill: #4C66F0;  --on-fill: #FFFFFF;
+    --bar: #3340C9;  --bar-fg: #FFFFFF;  --bar-blue: #4A55E6;
+    --tape: #4C66F0;  --tape-2: #2F3FB5;  --yellow: #F6D44B;
+    --c-ok: #4FD6AE;  --c-warn: #F6B04F;  --c-bad: #FF8F85;
+    --c-pur: #D6A3FF;  --c-inf: #93A8FF;
+    --ok: #6FE0A5;  --warn-bg: #4A3F12;  --warn-fg: #FFE98A;
+    --focus: #F6D44B;
+  }
+}

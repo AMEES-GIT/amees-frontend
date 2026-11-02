@@ -1,0 +1,70 @@
+.amees-countdown {
+  display: grid;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+  max-width: 480px;
+}
+
+.amees-countdown__prefix {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps-lg);
+  color: var(--fg);
+  margin: 0;
+}
+
+.amees-countdown__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+
+.amees-countdown__cell {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-1);
+  background: var(--panel-2);
+  border: var(--bw) solid var(--line);
+  box-shadow: var(--sh-sm);
+  border-radius: 0;
+}
+
+.amees-countdown__num {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: clamp(24px, 5vw, 34px);
+  line-height: var(--lh-none);
+  color: var(--blue);
+  font-variant-numeric: tabular-nums;
+}
+
+.amees-countdown__unit {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  color: var(--muted);
+}
+
+.amees-countdown-ended {
+  margin-top: var(--sp-5);
+  padding: var(--sp-3);
+  background: var(--warn-bg);
+  border: var(--bw) solid var(--line);
+  border-radius: 0;
+}
+
+.amees-countdown-ended__text {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-body);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  color: var(--warn-fg);
+  margin: 0;
+  text-align: center;
+}

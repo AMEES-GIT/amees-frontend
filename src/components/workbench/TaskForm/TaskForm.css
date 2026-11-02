@@ -1,0 +1,17 @@
+.amees-task-form {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.amees-task-form__row {
+  display: grid;
+  gap: var(--sp-3);
+  grid-template-columns: minmax(0, 2fr) minmax(120px, 1fr);
+  align-items: end;
+}
+
+@media (max-width: 560px) {
+  .amees-task-form__row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,41 @@
+.opp-header .amees-page-head__kicker {
+  font-size: var(--fs-lg);
+  letter-spacing: var(--ls-caps);
+  margin-bottom: var(--sp-1);
+}
+
+.opp-filters {
+  display: flex;
+  flex-direction: column;
+  /* Increased gap between the filter groups */
+  gap: var(--sp-5); 
+}
+
+/* The row with the search input and Saved button */
+.opp-search-row {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-top: var(--sp-2);
+}
+
+.opp-search-input {
+  flex: 1 1 240px;
+}
+
+.opp-grid {
+  display: grid;
+  gap: var(--sp-5); /* Increased gap between cards */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+}
+
+.opp-empty {
+  padding: var(--sp-6);
+  text-align: center;
+  background: var(--panel-2);
+  border: var(--bw-sm) dashed var(--line);
+  font-family: var(--font);
+  color: var(--muted);
+  margin-top: var(--sp-4);
+}

@@ -1,0 +1,23 @@
+.amees-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--sp-4) + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%) translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 60;
+  max-width: calc(100vw - var(--sp-4) * 2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bar);
+  color: var(--bar-fg);
+  border: var(--bw) solid var(--line);
+  box-shadow: var(--sh-md);
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps-sm);
+  line-height: var(--lh-body);
+  border-radius: 0;
+  overflow-wrap: anywhere;
+}

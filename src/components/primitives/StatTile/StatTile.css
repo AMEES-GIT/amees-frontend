@@ -1,0 +1,38 @@
+.amees-stat-grid {
+  display: grid;
+  gap: var(--sp-2);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+}
+
+.amees-stat-tile {
+  border: var(--bw) solid var(--line);
+  background: var(--panel);
+  padding: var(--sp-2) var(--sp-3);
+  min-width: 0;
+  border-radius: 0;
+}
+
+.amees-stat-tile--highlight {
+  background: var(--tint);
+}
+
+.amees-stat-tile__label {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  color: var(--muted);
+  line-height: var(--lh-tight);
+}
+
+.amees-stat-tile__value {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-xl);
+  line-height: var(--lh-tight);
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  margin-top: var(--sp-1);
+}

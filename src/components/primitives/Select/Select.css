@@ -1,0 +1,92 @@
+.amees-select {
+  width: 100%;
+  min-width: 0;
+  padding: var(--sp-3);
+  padding-right: calc(var(--sp-3) + 14px + var(--sp-2));
+  border: var(--bw) solid var(--line);
+  background-color: var(--panel-2);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='10' viewBox='0 0 14 10' fill='none' stroke='%231B0F4B' stroke-width='2.5' stroke-linecap='square'><path d='M1 1l6 6 6-6'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right var(--sp-3) center;
+  background-size: 14px 10px;
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  border-radius: 0;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+[data-theme='dark'] .amees-select {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='10' viewBox='0 0 14 10' fill='none' stroke='%23EDEAFF' stroke-width='2.5' stroke-linecap='square'><path d='M1 1l6 6 6-6'/></svg>");
+}
+
+.amees-select:focus {
+  outline: none;
+}
+
+.amees-select:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.amees-select:disabled {
+  background-color: var(--gray);
+  color: var(--muted);
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+.amees-select--invalid {
+  border-color: var(--c-bad);
+}
+
+/* Stylable picker: Chrome/Edge 135+. Everywhere else, the native panel stays. */
+@supports (appearance: base-select) {
+  .amees-select {
+    appearance: base-select;
+  }
+
+  .amees-select::picker-icon {
+    display: none; /* our own chevron is in background-image above */
+  }
+
+  .amees-select::picker(select) {
+    margin-top: var(--sp-1);
+    padding: var(--sp-1);
+    border: var(--bw) solid var(--line);
+    border-radius: 0;
+    background-color: var(--panel-2);
+    color: var(--fg);
+    box-shadow: var(--sh-md);
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .amees-select option {
+    padding: var(--sp-2) var(--sp-3);
+    background-color: transparent;
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    cursor: pointer;
+    border-radius: 0;
+  }
+
+  .amees-select option:hover {
+    background-color: var(--tint);
+  }
+
+  .amees-select option:checked {
+    background-color: var(--fill);
+    color: var(--on-fill);
+    font-weight: var(--fw-bold);
+  }
+
+  .amees-select option::checkmark {
+    display: none; /* our :checked background is the marker */
+  }
+}

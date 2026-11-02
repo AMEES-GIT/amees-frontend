@@ -1,0 +1,65 @@
+.amees-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(27, 15, 75, 0.7);
+  display: grid;
+  place-items: center;
+  padding: var(--sp-4);
+  backdrop-filter: blur(2px);
+  animation: overlayFadeIn 0.15s ease-out forwards;
+}
+
+.amees-dialog-container {
+  width: min(100%, 400px);
+  transform-origin: center;
+  animation: dialogSlideUp 0.2s ease-out forwards;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dialogSlideUp {
+  from { opacity: 0; transform: translateY(15px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.amees-dialog__body {
+  padding: var(--sp-4) 0;
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg);
+}
+
+.amees-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-3);
+  border-top: var(--bw-sm) dashed var(--line);
+  padding-top: var(--sp-3);
+}
+
+.amees-dialog__btn--danger {
+  background: var(--c-bad) !important;
+  border-color: var(--c-bad) !important;
+  color: #FFFFFF !important;
+}
+.amees-dialog__btn--danger:hover { filter: brightness(1.1); }
+
+.amees-dialog__btn--success {
+  background: var(--c-ok) !important;
+  border-color: var(--c-ok) !important;
+  color: #FFFFFF !important;
+}
+.amees-dialog__btn--success:hover { filter: brightness(1.1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .amees-dialog-overlay { animation: none; }
+  .amees-dialog-container { animation: none; }
+}
+
+[data-motion='reduce'] .amees-dialog-overlay { animation: none; }
+[data-motion='reduce'] .amees-dialog-container { animation: none; }

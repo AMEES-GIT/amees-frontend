@@ -1,0 +1,53 @@
+.amees-skip-link {
+  position: absolute;
+  top: -100px;
+  left: var(--sp-4);
+  z-index: 100;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bar);
+  color: var(--bar-fg);
+  border: var(--bw) solid var(--line);
+  box-shadow: var(--sh-md);
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  text-decoration: none;
+  border-radius: 0;
+  transition: top var(--dur-fast) ease-out;
+}
+
+.amees-skip-link:focus {
+  top: var(--sp-4);
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.amees-skip-link:focus:not(:focus-visible) {
+  top: -100px;
+  outline: none;
+}
+
+.amees-skip-link:focus-visible {
+  top: var(--sp-4);
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Force-visible for demo purposes only (never used in production) */
+.amees-skip-link--demo {
+  position: static;
+  top: auto;
+  left: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amees-skip-link {
+    transition: none;
+  }
+}
+
+[data-motion='reduce'] .amees-skip-link {
+  transition: none;
+}

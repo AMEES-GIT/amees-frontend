@@ -1,0 +1,65 @@
+.amees-agenda {
+  display: grid;
+  gap: var(--sp-5);
+  min-width: 0;
+}
+
+.amees-agenda__empty {
+  padding: var(--sp-4);
+  text-align: center;
+  background: var(--panel-2);
+  border: var(--bw-sm) dashed var(--line);
+  color: var(--muted);
+  font-family: var(--font);
+  font-size: var(--fs-md);
+}
+
+.amees-agenda__group {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.amees-agenda__date {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  color: var(--muted);
+  margin: 0;
+  padding-bottom: var(--sp-1);
+  border-bottom: var(--bw-sm) solid var(--line);
+}
+
+.amees-agenda__date--today {
+  color: var(--blue);
+  border-color: var(--blue);
+}
+
+.amees-agenda__today-badge {
+  color: var(--blue);
+}
+
+.amees-agenda__items {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.amees-agenda__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--panel-2);
+  border: var(--bw) solid var(--line);
+  box-shadow: var(--sh-sm);
+}
+
+.amees-agenda__title {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-body);
+  color: var(--fg);
+  line-height: var(--lh-tight);
+}

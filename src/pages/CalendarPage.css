@@ -1,0 +1,35 @@
+/* Grid layout adjustment for the sidebar */
+@media (min-width: 820px) {
+  .cal-grid {
+    grid-template-columns: 2fr 1fr; /* Calendar gets 2/3rds, milestones 1/3rd */
+  }
+}
+
+/* Hide AgendaList on desktop, hide MonthGrid on mobile */
+.cal-mobile-only {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  .cal-desktop-only {
+    display: none;
+  }
+  .cal-mobile-only {
+    display: block;
+  }
+}
+
+.muted-text {
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  color: var(--muted);
+  text-align: center;
+  padding: var(--sp-4) 0;
+}
+
+/* Make the "CALENDAR" kicker text bigger and stand out more */
+.calendar-header .amees-page-head__kicker {
+  font-size: var(--fs-lg); /* Bumps it up to 18px */
+  letter-spacing: var(--ls-caps);
+  margin-bottom: var(--sp-1);
+}

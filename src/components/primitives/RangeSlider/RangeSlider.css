@@ -1,0 +1,53 @@
+.amees-range {
+  display: grid;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.amees-range__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.amees-range__label {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  color: var(--fg);
+  line-height: var(--lh-tight);
+}
+
+.amees-range__value {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--lh-tight);
+}
+
+.amees-range__input {
+  width: 100%;
+  min-width: 0;
+  accent-color: var(--fill);
+  cursor: pointer;
+}
+
+.amees-range__input:focus {
+  outline: none;
+}
+
+.amees-range__input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.amees-range__input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

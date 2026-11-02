@@ -1,0 +1,44 @@
+.profile-header .amees-page-head__kicker {
+  font-size: var(--fs-lg);
+  letter-spacing: var(--ls-caps);
+  margin-bottom: var(--sp-1);
+}
+
+.profile-grid {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 800px) {
+  .profile-grid {
+    grid-template-columns: 2fr 1fr;
+    align-items: start;
+  }
+}
+
+.profile-pitch-box {
+  background: var(--panel-2);
+  padding: var(--sp-4);
+  border: var(--bw) solid var(--line);
+}
+
+.profile-pitch-title {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  text-transform: uppercase;
+  color: var(--blue);
+  margin: 0 0 var(--sp-2);
+}
+
+.profile-pitch-text {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  margin: 0 0 var(--sp-4);
+}
+
+.profile-back-btn {
+  margin-bottom: var(--sp-4);
+}

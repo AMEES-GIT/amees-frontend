@@ -1,0 +1,97 @@
+.amees-task-board {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.amees-task-board__roster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+.amees-task-board__roster-label {
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps-sm);
+}
+
+.amees-task-board__person {
+  padding: 2px var(--sp-2);
+  background: var(--panel-2);
+  border: var(--bw-sm) solid var(--line);
+  color: var(--fg);
+}
+
+.amees-task-board__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-3);
+  align-items: start;
+}
+
+.amees-task-board__col {
+  display: grid;
+  gap: var(--sp-2);
+  min-height: 120px;
+}
+
+.amees-task-board__empty {
+  font-family: var(--font);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  text-align: center;
+  margin: var(--sp-4) 0;
+}
+
+.amees-task-card {
+  background: var(--panel);
+  border: var(--bw-sm) solid var(--line);
+  padding: var(--sp-2);
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.amees-task-card__title {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  color: var(--fg);
+  line-height: var(--lh-tight);
+  overflow-wrap: anywhere;
+}
+
+.amees-task-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.amees-task-card__who {
+  font-family: var(--font);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps-sm);
+  color: var(--muted);
+}
+
+.amees-task-card__actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* Override button padding to make them fit nicely in the small card */
+.amees-task-card__actions .amees-btn {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+@media (max-width: 820px) {
+  .amees-task-board__grid {
+    grid-template-columns: 1fr;
+  }
+}

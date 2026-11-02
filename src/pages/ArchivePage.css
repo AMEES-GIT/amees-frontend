@@ -1,0 +1,27 @@
+/* Make the "ARCHIVE" kicker text bigger */
+.archive-header .amees-page-head__kicker {
+  font-size: var(--fs-lg);
+  letter-spacing: var(--ls-caps);
+  margin-bottom: var(--sp-1);
+}
+
+/* Layout for the filters block above the table */
+.archive-filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+
+/* The sample note below the table */
+.archive-note {
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  color: var(--muted);
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+  padding: var(--sp-3);
+  border: var(--bw) solid var(--line);
+  margin-top: var(--sp-4);
+  border-radius: 0;
+}

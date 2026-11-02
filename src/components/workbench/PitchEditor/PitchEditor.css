@@ -1,0 +1,18 @@
+.amees-pitch-editor {
+  display: grid;
+  gap: var(--sp-4);
+  /* Force a 2-column layout for horizontal fields */
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+}
+
+/* Make "Demo Steps" span full width because it needs more room */
+.amees-pitch-editor > :nth-child(5) {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 560px) {
+  .amees-pitch-editor {
+    grid-template-columns: 1fr; /* Stack only on mobile phones */
+  }
+}

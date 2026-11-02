@@ -1,0 +1,74 @@
+.amees-opp {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.amees-opp__header {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.amees-opp__title {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  color: var(--blue);
+  line-height: var(--lh-tight);
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.amees-opp__org {
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  color: var(--fg);
+  margin: 0;
+}
+
+.amees-opp__desc {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  color: var(--fg);
+  line-height: var(--lh-body);
+  margin: 0;
+}
+
+.amees-opp__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.amees-opp__deadline {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps-sm);
+  padding: 3px var(--sp-2);
+  border: var(--bw-sm) solid var(--line);
+}
+
+.amees-opp__deadline--open {
+  border-color: var(--c-ok);
+  color: var(--c-ok);
+}
+
+.amees-opp__deadline--soon {
+  border-color: var(--c-warn);
+  color: var(--c-warn);
+}
+
+.amees-opp__deadline--closed {
+  border-color: var(--muted);
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.amees-opp__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}

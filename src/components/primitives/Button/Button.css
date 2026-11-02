@@ -1,0 +1,132 @@
+.amees-btn {
+  --sink: 4px; /* :active sink, equals the md shadow offset */
+  position: relative;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  max-width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border: var(--bw) solid var(--line);
+  background: var(--panel-2);
+  color: var(--fg);
+  box-shadow: var(--sh-md);
+  font: var(--fw-bold) var(--fs-base) / var(--lh-tight) var(--font);
+  letter-spacing: var(--ls-caps);
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast),
+    box-shadow var(--dur-fast),
+    transform var(--dur-fast),
+    filter var(--dur-fast);
+}
+
+.amees-btn--sm {
+  --sink: 3px;
+  min-height: 0;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-md);
+  box-shadow: var(--sh-sm);
+}
+
+.amees-btn--primary {
+  background: var(--fill);
+  color: var(--on-fill);
+}
+
+/* hover */
+.amees-btn:not(:disabled, [aria-disabled="true"]):hover {
+  background: var(--tint);
+}
+.amees-btn--primary:not(:disabled, [aria-disabled="true"]):hover {
+  background: var(--fill);
+  filter: brightness(1.1);
+}
+
+/* pressed (toggle): sinks and fills; the sink is the non-colour cue */
+.amees-btn[aria-pressed="true"] {
+  background: var(--fill);
+  color: var(--on-fill);
+  box-shadow: none;
+  transform: translate(3px, 3px);
+}
+.amees-btn[aria-pressed="true"]:not(:disabled, [aria-disabled="true"]):hover {
+  background: var(--fill);
+  filter: brightness(1.1);
+}
+
+/* active press */
+.amees-btn:not(:disabled, [aria-disabled="true"]):active {
+  box-shadow: none;
+  transform: translate(var(--sink), var(--sink));
+}
+
+/* focus: base :focus-visible is not in tokens.css yet, so Button carries its own */
+.amees-btn:focus-visible {
+  outline: var(--bw) solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* loading: keeps its colours, label stays in the DOM (hidden, so width does not jump) */
+.amees-btn[aria-busy="true"] {
+  cursor: progress;
+}
+.amees-btn[aria-busy="true"] .amees-btn__label {
+  opacity: 0;
+}
+.amees-btn__dots {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+}
+.amees-btn__dot {
+  width: var(--sp-2);
+  height: var(--sp-2);
+  background: currentColor;
+}
+.amees-btn__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* disabled: grey, dashed border, no shadow (never colour-only). Last, so it beats pressed. */
+.amees-btn:disabled,
+.amees-btn[aria-disabled="true"]:not([aria-busy="true"]) {
+  background: var(--gray);
+  color: var(--muted);
+  border-style: dashed;
+  box-shadow: none;
+  filter: none;
+  cursor: not-allowed;
+}
+
+/* 44 px targets on small screens (560 = breakpoints.sm in tokens.ts) */
+@media (max-width: 560px), (pointer: coarse) {
+  .amees-btn--sm {
+    min-height: 44px;
+  }
+}
+
+/* reduced motion: no transitions (the loading dots stay static, see Button.tsx) */
+[data-motion="reduce"] .amees-btn {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .amees-btn {
+    transition: none;
+  }
+}

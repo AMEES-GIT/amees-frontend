@@ -1,0 +1,37 @@
+.amees-save-status {
+  font-family: var(--font);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps-sm);
+  padding: 4px var(--sp-2);
+  border: var(--bw-sm) solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+/* SOLID GREEN PILL with WHITE text */
+.amees-save-status--saved {
+  background: var(--c-ok);
+  color: #FFFFFF;
+  border-color: var(--c-ok);
+}
+
+.amees-save-status--saving {
+  color: var(--muted);
+  background: transparent;
+}
+
+.amees-save-status--unsaved {
+  color: var(--c-warn);
+  border-color: var(--c-warn);
+  background: transparent;
+}
+
+.amees-save-status--error {
+  color: var(--c-bad);
+  border-color: var(--c-bad);
+  background: transparent;
+}

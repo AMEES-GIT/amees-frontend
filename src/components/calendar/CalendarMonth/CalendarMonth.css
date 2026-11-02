@@ -1,0 +1,171 @@
+.amees-cal {
+  display: grid;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.amees-cal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+.amees-cal__title {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-2xl);
+  text-transform: uppercase;
+  color: var(--blue);
+  margin: 0;
+  line-height: var(--lh-tight);
+}
+
+.amees-cal__nav {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.amees-cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-top: var(--bw) solid var(--line);
+  border-left: var(--bw) solid var(--line);
+  background: var(--panel-2);
+}
+
+.amees-cal__dow {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  padding: var(--sp-2);
+  background: var(--bar);
+  color: var(--bar-fg);
+  border-right: var(--bw) solid var(--line);
+  border-bottom: var(--bw) solid var(--line);
+  text-align: center;
+}
+
+.amees-cal__day {
+  min-height: 110px;
+  padding: var(--sp-1);
+  border-right: var(--bw) solid var(--line);
+  border-bottom: var(--bw) solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.amees-cal__day--off {
+  background: var(--panel);
+  opacity: 0.5;
+}
+
+.amees-cal__day--in-range {
+  background: color-mix(in srgb, var(--blue) 16%, var(--panel-2));
+}
+
+.amees-cal__day--today {
+  outline: 4px solid var(--focus);
+  outline-offset: -4px;
+  z-index: 1;
+}
+
+.amees-cal__num {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  color: var(--fg);
+  padding: 2px var(--sp-1);
+}
+
+.amees-cal__events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.amees-cal__chip {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-xs);
+  line-height: 1.25;
+  text-transform: uppercase;
+  padding: 2px 4px;
+  color: var(--on-fill);
+  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.amees-cal__chip--default { background: var(--tape-2); }
+.amees-cal__chip--special { background: var(--fill); }
+.amees-cal__chip--holiday { background: var(--c-pur); }
+
+.amees-cal__dots {
+  display: none; /* Hidden on desktop */
+}
+
+.amees-cal__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  font-family: var(--font);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  margin-top: var(--sp-2);
+}
+
+.amees-cal__legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.amees-cal__legend-item::before {
+  content: '';
+  display: block;
+  width: 12px;
+  height: 12px;
+  border: var(--bw-sm) solid var(--line);
+}
+
+.amees-cal__legend-item--range::before { background: color-mix(in srgb, var(--blue) 16%, var(--panel-2)); }
+.amees-cal__legend-item--special::before { background: var(--fill); }
+.amees-cal__legend-item--holiday::before { background: var(--c-pur); }
+
+/* 360px Mobile View: Hide chips, show dots */
+@media (max-width: 480px) {
+  .amees-cal__day {
+    min-height: 60px;
+    padding: 4px;
+  }
+  .amees-cal__dow {
+    font-size: 10px;
+    padding: 6px 2px;
+  }
+  .amees-cal__num {
+    font-size: var(--fs-sm);
+  }
+  .amees-cal__chip {
+    display: none;
+  }
+  .amees-cal__dots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding-top: 2px;
+  }
+  .amees-cal__dot {
+    width: 6px;
+    height: 6px;
+    background: var(--fill);
+    border-radius: 50%; /* Exception: dots are round */
+  }
+}

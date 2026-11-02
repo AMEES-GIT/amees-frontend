@@ -1,0 +1,40 @@
+.amees-input {
+  width: 100%;
+  min-width: 0;
+  padding: var(--sp-3);
+  border: var(--bw) solid var(--line);
+  background: var(--panel-2);
+  color: var(--fg);
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  border-radius: 0; /* iOS Safari reset — see DECISIONS.md */
+  /* Suppress the UA focus ring in favour of our explicit one */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.amees-input:focus {
+  outline: none;
+}
+
+.amees-input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.amees-input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+.amees-input:disabled {
+  background: var(--gray);
+  color: var(--muted);
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+.amees-input--invalid {
+  border-color: var(--c-bad);
+}

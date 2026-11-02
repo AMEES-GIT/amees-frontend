@@ -1,0 +1,17 @@
+.amees-wb-signin {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.amees-wb-signin__actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+.amees-wb-signin__hint {
+  font-family: var(--font);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  margin: 0;
+}

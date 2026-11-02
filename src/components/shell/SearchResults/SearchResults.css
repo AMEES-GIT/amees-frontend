@@ -1,0 +1,124 @@
+.amees-search-results {
+  display: grid;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.amees-search-results__header {
+  display: grid;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+
+.amees-search-results__title {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-xl);
+  color: var(--fg);
+  margin: 0;
+  line-height: var(--lh-tight);
+  text-transform: uppercase;
+}
+
+.amees-search-results__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.amees-search-results__filter-btn {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  text-transform: uppercase;
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--panel-2);
+  border: var(--bw-sm) solid var(--line);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.amees-search-results__filter-btn:hover {
+  background: var(--tint);
+}
+
+.amees-search-results__filter-btn[aria-pressed="true"] {
+  background: var(--fill);
+  color: var(--on-fill);
+  border-color: var(--fill);
+}
+
+.amees-search-results__filter-btn:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.amees-search-results__list {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.amees-search-results__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--panel-2);
+  border: var(--bw) solid var(--line);
+  box-shadow: var(--sh-sm);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color var(--dur-fast);
+}
+
+.amees-search-results__item:hover {
+  background: var(--tint);
+}
+
+.amees-search-results__item:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.amees-search-results__type {
+  padding-top: 2px;
+}
+
+.amees-search-results__content {
+  min-width: 0;
+}
+
+.amees-search-results__item-title {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  color: var(--fg);
+  margin: 0 0 var(--sp-1);
+  line-height: var(--lh-tight);
+}
+
+.amees-search-results__item-body {
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  color: var(--muted);
+  margin: 0;
+  line-height: var(--lh-body);
+}
+
+/* The <mark> element for highlights */
+.amees-search-results mark {
+  background: var(--yellow);
+  color: #1B0F4B;
+  padding: 0 2px;
+  border-radius: 0;
+}
+
+.amees-search-results__empty {
+  padding: var(--sp-5);
+  text-align: center;
+  border: var(--bw-sm) dashed var(--line);
+  background: var(--panel-2);
+  color: var(--muted);
+  font-family: var(--font);
+  font-size: var(--fs-md);
+}

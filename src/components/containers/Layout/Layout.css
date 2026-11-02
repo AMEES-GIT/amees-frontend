@@ -1,0 +1,32 @@
+.amees-wrap {
+  max-width: var(--wrap-max);
+  margin-inline: auto;
+  padding-inline: max(var(--sp-4), env(safe-area-inset-left, 0px))
+    max(var(--sp-4), env(safe-area-inset-right, 0px));
+}
+
+.amees-grid {
+  display: grid;
+  gap: var(--sp-5);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--amees-grid-min, 320px)), 1fr));
+  min-width: 0;
+}
+
+.amees-grid > * {
+  min-width: 0;
+}
+
+.amees-block {
+  margin-top: calc(var(--sp-5) * 2);
+}
+
+.amees-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.amees-row > * {
+  min-width: 0;
+}

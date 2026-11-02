@@ -1,0 +1,52 @@
+.amees-reg__form {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.amees-reg__row {
+  display: grid;
+  gap: var(--sp-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+}
+
+.amees-reg__actions {
+  margin-top: var(--sp-2);
+  display: flex;
+  justify-content: flex-start;
+}
+
+.amees-reg__form-error {
+  padding: var(--sp-3);
+  border: var(--bw) solid var(--c-bad);
+  background: color-mix(in srgb, var(--c-bad) 8%, var(--panel-2));
+  color: var(--c-bad);
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+}
+
+.amees-reg__done {
+  padding: var(--sp-4) 0;
+}
+
+.amees-reg__done-title {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-xl);
+  color: var(--c-ok);
+  text-transform: uppercase;
+  margin: 0 0 var(--sp-2);
+  line-height: var(--lh-tight);
+}
+
+.amees-reg__done-text {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg);
+  margin: 0 0 var(--sp-4);
+}
+
+.amees-reg__reset-btn {
+  /* Uses default Button styling */
+}

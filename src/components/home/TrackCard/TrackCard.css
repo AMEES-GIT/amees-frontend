@@ -1,0 +1,7 @@
+.amees-track-card__desc {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg);
+  margin: 0;
+}

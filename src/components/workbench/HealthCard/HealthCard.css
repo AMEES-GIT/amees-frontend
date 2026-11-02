@@ -1,0 +1,57 @@
+.amees-health {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.amees-health__score {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-stat);
+  line-height: var(--lh-none);
+  color: var(--blue);
+}
+
+.amees-health__max {
+  font-size: var(--fs-xl);
+  color: var(--muted);
+}
+
+.amees-health__breakdown {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.amees-health__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 60px;
+  gap: var(--sp-1) var(--sp-3);
+  align-items: center;
+  font-family: var(--font);
+  font-size: var(--fs-sm);
+}
+
+.amees-health__row--penalty {
+  color: var(--c-bad);
+  font-weight: var(--fw-bold);
+}
+
+.amees-health__label {
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.amees-health__val {
+  text-align: right;
+  font-weight: var(--fw-bold);
+}
+
+.amees-health__meter {
+  grid-column: 1 / -1;
+}
+
+/* Override the default meter height slightly for the breakdown */
+.amees-health__meter .amees-meter__track {
+  height: 8px;
+}

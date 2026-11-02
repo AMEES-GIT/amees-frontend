@@ -1,0 +1,33 @@
+.amees-empty-state {
+  display: grid;
+  gap: var(--sp-3);
+  justify-items: center;
+  text-align: center;
+  padding: var(--sp-6) var(--sp-4);
+  min-width: 0;
+}
+
+.amees-empty-state__title {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  color: var(--fg);
+  margin: 0;
+  line-height: var(--lh-tight);
+  text-wrap: balance;
+}
+
+.amees-empty-state__text {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--muted);
+  max-width: 42ch;
+  margin: 0;
+}
+
+.amees-empty-state__action {
+  margin-top: var(--sp-2);
+}

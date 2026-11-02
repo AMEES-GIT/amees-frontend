@@ -1,0 +1,12 @@
+.toolbox-header .amees-page-head__kicker {
+  font-size: var(--fs-lg);
+  letter-spacing: var(--ls-caps);
+  margin-bottom: var(--sp-1);
+}
+
+.toolbox-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}

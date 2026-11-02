@@ -1,0 +1,83 @@
+.sponsors-header .amees-page-head__kicker {
+  font-size: var(--fs-lg);
+  letter-spacing: var(--ls-caps);
+  margin-bottom: var(--sp-1);
+}
+
+.sponsors-text {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg);
+  margin-bottom: var(--sp-4);
+}
+
+.sponsors-section-title {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-xl);
+  text-transform: uppercase;
+  color: var(--blue);
+  margin: 0 0 var(--sp-4);
+}
+
+.sponsors-tiers {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  align-items: stretch;
+  padding-block: var(--sp-4);
+}
+
+/* 
+ * The "Silver" (hot) tier stands out via a blue title bar, 
+ * thicker border, and a hard accent shadow.
+ */
+.tier-hot-wrapper {
+  transform: scale(1.03);
+  z-index: 2;
+}
+
+.tier-hot {
+  border-width: var(--bw) !important;
+  box-shadow: var(--sh-accent) !important;
+  border-color: var(--fill) !important;
+}
+
+.tier-hot .amees-window__titlebar {
+  background: var(--fill) !important;
+  color: var(--on-fill) !important;
+}
+
+.tier-hot .amees-badge {
+  margin-bottom: var(--sp-3);
+  display: inline-block;
+}
+
+/* =========================================
+   DARK MODE OVERRIDES
+   ========================================= */
+[data-theme="dark"] .tier-hot {
+  /* Use the bright light-blue for borders and shadows */
+  border-color: var(--blue) !important;
+  box-shadow: 6px 6px 0 var(--blue) !important;
+}
+
+[data-theme="dark"] .tier-hot .amees-window__titlebar {
+  /* Bright blue title bar with dark text for high contrast */
+  background: var(--blue) !important;
+  color: var(--bg) !important;
+}
+
+[data-theme="dark"] .tier-hot .amees-badge {
+  /* Make the "Most Popular" badge match the bright blue theme */
+  background: var(--blue) !important;
+  border-color: var(--blue) !important;
+  color: var(--bg) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tier-hot-wrapper {
+    transform: none; /* Keep it grounded if scaling causes motion sickness */
+  }
+}

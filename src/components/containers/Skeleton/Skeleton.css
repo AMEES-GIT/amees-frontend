@@ -1,0 +1,48 @@
+.amees-skeleton {
+  display: grid;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.amees-skeleton__bar {
+  display: block;
+  background: color-mix(in srgb, var(--line) 18%, var(--panel-2));
+  border: var(--bw-sm) solid color-mix(in srgb, var(--line) 55%, transparent);
+  border-radius: 0;
+  animation: amees-skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+/* Line: three horizontal bars of decreasing width */
+.amees-skeleton--line .amees-skeleton__bar:nth-child(1) { height: 14px; width: 100%; }
+.amees-skeleton--line .amees-skeleton__bar:nth-child(2) { height: 14px; width: 100%; }
+.amees-skeleton--line .amees-skeleton__bar:nth-child(3) { height: 14px; width: 60%; }
+
+/* Block: one tall rectangle */
+.amees-skeleton--block .amees-skeleton__bar {
+  height: 120px;
+  width: 100%;
+}
+
+/* Row: three short bars, each mimicking a list item */
+.amees-skeleton--row .amees-skeleton__bar {
+  height: 48px;
+  width: 100%;
+}
+
+@keyframes amees-skeleton-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* Static under reduced motion */
+[data-motion="reduce"] .amees-skeleton__bar {
+  animation: none;
+  opacity: 0.75;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amees-skeleton__bar {
+    animation: none;
+    opacity: 0.75;
+  }
+}

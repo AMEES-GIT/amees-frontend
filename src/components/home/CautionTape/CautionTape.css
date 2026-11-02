@@ -1,0 +1,58 @@
+.amees-tapes {
+  position: relative;
+  height: 128px;
+  overflow: hidden;
+  margin-block: var(--sp-4) var(--sp-2);
+}
+
+.amees-tape {
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  color: #FFFFFF; /* White text on the solid bands */
+  border-block: var(--bw) solid var(--line);
+}
+
+.amees-tape--a {
+  top: 20px;
+  background: var(--tape);
+  transform: rotate(-2.2deg);
+}
+
+.amees-tape--b {
+  top: 52px;
+  background: var(--tape-2);
+  transform: rotate(1.8deg);
+}
+
+.amees-tape__run {
+  display: flex;
+  width: max-content;
+}
+
+.amees-tape__text {
+  flex: none;
+  white-space: nowrap;
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  font-style: italic;
+  letter-spacing: var(--ls-caps);
+  padding-right: 36px;
+  line-height: var(--lh-none);
+}
+
+[data-motion='reduce'] .amees-tape__run {
+  /* Static under reduced motion */
+  transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amees-tape__run {
+    transform: none !important;
+  }
+}

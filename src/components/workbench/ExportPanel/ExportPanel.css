@@ -1,0 +1,40 @@
+.amees-export-panel {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.amees-export-panel__gaps {
+  padding: var(--sp-3);
+  background: var(--warn-bg);
+  border: var(--bw) solid var(--c-warn);
+  color: var(--warn-fg);
+}
+
+.amees-export-panel__gaps-title {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  margin: 0 0 var(--sp-2);
+}
+
+.amees-export-panel__gaps .amees-dot-list li::before {
+  background: var(--c-warn);
+}
+
+.amees-export-panel__textarea {
+  width: 100%;
+  min-height: 240px;
+  padding: var(--sp-3);
+  background: var(--panel-2);
+  border: var(--bw) solid var(--line);
+  color: var(--fg);
+  font-family: monospace; /* Monospace for the report */
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.amees-export-panel__actions {
+  display: flex;
+  gap: var(--sp-2);
+}

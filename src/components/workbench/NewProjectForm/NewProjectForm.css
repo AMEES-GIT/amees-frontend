@@ -1,0 +1,16 @@
+.amees-wb-newproj {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.amees-wb-newproj__row {
+  display: grid;
+  gap: var(--sp-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+}
+
+.amees-wb-newproj__actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}

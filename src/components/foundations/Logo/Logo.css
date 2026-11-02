@@ -1,0 +1,39 @@
+.amees-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  text-decoration: none;
+  color: inherit;
+}
+
+.amees-logo__img {
+  width: auto;
+  display: block;
+  flex: none;
+  /* Mockup's dark-mode filter — brightens and desaturates so the navy mark
+     stays visible on the dark indigo background. */
+  filter: none;
+}
+
+[data-theme='dark'] .amees-logo__img {
+  filter: brightness(2.1) saturate(0.7);
+}
+
+.amees-logo__wordmark {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-xl);
+  line-height: var(--lh-none);
+  letter-spacing: var(--ls-caps);
+  color: var(--blue);
+  text-transform: uppercase;
+}
+
+.amees-logo__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

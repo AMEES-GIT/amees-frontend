@@ -1,0 +1,40 @@
+.wb-header .amees-page-head__kicker {
+  font-size: var(--fs-lg);
+  letter-spacing: var(--ls-caps);
+  margin-bottom: var(--sp-1);
+}
+
+.wb-stage-actions {
+  margin-top: var(--sp-4);
+  border-top: var(--bw-sm) dashed var(--line);
+  padding-top: var(--sp-3);
+}
+
+.wb-signout-btn {
+  margin-left: auto;
+}
+
+.wb-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-block: var(--sp-5);
+}
+
+.wb-grid {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+@media (min-width: 800px) {
+  .wb-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.wb-span-full {
+  grid-column: 1 / -1;
+  min-width: 0;
+}

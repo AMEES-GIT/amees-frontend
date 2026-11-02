@@ -1,0 +1,88 @@
+.amees-stages {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin-top: var(--sp-2);
+  width: 100%;
+}
+
+.amees-stg {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  text-align: center;
+}
+
+.amees-stg__node {
+  width: 26px;
+  height: 26px;
+  border: var(--bw) solid var(--line);
+  background: var(--panel-2);
+  position: relative;
+  z-index: 2;
+}
+
+.amees-stg__node--done {
+  background: var(--fill);
+}
+
+.amees-stg__node--now {
+  background: var(--yellow);
+  /* Add a pulsing effect to the current node */
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--yellow) 40%, transparent);
+}
+
+.amees-stg__label {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps-sm);
+  color: var(--muted);
+}
+
+.amees-stg__label--done {
+  color: var(--fg);
+}
+
+.amees-stg__label--now {
+  color: var(--fg);
+}
+
+/* The connecting line between nodes */
+.amees-stg__line {
+  position: absolute;
+  top: 12px;
+  left: calc(50% + 14px); /* Start just right of the node */
+  width: calc(100% - 28px); /* Stretch to the next node */
+  height: 4px;
+  background: var(--line);
+  opacity: 0.3;
+  z-index: 1;
+}
+
+.amees-stg__line--done {
+  background: var(--fill);
+  opacity: 1;
+}
+
+@media (max-width: 560px) {
+  .amees-stages {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-2);
+  }
+  .amees-stg {
+    grid-auto-flow: column;
+    justify-content: start;
+    text-align: left;
+    gap: var(--sp-3);
+    align-items: center;
+  }
+  .amees-stg__line {
+    display: none;
+  }
+  .amees-stg__label {
+    font-size: var(--fs-md);
+  }
+}

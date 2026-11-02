@@ -1,0 +1,70 @@
+.amees-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps-sm);
+  line-height: var(--lh-none);
+  border: var(--bw-sm) solid var(--line);
+  background: var(--tint);
+  color: var(--fg);
+  border-radius: 0;
+  vertical-align: middle;
+}
+
+/* Kinds (shape) */
+.amees-badge--tag {
+  padding: 3px var(--sp-2);
+  font-size: var(--fs-sm);
+}
+.amees-badge--pill {
+  padding: 2px var(--sp-1);
+  font-size: var(--fs-xs);
+}
+.amees-badge--stat {
+  padding: 3px var(--sp-2);
+  font-size: var(--fs-xs);
+  background: transparent;
+  border-color: currentColor;
+}
+.amees-badge--type {
+  padding: 3px var(--sp-2);
+  font-size: var(--fs-xs);
+  background: color-mix(in srgb, currentColor 14%, var(--panel-2));
+  border-color: currentColor;
+}
+
+/* Tones (colour) — neutral keeps defaults above */
+.amees-badge--ok { color: var(--c-ok); border-color: var(--c-ok); }
+.amees-badge--warn { color: var(--c-warn); border-color: var(--c-warn); }
+.amees-badge--bad { color: var(--c-bad); border-color: var(--c-bad); }
+.amees-badge--info { color: var(--c-inf); border-color: var(--c-inf); }
+.amees-badge--purple { color: var(--c-pur); border-color: var(--c-pur); }
+
+/* Tags with tone get a tinted bg; stat/type keep their own bg rules above */
+.amees-badge--tag.amees-badge--ok,
+.amees-badge--tag.amees-badge--warn,
+.amees-badge--tag.amees-badge--bad,
+.amees-badge--tag.amees-badge--info,
+.amees-badge--tag.amees-badge--purple,
+.amees-badge--pill.amees-badge--ok,
+.amees-badge--pill.amees-badge--warn,
+.amees-badge--pill.amees-badge--bad,
+.amees-badge--pill.amees-badge--info,
+.amees-badge--pill.amees-badge--purple {
+  background: color-mix(in srgb, currentColor 14%, var(--panel-2));
+}
+
+/* Filled: solid tone bg, on-fill text. Overrides everything else. */
+.amees-badge--filled {
+  background: var(--c-ok);
+  color: var(--on-fill);
+  border-color: var(--c-ok);
+}
+.amees-badge--filled.amees-badge--warn { background: var(--c-warn); border-color: var(--c-warn); }
+.amees-badge--filled.amees-badge--bad { background: var(--c-bad); border-color: var(--c-bad); }
+.amees-badge--filled.amees-badge--info { background: var(--c-inf); border-color: var(--c-inf); }
+.amees-badge--filled.amees-badge--purple { background: var(--c-pur); border-color: var(--c-pur); }
+.amees-badge--filled.amees-badge--neutral { background: var(--fill); border-color: var(--fill); }

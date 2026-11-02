@@ -1,0 +1,30 @@
+.amees-meter {
+  display: grid;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.amees-meter__track {
+  height: 14px;
+  background: var(--panel);
+  border: var(--bw) solid var(--line);
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.amees-meter__fill {
+  display: block;
+  height: 100%;
+  background: var(--fill);
+  transition: width var(--dur-fast) ease-out;
+}
+
+.amees-meter--warn .amees-meter__fill { background: var(--c-warn); }
+.amees-meter--bad .amees-meter__fill { background: var(--c-bad); }
+
+.amees-meter__text {
+  font-family: var(--font);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}

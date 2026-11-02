@@ -1,0 +1,22 @@
+.amees-entry-form {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.amees-entry-form__row {
+  display: grid;
+  gap: var(--sp-3);
+  grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr);
+}
+
+.amees-entry-form__actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+@media (max-width: 560px) {
+  .amees-entry-form__row {
+    grid-template-columns: 1fr;
+  }
+}

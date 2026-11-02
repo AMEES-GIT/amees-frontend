@@ -1,0 +1,42 @@
+.amees-page-head {
+  display: grid;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-6);
+  min-width: 0;
+}
+
+.amees-page-head__kicker {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps-lg);
+  color: var(--blue);
+  line-height: var(--lh-tight);
+}
+
+.amees-page-head__title {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-h1);
+  line-height: var(--lh-none);
+  text-transform: uppercase;
+  color: var(--blue);
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+  margin: 0;
+}
+
+.amees-page-head__title:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.amees-page-head__lede {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg);
+  max-width: 64ch;
+  margin: 0;
+}

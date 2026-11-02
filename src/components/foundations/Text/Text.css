@@ -1,0 +1,81 @@
+.amees-kicker {
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-caps-lg);
+  text-transform: uppercase;
+  color: var(--blue);
+}
+
+.amees-lede {
+  max-width: 64ch;
+  margin: 0;
+}
+
+.amees-note {
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--sp-3);
+  border: var(--bw) solid var(--line);
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+  font-size: var(--fs-base);
+  overflow-wrap: anywhere;
+}
+
+.amees-hint {
+  margin: 0;
+  font-size: var(--fs-md);
+  color: var(--muted);
+}
+
+.amees-muted {
+  color: var(--muted);
+}
+
+.amees-display {
+  margin: 0;
+  font-family: var(--font);
+  letter-spacing: var(--ls-caps-sm);
+  text-transform: uppercase;
+  line-height: 1.35;
+}
+.amees-display--lg { font-size: var(--fs-lg); }
+.amees-display--xl { font-size: var(--fs-xl); }
+
+/* 30px has no token, so the upper end of the clamp lives here */
+.amees-section-heading {
+  margin: 0 0 var(--sp-4);
+  font-family: var(--font);
+  font-size: clamp(var(--fs-xl), 3.4vw, 30px);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-tight);
+  text-transform: uppercase;
+  color: var(--blue);
+  text-wrap: balance;
+}
+
+.amees-extlink {
+  color: var(--blue);
+  text-decoration: underline;
+  text-decoration-thickness: var(--bw-sm);
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+.amees-extlink:hover { background: var(--tint); }
+.amees-extlink:focus-visible {
+  outline: var(--bw) solid var(--focus);
+  outline-offset: 2px;
+}
+.amees-extlink__icon { margin-left: var(--sp-1); }
+
+/* visually hidden, still read aloud (shared base.css later; Button has its own copy) */
+.amees-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

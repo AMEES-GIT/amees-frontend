@@ -1,0 +1,115 @@
+.ftr {
+  margin-top: calc(var(--sp-6) * 2);
+  background: var(--bg);
+  border-top: var(--bw) solid var(--line);
+}
+
+.ftr__wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr);
+  gap: var(--sp-6) var(--sp-5);
+  max-width: var(--wrap-max);
+  margin-inline: auto;
+  padding: var(--sp-6) var(--sp-5);
+}
+
+.ftr__brand {
+  display: grid;
+  align-content: start;
+  gap: var(--sp-4);
+}
+
+.ftr__tagline {
+  max-width: 36ch;
+  color: var(--muted);
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+}
+
+.ftr__groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: var(--sp-5);
+}
+
+.ftr__title {
+  margin: 0 0 var(--sp-3);
+  color: var(--blue);
+  font: var(--fw-bold) var(--fs-sm) / var(--lh-tight) var(--font);
+  letter-spacing: var(--ls-caps-lg);
+  text-transform: uppercase;
+}
+
+.ftr__list {
+  display: grid;
+  gap: var(--sp-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ftr__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 32px;
+  color: var(--fg);
+  font: var(--fw-bold) var(--fs-base) / var(--lh-tight) var(--font);
+  text-decoration: none;
+}
+
+.ftr__link:hover {
+  text-decoration: underline;
+  text-decoration-thickness: var(--bw-sm);
+  text-underline-offset: 4px;
+}
+
+/* Bottom bar */
+.ftr__bar {
+  background: var(--bar);
+  color: var(--bar-fg);
+}
+
+.ftr__bar-in {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  max-width: var(--wrap-max);
+  margin-inline: auto;
+  padding: var(--sp-3) var(--sp-5);
+  font-size: var(--fs-sm);
+}
+
+.ftr__top {
+  min-height: 36px;
+  padding: 0 var(--sp-3);
+  border: var(--bw-sm) solid var(--bar-fg);
+  background: transparent;
+  color: inherit;
+  font: var(--fw-bold) var(--fs-sm) / var(--lh-none) var(--font);
+  letter-spacing: var(--ls-caps);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.ftr__top:hover {
+  background: var(--bar-fg);
+  color: var(--bar);
+}
+
+@media (max-width: 720px) {
+  .ftr__wrap {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: var(--sp-4);
+  }
+
+  .ftr__link,
+  .ftr__top {
+    min-height: 44px;
+  }
+
+  .ftr__bar-in {
+    padding-inline: var(--sp-4);
+  }
+}

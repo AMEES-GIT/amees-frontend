@@ -1,0 +1,66 @@
+.amees-table {
+  border: var(--bw) solid var(--line);
+  background: var(--panel-2);
+  overflow-x: auto;
+  border-radius: 0;
+  min-width: 0;
+}
+
+.amees-table > table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 640px;
+}
+
+.amees-table__caption {
+  caption-side: top;
+  padding: var(--sp-2) var(--sp-3);
+  text-align: left;
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  color: var(--muted);
+  background: var(--panel);
+  border-bottom: var(--bw) solid var(--line);
+}
+
+.amees-table th {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  background: var(--bar);
+  color: var(--bar-fg);
+  padding: var(--sp-2) var(--sp-3);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.amees-table td {
+  padding: var(--sp-3);
+  border-bottom: var(--bw-sm) dashed var(--line);
+  vertical-align: middle;
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  color: var(--fg);
+}
+
+.amees-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.amees-table__empty-cell {
+  padding: 0;
+}
+
+.amees-table__note {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-3) 0;
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  color: var(--muted);
+  line-height: var(--lh-body);
+}

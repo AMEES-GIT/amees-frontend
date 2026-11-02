@@ -1,0 +1,30 @@
+.amees-field {
+  display: grid;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.amees-field__label {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  color: var(--fg);
+  line-height: var(--lh-tight);
+}
+
+.amees-field__hint {
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  color: var(--muted);
+  line-height: var(--lh-body);
+}
+
+.amees-field__error {
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--c-bad);
+  line-height: var(--lh-body);
+}

@@ -1,0 +1,30 @@
+.amees-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: s;
+}
+
+.amees-steps li {
+  counter-increment: s;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: var(--sp-2);
+  margin-block: var(--sp-3);
+  align-items: baseline;
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg);
+  min-width: 0;
+}
+
+.amees-steps li::before {
+  content: counter(s) '.';
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  color: var(--blue);
+  line-height: var(--lh-tight);
+  text-align: right;
+}

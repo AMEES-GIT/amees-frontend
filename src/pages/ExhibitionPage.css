@@ -1,0 +1,30 @@
+.exhibit-header .amees-page-head__kicker {
+  font-size: var(--fs-lg);
+  letter-spacing: var(--ls-caps);
+  margin-bottom: var(--sp-1);
+}
+
+.exhibit-grid {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+}
+
+.exhibit-card-content {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.exhibit-card-desc {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg);
+  margin: 0;
+}
+
+.exhibit-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}

@@ -1,0 +1,96 @@
+.about-header .amees-page-head__kicker {
+  font-size: var(--fs-lg);
+  letter-spacing: var(--ls-caps);
+  margin-bottom: var(--sp-1);
+}
+
+.about-identity {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.about-motto {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-xl);
+  color: var(--blue);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps-sm);
+  margin: 0;
+}
+
+.about-text {
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg);
+  margin: 0;
+}
+
+.about-exec-grid {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+}
+
+.about-exec-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: var(--bw-sm) solid var(--line);
+  background: var(--panel-2);
+  padding: var(--sp-4) var(--sp-3);
+  text-align: center;
+  
+  /* Reset the anchor tag styles so it behaves like a div */
+  text-decoration: none;
+  color: inherit;
+  transition: background-color var(--dur-fast);
+}
+
+/* Only apply hover effects if it's an <a> tag (has a LinkedIn) */
+a.about-exec-card:hover {
+  background: var(--tint);
+}
+
+.about-exec-avatar {
+  width: 72px;
+  height: 72px;
+  margin-bottom: var(--sp-3);
+  border: var(--bw) solid var(--line);
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  /* Fallback text styling (Initials) */
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-xl);
+  color: var(--blue);
+  text-transform: uppercase;
+}
+
+.about-exec-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: contrast(1.1) grayscale(20%);
+}
+
+.about-exec-role {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps-sm);
+  margin-bottom: var(--sp-1);
+}
+
+.about-exec-name {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  color: var(--fg);
+}

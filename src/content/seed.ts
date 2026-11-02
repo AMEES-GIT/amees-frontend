@@ -2,7 +2,7 @@ import type { SiteContent } from './types';
 
 export const seedContent: SiteContent = {
   activeMarquee: 'caution',
-  
+
   featured: {
     id: '',
     pre: '',
@@ -27,12 +27,11 @@ export const seedContent: SiteContent = {
   archive: [],
   opportunities: [],
 
-  // FIXED: exhibition is now projects
   projects: {
     title: '',
     subtitle: '',
     submitText: '',
-    projects: []
+    projects: [],
   },
 
   sponsorPitch: { title: '', text: '', cta: '' },
@@ -44,7 +43,7 @@ export const seedContent: SiteContent = {
     motto: '',
     description: '',
     pillars: [],
-    executive: []
+    executive: [],
   },
 
   footer: {
@@ -56,15 +55,19 @@ export const seedContent: SiteContent = {
   calendarMilestones: [],
   calendarNote: '',
 
+  // ── new fields, added by these fixes ──
+  membershipFormUrl: '',
+  projectSubmissionUrl: '',
+
   pages: {
-    events: { kicker: "Events", title: "What is on at AMEES", lede: "" },
-    calendar: { kicker: "Calendar", title: "Session calendar", lede: "" },
-    archive: { kicker: "Study archive", title: "Past questions and notes", lede: "" },
-    workbench: { kicker: "Workbench", title: "Your project tracker", lede: "" },
-    toolbox: { kicker: "Toolbox", title: "Engineering toolbox", lede: "" },
-    opportunities: { kicker: "Opportunities", title: "Placements and prizes", lede: "" },
-    about: { kicker: "About AMEES", title: "Who we are", lede: "" },
-    sponsors: { kicker: "Sponsors & Partners", title: "Back our future engineers", lede: "" },
-    projects: { kicker: "Projects", title: "Built by students", lede: "" }
-  }
+    events: { kicker: 'Events', title: 'What is on at AMEES', lede: '' },
+    calendar: { kicker: 'Calendar', title: 'Session calendar', lede: '' },
+    archive: { kicker: 'Study archive', title: 'Past questions and notes', lede: '' },
+    workbench: { kicker: 'Workbench', title: 'Your project tracker', lede: '' },
+    toolbox: { kicker: 'Toolbox', title: 'Engineering toolbox', lede: '' },
+    opportunities: { kicker: 'Opportunities', title: 'Placements and prizes', lede: '' },
+    about: { kicker: 'About AMEES', title: 'Who we are', lede: '' },
+    sponsors: { kicker: 'Sponsors & Partners', title: 'Back our future engineers', lede: '' },
+    projects: { kicker: 'Projects', title: 'Built by students', lede: '' },
+  },
 };

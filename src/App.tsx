@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Header } from './components/shell/Header';
 import { Footer } from './components/shell/Footer';
+import { FooterRunner } from './components/shell/Footer/FooterRunner';
 import { SearchBox } from './components/shell/SearchBox';
-import { RequireAuth } from './components/admin/requireAuth';
+import { RequireAuth } from './components/admin/RequireAuth';
 
 // Pages
 import { HomePage } from './pages/HomePage';
@@ -155,7 +156,7 @@ export default function App() {
           <NotFoundPage onNavigate={onNavigate} />
         )}
       </main>
-      <Footer {...footerProps(content)} />
+      <Footer {...footerProps(content)} runner={<FooterRunner />} />
     </>
   );
 }

@@ -19,19 +19,23 @@ export function CalendarPage() {
   const intro = content.pages.calendar;
   const milestones = content.calendarMilestones || [];
 
-  // Calendar state
+  // If there's no featured event, still show the calendar but skip the highlight.
+  const highlightRange = f
+    ? { start: watIsoDate(f.start), end: watIsoDate(f.end) }
+    : { start: '', end: '' };
+
   const initialCal = useMemo(() => watMonth(now), [now]);
   const [calDate, setCalDate] = useState(initialCal);
 
   const handlePrev = () => {
-    setCalDate(prev => {
+    setCalDate((prev) => {
       const d = new Date(prev.year, prev.month - 1, 1);
       return { year: d.getFullYear(), month: d.getMonth() };
     });
   };
 
   const handleNext = () => {
-    setCalDate(prev => {
+    setCalDate((prev) => {
       const d = new Date(prev.year, prev.month + 1, 1);
       return { year: d.getFullYear(), month: d.getMonth() };
     });
@@ -46,11 +50,11 @@ export function CalendarPage() {
   return (
     <Wrap>
       <Block>
-        <PageHeader 
-          className="calendar-header" 
-          kicker={intro.kicker} 
-          title={intro.title} 
-          lede={intro.lede} 
+        <PageHeader
+          className="calendar-header"
+          kicker={intro.kicker}
+          title={intro.title}
+          lede={intro.lede}
         />
       </Block>
 
@@ -66,24 +70,36 @@ export function CalendarPage() {
                   month={calDate.month}
                   events={events}
                   now={now}
-                  highlightRange={{ start: watIsoDate(f.start), end: watIsoDate(f.end) }}
+                  highlightRange={highlightRange}
                   onPrev={handlePrev}
                   onNext={handleNext}
                   onToday={handleToday}
                 />
               </div>
-              
+
               {/* Mobile view: Agenda List */}
               <div className="cal-mobile-only">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--sp-3)' }}>
-                  <button className="amees-btn amees-btn--sm" onClick={handlePrev}>Prev</button>
-                  <button className="amees-btn amees-btn--sm" onClick={handleToday}>Today</button>
-                  <button className="amees-btn amees-btn--sm" onClick={handleNext}>Next</button>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: 'var(--sp-3)',
+                  }}
+                >
+                  <button className="amees-btn amees-btn--sm" onClick={handlePrev}>
+                    Prev
+                  </button>
+                  <button className="amees-btn amees-btn--sm" onClick={handleToday}>
+                    Today
+                  </button>
+                  <button className="amees-btn amees-btn--sm" onClick={handleNext}>
+                    Next
+                  </button>
                 </div>
-                <AgendaList 
-                  events={events} 
+                <AgendaList
+                  events={events}
                   from={`${calDate.year}-${String(calDate.month + 1).padStart(2, '0')}-01`}
-                  now={now} 
+                  now={now}
                 />
               </div>
             </Window>
@@ -94,8 +110,8 @@ export function CalendarPage() {
             <Window title="Session milestones" scrollbar>
               {milestones.length > 0 ? (
                 <DotList
-                  items={milestones.map(m => (
-                    <span>
+                  items={milestones.map((m, i) => (
+                    <span key={i}>
                       <b>{m.title}</b>: {m.text}
                     </span>
                   ))}
@@ -107,7 +123,7 @@ export function CalendarPage() {
           </div>
         </Grid>
       </Block>
-      
+
       {content.calendarNote && (
         <Block>
           <div className="amees-note" role="note">

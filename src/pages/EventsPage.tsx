@@ -33,6 +33,19 @@ function goToRegister() {
 export function EventsPage({ onNavigate }: EventsPageProps) {
   const content = useContent();
   const f = useFeatured();
+  if (!f) {
+  return (
+    <Wrap>
+      <Block>
+        <PageHeader
+          kicker={content.pages.events.kicker}
+          title={content.pages.events.title}
+          lede="No featured event is scheduled right now. Check back soon."
+        />
+      </Block>
+    </Wrap>
+  );
+}
   const now = useNow(60_000);
   const state = eventState(now, f.start, f.end);
   const [status, setStatus] = useState<'idle' | 'done'>('idle');

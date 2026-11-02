@@ -1,0 +1,23 @@
+.amees-wa-fab {
+  position: fixed;
+  right: var(--sp-4);
+  bottom: var(--sp-4);
+  z-index: 40;
+  width: 56px;
+  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #25d366;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: transform 150ms ease;
+}
+
+.amees-wa-fab:hover { transform: scale(1.05); }
+.amees-wa-fab:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+@media (max-width: 480px) {
+  .amees-wa-fab { right: var(--sp-3); bottom: var(--sp-3); width: 48px; height: 48px; }
+}

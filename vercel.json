@@ -1,12 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
     {
       "source": "/api/:path*",
       "destination": "https://api.amees.com.ng/api/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/project/:id",
       "destination": "/index.html"
     }
   ]

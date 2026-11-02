@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { Header } from './components/shell/Header';
 import { Footer } from './components/shell/Footer';
-import { FooterRunner } from './components/shell/Footer/FooterRunner';
 import { SearchBox } from './components/shell/SearchBox';
 import { RequireAuth } from './components/admin/RequireAuth';
 
-// Pages
 import { HomePage } from './pages/HomePage';
 import { EventsPage } from './pages/EventsPage';
 import { CalendarPage } from './pages/CalendarPage';
@@ -27,14 +25,28 @@ import { useContent } from './content/contentProvider';
 import { footerProps } from './content/selectors';
 import type { PageId } from './pages/types';
 
+const FooterRunner = lazy(() =>
+  import('./components/shell/Footer/FooterRunner').then((m) => ({
+    default: m.FooterRunner,
+  })),
+);
+
 type Theme = 'light' | 'dark';
 
-function pageFromHash(): PageId {
-  const hash = window.location.hash.replace('#', '');
-  const [id] = hash.split('/');
-  return NAV.some((n) => n.key === id) || id === 'project' || id === 'search' || id === 'login' || id === 'admin'
-    ? (id as PageId)
-    : 'home';
+const KNOWN_EXTRA = ['project', 'search', 'login', 'admin'] as const;
+
+function pageFromPath(): PageId {
+  const path = window.location.pathname.replace(/^\/|\/$/g, '');
+  if (!path) return 'home';
+  const [id] = path.split('/');
+  if (NAV.some((n) => n.key === id)) return id as PageId;
+  if ((KNOWN_EXTRA as readonly string[]).includes(id)) return id as PageId;
+  return 'not-found' as PageId;
+}
+
+function projectIdFromPath(): string | null {
+  const parts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
+  return parts[0] === 'project' && parts[1] ? parts[1] : null;
 }
 
 function readTheme(): Theme {
@@ -43,13 +55,8 @@ function readTheme(): Theme {
 
 export default function App() {
   const content = useContent();
-  const [page, setPage] = useState<PageId>(pageFromHash);
-
-  const [projectId, setProjectId] = useState<string | null>(() => {
-    const hash = window.location.hash.replace('#', '');
-    const parts = hash.split('/');
-    return parts[0] === 'project' && parts[1] ? parts[1] : null;
-  });
+  const [page, setPage] = useState<PageId>(pageFromPath);
+  const [projectId, setProjectId] = useState<string | null>(projectIdFromPath);
 
   const [theme, setTheme] = useState<Theme>(readTheme);
   const [query, setQuery] = useState('');
@@ -62,27 +69,57 @@ export default function App() {
     [],
   );
 
+  // React to back/forward and to any popstate we dispatch ourselves
   useEffect(() => {
-    const onHash = () => {
-      const hash = window.location.hash.replace('#', '');
-      const parts = hash.split('/');
-
-      if (parts[0] === 'project' && parts[1]) {
-        setProjectId(parts[1]);
-      } else {
-        setProjectId(null);
-      }
-
-      setPage(pageFromHash());
+    const onPop = () => {
+      setPage(pageFromPath());
+      setProjectId(projectIdFromPath());
       window.scrollTo(0, 0);
     };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
+  // Intercept internal clicks so <a href="/events"> navigates without a full reload
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (e.button !== 0) return;
+
+      const anchor = (e.target as HTMLElement | null)?.closest('a');
+      if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+
+      const href = anchor.getAttribute('href');
+      if (!href) return;
+
+      // Legacy #hash links from CMS content
+      if (href.startsWith('#')) {
+        e.preventDefault();
+        const raw = href.slice(1).replace(/^\/?/, '');
+        if (!raw || raw === 'home') {
+          window.history.pushState({}, '', '/');
+        } else {
+          const target = raw.startsWith('project/') ? `/${raw}` : `/${raw.split('/')[0]}`;
+          window.history.pushState({}, '', target);
+        }
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        return;
+      }
+
+      // Internal path links
+      if (!href.startsWith('/') || href.startsWith('//')) return;
+      e.preventDefault();
+      window.history.pushState({}, '', href);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    };
+
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
   }, []);
 
   useEffect(() => {
-    const label = NAV.find((n) => n.key === page)?.label ?? 'Home';
+    const label = NAV.find((n) => n.key === page)?.label ?? 'AMEES';
     document.title = `${label} · AMEES`;
   }, [page]);
 
@@ -91,7 +128,8 @@ export default function App() {
   }, [theme]);
 
   const onNavigate = useCallback((id: PageId) => {
-    window.location.hash = id;
+    window.history.pushState({}, '', id === 'home' ? '/' : `/${id}`);
+    window.dispatchEvent(new PopStateEvent('popstate'));
   }, []);
 
   const onThemeToggle = useCallback(() => {
@@ -104,7 +142,10 @@ export default function App() {
 
   const onSearchSubmit = useCallback((q: string) => {
     setQuery(q);
-    if (NAV.some((n) => String(n.key) === 'search')) window.location.hash = 'search';
+    if (NAV.some((n) => String(n.key) === 'search')) {
+      window.history.pushState({}, '', '/search');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
   }, []);
 
   return (
@@ -156,7 +197,14 @@ export default function App() {
           <NotFoundPage onNavigate={onNavigate} />
         )}
       </main>
-      <Footer {...footerProps(content)} runner={<FooterRunner />} />
+      <Footer
+        {...footerProps(content)}
+        runner={
+          <Suspense fallback={null}>
+            <FooterRunner />
+          </Suspense>
+        }
+      />
     </>
   );
 }

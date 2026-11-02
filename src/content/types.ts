@@ -72,19 +72,6 @@ export interface QuickLink {
   cta: string;
 }
 
-export interface ArchiveFile {
-  id: string;
-  title: string;
-  course: string;
-  level: number;
-  kind: string;
-  year: number;
-  ext: string;
-  size?: string;
-  /** Shown as "sample listing" until real files replace it. */
-  sample?: boolean;
-}
-
 export interface PageIntro {
   kicker: string;
   title: string;
@@ -171,11 +158,16 @@ export interface SiteContent {
   calendarEntries: CalendarEntry[];
   upcoming: UpcomingEvent[];
   quickLinks: QuickLink[];
-  archive: ArchiveFile[];
   opportunities: Opportunity[];
   activeMarquee?: 'caution' | 'showcase';
-  membershipFormUrl: string;    // <-- ADDED
+  membershipFormUrl: string;    
   projectSubmissionUrl: string;
+
+  /** Google Form URL for registering to the active event. Empty = not configured. */
+  eventRegistrationFormUrl: string;
+  /** Optional: the Google Forms entry.* ID for the "Event" field, used for prefill. */
+  eventRegistrationEventFieldId: string;
+
 
   sponsorPitch: { title: string; text: string; cta: string };
   
@@ -218,4 +210,34 @@ export interface SiteContent {
 
   calendarMilestones: { title: string; text: string }[];
   calendarNote: string;
+
+  archive: ArchiveFile[];
+  archiveFiles: ArchiveFileRow[]; 
+}
+
+// …existing ArchiveFile (keep for old JSON fallback)…
+export interface ArchiveFile {
+  id: string;
+  title: string;
+  course: string;
+  level: number;
+  kind: string;
+  year: number;
+  ext: string;
+  size?: string;
+  sample?: boolean;
+}
+
+/** Row from the ArchiveFile DB table (admin-managed Drive links). */
+export interface ArchiveFileRow {
+  id: string;
+  title: string;
+  course: string;
+  level: number;
+  kind: string;
+  year: number;
+  fileUrl: string | null;
+  sizeBytes: number;
+  sample: boolean;
+  uploadedAt: string;
 }

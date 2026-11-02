@@ -21,6 +21,7 @@ type AdminTab =
   | 'executives'
   | 'projects'
   | 'partners'
+  | 'archive'
   | 'general';
 
 const API_URL = `${API_BASE}/api/admin`;
@@ -89,11 +90,25 @@ export function AdminPage() {
     logoUrl: '',
     websiteUrl: '',
   });
+  const [newArchive, setNewArchive] = useState({
+    title: '',
+    course: '',
+    level: '100',
+    year: String(new Date().getFullYear()),
+    kind: 'PDF',
+    fileUrl: '',
+  });
 
   const [marqueeMode, setMarqueeMode] = useState(content.activeMarquee || 'caution');
   const [footerTagline, setFooterTagline] = useState(content.footer.tagline);
   const [membershipFormUrl, setMembershipFormUrl] = useState(content.membershipFormUrl || '');
   const [projectSubmissionUrl, setProjectSubmissionUrl] = useState(content.projectSubmissionUrl || '');
+  const [eventRegistrationFormUrl, setEventRegistrationFormUrl] = useState(
+    content.eventRegistrationFormUrl || '',
+  );
+  const [eventRegistrationEventFieldId, setEventRegistrationEventFieldId] = useState(
+    content.eventRegistrationEventFieldId || '',
+  );
 
   useEffect(() => {
     setFormData(content.featured);
@@ -101,10 +116,10 @@ export function AdminPage() {
     setFooterTagline(content.footer.tagline);
     setMembershipFormUrl(content.membershipFormUrl || '');
     setProjectSubmissionUrl(content.projectSubmissionUrl || '');
+    setEventRegistrationFormUrl(content.eventRegistrationFormUrl || '');
+    setEventRegistrationEventFieldId(content.eventRegistrationEventFieldId || '');
   }, [content]);
 
-  // Belt-and-braces: RequireAuth already gates this route, but AdminPage
-  // must not render without a valid token even if mounted standalone.
   useEffect(() => {
     if (!getValidToken()) {
       window.location.hash = 'login';
@@ -118,10 +133,10 @@ export function AdminPage() {
     { id: 'executives', label: 'Executives' },
     { id: 'projects', label: 'Projects' },
     { id: 'partners', label: 'Sponsors' },
+    { id: 'archive', label: 'Archive links' },
     { id: 'general', label: 'Site Settings' },
   ];
 
-  // --- API Handlers ---
   const saveEvent = async () => {
     setStatus('saving');
     try {
@@ -151,6 +166,8 @@ export function AdminPage() {
           footer: { ...content.footer, tagline: footerTagline },
           membershipFormUrl,
           projectSubmissionUrl,
+          eventRegistrationFormUrl,
+          eventRegistrationEventFieldId,
         }),
       });
       if (res.ok) {
@@ -170,9 +187,7 @@ export function AdminPage() {
       const res = await adminFetch('/calendar', { method: 'POST', body: JSON.stringify(data) });
       if (res.ok) refresh();
       else alert('Failed');
-    } catch {
-      /* handled */
-    }
+    } catch {}
   };
 
   const deleteCalendarEntry = async (id: string) => {
@@ -180,9 +195,7 @@ export function AdminPage() {
       const res = await adminFetch(`/calendar/${id}`, { method: 'DELETE' });
       if (res.ok) refresh();
       else alert('Failed');
-    } catch {
-      /* handled */
-    }
+    } catch {}
   };
 
   const addWeeklyItem = async (data: any) => {
@@ -190,9 +203,7 @@ export function AdminPage() {
       const res = await adminFetch('/weekly', { method: 'POST', body: JSON.stringify(data) });
       if (res.ok) refresh();
       else alert('Failed');
-    } catch {
-      /* handled */
-    }
+    } catch {}
   };
 
   const deleteWeeklyItem = async (id: string) => {
@@ -200,9 +211,7 @@ export function AdminPage() {
       const res = await adminFetch(`/weekly/${id}`, { method: 'DELETE' });
       if (res.ok) refresh();
       else alert('Failed');
-    } catch {
-      /* handled */
-    }
+    } catch {}
   };
 
   const addExecutive = async (data: Omit<ExecutiveMember, 'id'>) => {
@@ -213,9 +222,7 @@ export function AdminPage() {
       });
       if (res.ok) refresh();
       else alert('Failed');
-    } catch {
-      /* handled */
-    }
+    } catch {}
   };
 
   const deleteExecutive = async (id: string) => {
@@ -223,9 +230,7 @@ export function AdminPage() {
       const res = await adminFetch(`/executives/${id}`, { method: 'DELETE' });
       if (res.ok) refresh();
       else alert('Failed');
-    } catch {
-      /* handled */
-    }
+    } catch {}
   };
 
   const toggleProject = async (id: string) => {
@@ -233,9 +238,7 @@ export function AdminPage() {
       const res = await adminFetch(`/projects/${id}/toggle`, { method: 'PUT' });
       if (res.ok) refresh();
       else alert('Failed');
-    } catch {
-      /* handled */
-    }
+    } catch {}
   };
 
   const addPartner = async () => {
@@ -254,12 +257,8 @@ export function AdminPage() {
       if (res.ok) {
         refresh();
         setNewPartner({ name: '', type: 'Sponsor', tier: '', logoUrl: '', websiteUrl: '' });
-      } else {
-        alert('Failed');
-      }
-    } catch {
-      /* handled */
-    }
+      } else alert('Failed');
+    } catch {}
   };
 
   const deletePartner = async (id: string) => {
@@ -267,12 +266,40 @@ export function AdminPage() {
       const res = await adminFetch(`/partners/${id}`, { method: 'DELETE' });
       if (res.ok) refresh();
       else alert('Failed');
-    } catch {
-      /* handled */
-    }
+    } catch {}
   };
 
-  // --- Confirm Wrappers ---
+  const addArchiveFile = async () => {
+    try {
+      const res = await adminFetch('/archive-files', {
+        method: 'POST',
+        body: JSON.stringify(newArchive),
+      });
+      if (res.ok) {
+        refresh();
+        setNewArchive({
+          title: '',
+          course: '',
+          level: '100',
+          year: String(new Date().getFullYear()),
+          kind: 'PDF',
+          fileUrl: '',
+        });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert((data as any).error ?? 'Failed');
+      }
+    } catch {}
+  };
+
+  const deleteArchiveFile = async (id: string) => {
+    try {
+      const res = await adminFetch(`/archive-files/${id}`, { method: 'DELETE' });
+      if (res.ok) refresh();
+      else alert('Failed');
+    } catch {}
+  };
+
   const confirmSaveEvent = () =>
     setConfirmDialog({
       open: true,
@@ -282,6 +309,7 @@ export function AdminPage() {
       confirmLabel: 'Save',
       action: saveEvent,
     });
+
   const confirmSaveSettings = () =>
     setConfirmDialog({
       open: true,
@@ -291,6 +319,7 @@ export function AdminPage() {
       confirmLabel: 'Save',
       action: saveSettings,
     });
+
   const confirmAddCalendar = () => {
     if (!newCalDate || !newCalTitle) return;
     setConfirmDialog({
@@ -384,6 +413,26 @@ export function AdminPage() {
       type: 'confirm',
       confirmLabel: 'Remove',
       action: () => deletePartner(id),
+    });
+  const confirmAddArchiveFile = () => {
+    if (!newArchive.title.trim() || !newArchive.course.trim() || !newArchive.fileUrl.trim()) return;
+    setConfirmDialog({
+      open: true,
+      title: 'Add archive link',
+      body: `Add "${newArchive.title}"?`,
+      type: 'success',
+      confirmLabel: 'Add',
+      action: addArchiveFile,
+    });
+  };
+  const confirmDeleteArchive = (id: string, title: string) =>
+    setConfirmDialog({
+      open: true,
+      title: 'Remove link',
+      body: `Remove "${title}"? The Drive file itself is untouched.`,
+      type: 'confirm',
+      confirmLabel: 'Remove',
+      action: () => deleteArchiveFile(id),
     });
 
   const DAYS = [
@@ -719,6 +768,134 @@ export function AdminPage() {
             </div>
           )}
 
+          {tab === 'archive' && (
+            <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
+              <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
+                  Add a study file link
+                </h3>
+                <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--sp-3)' }}>
+                    <Field label="Title">
+                      <TextInput
+                        type="text"
+                        value={newArchive.title}
+                        onChange={(v) => setNewArchive({ ...newArchive, title: v })}
+                        placeholder="Control Systems I — lecture slides"
+                      />
+                    </Field>
+                    <Field label="Course code">
+                      <TextInput
+                        type="text"
+                        value={newArchive.course}
+                        onChange={(v) => setNewArchive({ ...newArchive, course: v })}
+                        placeholder="MCE 301"
+                      />
+                    </Field>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--sp-3)' }}>
+                    <Field label="Level">
+                      <select
+                        className="amees-input"
+                        value={newArchive.level}
+                        onChange={(e) => setNewArchive({ ...newArchive, level: e.target.value })}
+                      >
+                        {['100', '200', '300', '400', '500'].map((l) => (
+                          <option key={l} value={l}>{l}</option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Year">
+                      <TextInput
+                        type="text"
+                        value={newArchive.year}
+                        onChange={(v) => setNewArchive({ ...newArchive, year: v })}
+                      />
+                    </Field>
+                    <Field label="Kind">
+                      <select
+                        className="amees-input"
+                        value={newArchive.kind}
+                        onChange={(e) => setNewArchive({ ...newArchive, kind: e.target.value })}
+                      >
+                        {['PDF', 'DOCX', 'PPTX', 'XLSX'].map((k) => (
+                          <option key={k} value={k}>{k}</option>
+                        ))}
+                      </select>
+                    </Field>
+                  </div>
+                  <Field label="Google Drive share link">
+                    <TextInput
+                      type="url"
+                      value={newArchive.fileUrl}
+                      onChange={(v) => setNewArchive({ ...newArchive, fileUrl: v })}
+                      placeholder="https://drive.google.com/file/d/…/view"
+                    />
+                  </Field>
+                  <p style={{ margin: 0, fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
+                    In Drive: right-click the file → <b>Share</b> → <b>Anyone with the link</b> →
+                    Copy. Test the URL in a private window before saving — broken links are
+                    discovered by students, not by you.
+                  </p>
+                  <div>
+                    <Button
+                      variant="primary"
+                      onClick={confirmAddArchiveFile}
+                      disabled={
+                        !newArchive.title.trim() ||
+                        !newArchive.course.trim() ||
+                        !newArchive.fileUrl.trim()
+                      }
+                    >
+                      Add link
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
+                  Current links ({content.archiveFiles?.length ?? 0})
+                </h3>
+                {(!content.archiveFiles || content.archiveFiles.length === 0) ? (
+                  <p style={{ color: 'var(--muted)' }}>No archive links yet.</p>
+                ) : (
+                  content.archiveFiles.map((f) => (
+                    <div key={f.id} className="admin-list-item">
+                      <div>
+                        <div style={{ fontWeight: 'bold' }}>{f.title}</div>
+                        <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
+                          {f.course} · {f.level}L · {f.year} · {f.kind}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                        {f.fileUrl && (
+                          <Button
+                            as="a"
+                            href={f.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            size="sm"
+                            variant="default"
+                          >
+                            Open
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => confirmDeleteArchive(f.id, f.title)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           {tab === 'general' && (
             <div className="admin-form-grid">
               <Field label="Home Page Marquee Mode">
@@ -730,6 +907,49 @@ export function AdminPage() {
               <Field label="Footer Tagline">
                 <Textarea value={footerTagline} onChange={setFooterTagline} />
               </Field>
+
+              <h3
+                style={{
+                  margin: 'var(--sp-4) 0 0',
+                  fontFamily: 'var(--font)',
+                  fontSize: 'var(--fs-md)',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                }}
+              >
+                External form links
+              </h3>
+
+              <Field label="Event Registration Form URL">
+                <TextInput
+                  type="url"
+                  value={eventRegistrationFormUrl}
+                  onChange={setEventRegistrationFormUrl}
+                  placeholder="https://docs.google.com/forms/d/e/…/viewform"
+                />
+              </Field>
+              <div style={{ display: 'grid', gap: 'var(--sp-1)', marginTop: 'calc(var(--sp-2) * -1)' }}>
+                <p style={{ margin: 0, fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
+                  The Google Form students use to register for the featured event.
+                </p>
+              </div>
+
+              <Field label="Event Field Entry ID (Optional)">
+                <TextInput
+                  type="text"
+                  value={eventRegistrationEventFieldId}
+                  onChange={setEventRegistrationEventFieldId}
+                  placeholder="123456789"
+                />
+              </Field>
+              <div style={{ display: 'grid', gap: 'var(--sp-1)', marginTop: 'calc(var(--sp-2) * -1)' }}>
+                <p style={{ margin: 0, fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
+                  To find this: open the form → ⋮ menu → <b>Get pre-filled link</b> → type the event
+                  name into the Event field → click <b>Get link</b> → copy the number after{' '}
+                  <code>entry.</code> in the URL. Leave blank to skip prefill.
+                </p>
+              </div>
+
               <Field label="Membership Form URL">
                 <TextInput type="url" value={membershipFormUrl} onChange={setMembershipFormUrl} placeholder="https://forms.gle/..." />
               </Field>

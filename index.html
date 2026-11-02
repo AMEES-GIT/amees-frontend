@@ -4,39 +4,64 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-    <title>AMEES · Lead City University</title>
-    <meta
-      name="description"
-      content="The Association of Mechatronics and Electrical and Electronics Engineering Students at Lead City University, Ibadan."
-    />
-
-    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <link rel="apple-touch-icon" href="/logo.svg" />
 
-    <!-- Theme colours — match your tokens.css -->
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
 
-    <!-- Open Graph (WhatsApp, LinkedIn, Facebook link previews) -->
+    <!-- BEGIN: per-route SEO — replaced at build by vite-plugins/seo.ts -->
+    <!-- seo:start -->
+    <title>AMEES · Lead City University</title>
+    <meta name="description" content="The Association of Mechatronics and Electrical and Electronics Engineering Students at Lead City University, Ibadan." />
+    <link rel="canonical" href="https://amees.com.ng/" />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:title" content="AMEES · Lead City University" />
+    <meta property="og:description" content="The Association of Mechatronics and Electrical and Electronics Engineering Students at Lead City University, Ibadan." />
+    <meta property="og:url" content="https://amees.com.ng/" />
+    <meta name="twitter:title" content="AMEES · Lead City University" />
+    <meta name="twitter:description" content="The Association of Mechatronics and Electrical and Electronics Engineering Students at Lead City University, Ibadan." />
+    <!-- seo:end -->
+    <!-- END: per-route SEO -->
+
+    <!-- Sitewide OG — same on every page -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="AMEES" />
-    <meta property="og:title" content="AMEES · Lead City University" />
-    <meta
-      property="og:description"
-      content="The Association of Mechatronics and Electrical and Electronics Engineering Students at Lead City University, Ibadan."
-    />
-    <meta property="og:image" content="/logo.svg" />
-    <meta property="og:url" content="https://amees.com.ng" />
+    <meta property="og:image" content="https://amees.com.ng/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://amees.com.ng/og-image.png" />
 
-    <!-- Twitter / X -->
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="AMEES · Lead City University" />
-    <meta
-      name="twitter:description"
-      content="The Association of Mechatronics and Electrical and Electronics Engineering Students at Lead City University, Ibadan."
-    />
-    <meta name="twitter:image" content="/logo.svg" />
+    <!-- Fill these with the codes from Search Console / Bing -->
+    <meta name="google-site-verification" content="" />
+    <meta name="msvalidate.01" content="" />
+
+    <!-- Sitewide Organization structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://amees.com.ng/#organization",
+      "name": "AMEES — Association of Mechatronics and Electrical and Electronics Engineering Students",
+      "alternateName": "AMEES",
+      "url": "https://amees.com.ng",
+      "logo": "https://amees.com.ng/logo.svg",
+      "description": "Student body for Mechatronics and Electrical & Electronics Engineering at Lead City University, Ibadan.",
+      "foundingDate": "2025",
+      "parentOrganization": {
+        "@type": "CollegeOrUniversity",
+        "name": "Lead City University",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Ibadan",
+          "addressRegion": "Oyo",
+          "addressCountry": "NG"
+        }
+      },
+      "sameAs": []
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

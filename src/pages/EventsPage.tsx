@@ -48,8 +48,6 @@ export function EventsPage({ onNavigate }: EventsPageProps) {
 }
   const now = useNow(60_000);
   const state = eventState(now, f.start, f.end);
-  const [status, setStatus] = useState<'idle' | 'done'>('idle');
-
   const name = `${f.title} ${f.version}`;
   const canRegister = f.registrationOpen && state !== 'after';
   const intro = content.pages.events;
@@ -153,10 +151,10 @@ export function EventsPage({ onNavigate }: EventsPageProps) {
             <div id="register">
               {canRegister ? (
                 <RegistrationForm
-                  eventTitle={name}
-                  tracks={f.tracks.map((t) => t.title)}
-                  status={status}
-                  onSubmit={() => setStatus('done')}
+                  eventTitle={f.title}
+                  formUrl={content.eventRegistrationFormUrl}
+                  eventFieldId={content.eventRegistrationEventFieldId}
+                  open={f.registrationOpen}
                 />
               ) : (
                 <Window title="Registration" meta="Closed">
@@ -169,7 +167,7 @@ export function EventsPage({ onNavigate }: EventsPageProps) {
       )}
 
       <Block>
-        <Window title="Weekly rhythm" meta="Every week">
+        <Window title="Weekly Schedule" meta="Every week">
           <RowList rows={weeklyRows(content)} />
         </Window>
       </Block>

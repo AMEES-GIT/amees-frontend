@@ -1,0 +1,42 @@
+/* src/pages/SearchPage.css — new file */
+.search-results {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.search-result {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.search-result__subtitle {
+  margin: 0 0 var(--sp-1);
+  font-family: var(--font);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+}
+
+.search-result__desc {
+  margin: 0;
+  font-family: var(--font);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg);
+}
+
+.search-result__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}
+
+.search-muted {
+  font-family: var(--font);
+  color: var(--muted);
+}

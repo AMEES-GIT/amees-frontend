@@ -24,7 +24,6 @@ export const seedContent: SiteContent = {
   calendarEntries: [],
   upcoming: [],
   quickLinks: [],
-  archive: [],
   opportunities: [],
 
   projects: {
@@ -54,10 +53,14 @@ export const seedContent: SiteContent = {
 
   calendarMilestones: [],
   calendarNote: '',
+  archive: [],
+  archiveFiles: [],
 
-  // ── new fields, added by these fixes ──
+
   membershipFormUrl: '',
   projectSubmissionUrl: '',
+  eventRegistrationFormUrl: '',
+  eventRegistrationEventFieldId: '',
 
   pages: {
     events: { kicker: 'Events', title: 'What is on at AMEES', lede: '' },

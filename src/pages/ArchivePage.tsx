@@ -7,22 +7,31 @@ import { ChipGroup } from '../components/primitives/ChipGroup';
 import { TextInput } from '../components/primitives/TextInput';
 import { Select } from '../components/primitives/Select';
 import { Button } from '../components/primitives/Button';
+import { Badge } from '../components/primitives/Badge';
 import { FileTile } from '../components/foundations/FileTile';
 import { EmptyState } from '../components/containers/EmptyState';
 import { useContent } from '../content/contentProvider';
-import type { ArchiveFile } from '../content/types';
+import type { ArchiveFileRow } from '../content/types';
 import './ArchivePage.css';
+
+function formatSize(bytes: number): string {
+  if (!bytes) return '—';
+  const mb = bytes / (1024 * 1024);
+  if (mb >= 1) return `${mb.toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
 
 export function ArchivePage() {
   const content = useContent();
+  const files = content.archiveFiles ?? [];
+
   const [level, setLevel] = useState('all');
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('all');
 
-  // Extract unique kinds from the content for the dropdown
   const kinds = useMemo(() => {
-    return Array.from(new Set(content.archive.map(f => f.kind)));
-  }, [content.archive]);
+    return Array.from(new Set(files.map((f) => f.kind)));
+  }, [files]);
 
   const levels = [
     { value: 'all', label: 'All levels' },
@@ -35,21 +44,20 @@ export function ArchivePage() {
 
   const kindOptions = [
     { value: 'all', label: 'All types' },
-    ...kinds.map(k => ({ value: k, label: k }))
+    ...kinds.map((k) => ({ value: k, label: k })),
   ];
 
-  // Filter logic
   const filteredFiles = useMemo(() => {
     const q = query.toLowerCase().trim();
-    return content.archive.filter(f => {
+    return files.filter((f) => {
       if (level !== 'all' && String(f.level) !== level) return false;
       if (kind !== 'all' && f.kind !== kind) return false;
-      if (q && !(`${f.title} ${f.course}`.toLowerCase().includes(q))) return false;
+      if (q && !`${f.title} ${f.course}`.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [content.archive, level, kind, query]);
+  }, [files, level, kind, query]);
 
-  const hasSamples = filteredFiles.some(f => f.sample);
+  const hasSamples = filteredFiles.some((f) => !f.fileUrl);
 
   const clearFilters = () => {
     setLevel('all');
@@ -57,17 +65,16 @@ export function ArchivePage() {
     setQuery('');
   };
 
-  // Define Table Columns
-  const columns: DataTableColumn<ArchiveFile>[] = [
-    { 
-      key: 'ext', 
-      label: '', 
-      width: 56, 
-      render: (r) => <FileTile type={r.ext} /> 
+  const columns: DataTableColumn<ArchiveFileRow>[] = [
+    {
+      key: 'kind',
+      label: '',
+      width: 56,
+      render: (r) => <FileTile type={r.kind} />,
     },
-    { 
-      key: 'title', 
-      label: 'Title', 
+    {
+      key: 'title',
+      label: 'Title',
       render: (r) => (
         <div>
           <b>{r.title}</b>
@@ -75,53 +82,79 @@ export function ArchivePage() {
             {r.kind}
           </div>
         </div>
-      ) 
+      ),
     },
     { key: 'course', label: 'Course' },
     { key: 'level', label: 'Level', align: 'right' },
     { key: 'year', label: 'Year', align: 'right' },
-    { key: 'size', label: 'Size', align: 'right' },
+    {
+      key: 'sizeBytes',
+      label: 'Size',
+      align: 'right',
+      render: (r) => formatSize(r.sizeBytes),
+    },
     {
       key: 'action',
       label: '',
       align: 'right',
-      render: () => <Button size="sm">Open</Button>,
-    }
+      render: (r) =>
+        r.fileUrl ? (
+          <Button
+            as="a"
+            href={r.fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            size="sm"
+            variant="primary"
+          >
+            Open
+          </Button>
+        ) : (
+          <Badge tone="warn" kind="tag">
+            Sample
+          </Badge>
+        ),
+    },
   ];
 
   return (
     <Wrap>
       <Block>
-        <PageHeader 
+        <PageHeader
           className="archive-header"
-          kicker={content.pages.archive.kicker} 
-          title={content.pages.archive.title} 
-          lede={content.pages.archive.lede} 
+          kicker={content.pages.archive.kicker}
+          title={content.pages.archive.title}
+          lede={content.pages.archive.lede}
         />
       </Block>
 
       <Block>
-        <Window title="C:\AMEES\archive" meta={`${filteredFiles.length} of ${content.archive.length} files`}>
-          
+        <Window
+          title="C:\AMEES\archive"
+          meta={`${filteredFiles.length} of ${files.length} files`}
+        >
           <div className="archive-filters">
-            <div style={{ display: 'flex', gap: 'var(--sp-3)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div
+              style={{
+                display: 'flex',
+                gap: 'var(--sp-3)',
+                flexWrap: 'wrap',
+                alignItems: 'flex-end',
+              }}
+            >
               <div style={{ flex: '1 1 240px' }}>
-                <TextInput 
-                  value={query} 
-                  onChange={setQuery} 
-                  placeholder="Search by course code or title" 
+                <TextInput
+                  value={query}
+                  onChange={setQuery}
+                  placeholder="Search by course code or title"
                 />
               </div>
               <div style={{ flex: '0 1 200px' }}>
-                <Select 
-                  options={kindOptions} 
-                  value={kind} 
-                  onChange={setKind} 
-                />
+                <Select options={kindOptions} value={kind} onChange={setKind} />
               </div>
             </div>
-            
-            <ChipGroup 
+
+            <ChipGroup
               label="Level"
               showLabel={false}
               items={levels}
@@ -130,14 +163,14 @@ export function ArchivePage() {
             />
           </div>
 
-          <DataTable 
+          <DataTable
             columns={columns}
             rows={filteredFiles}
             rowKey={(r) => r.id}
             empty={
-              <EmptyState 
-                title="No files match" 
-                text="Clear a filter or search a different course code." 
+              <EmptyState
+                title="No files match"
+                text="Clear a filter or search a different course code."
                 action={<Button onClick={clearFilters}>Clear filters</Button>}
               />
             }
@@ -145,7 +178,8 @@ export function ArchivePage() {
 
           {hasSamples && (
             <p className="archive-note">
-              Sample listing. Course names and files show here once the archive is connected.
+              Some entries are sample listings. Real files appear here once the
+              exec team adds Drive links through the admin panel.
             </p>
           )}
         </Window>

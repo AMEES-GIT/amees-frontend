@@ -1,145 +1,116 @@
-import { useState } from 'react';
 import { Window } from '../../containers/Window';
-import { Field } from '../../primitives/Field';
-import { TextInput } from '../../primitives/TextInput';
-import { Select } from '../../primitives/Select';
 import { Button } from '../../primitives/Button';
 import './RegistrationForm.css';
 
-export type FormStatus = 'idle' | 'submitting' | 'done' | 'error';
-
-export interface RegistrationData {
-  name: string;
-  matric: string;
-  level: string;
-  track: string;
-}
-
 export interface RegistrationFormProps {
-  /** E.g. "Wired 1.0", "Tech Week Hackathon". */
+  /** E.g. "Wired 1.0". Shown in the gate and prefilled into the Google Form. */
   eventTitle: string;
-  /** Array of strings for the track dropdown. */
-  tracks: readonly string[];
-  /** Array of strings for the level dropdown. Defaults to 100–500. */
-  levels?: readonly string[];
-  /** Controlled status. */
-  status?: FormStatus;
-  /** Server-side validation errors, keyed by field name. */
-  errors?: Partial<Record<keyof RegistrationData, string>>;
-  /** Called with the form data when submitted. */
-  onSubmit: (data: RegistrationData) => void;
-  /** Called when "Register someone else" is clicked in the done state. */
-  onReset?: () => void;
+  /** Google Form URL from SiteSettings.eventRegistrationFormUrl. */
+  formUrl: string;
+  /** Optional: the entry.* ID for the "Event" field, for prefill. */
+  eventFieldId?: string;
+  /** Whether registration is currently open. Defaults to true. */
+  open?: boolean;
   className?: string;
 }
 
-const DEFAULT_LEVELS = ['100', '200', '300', '400', '500'];
-
+/**
+ * Registration runs entirely through Google Forms.
+ *
+ * Why: the exec team already works in Google Sheets, Google's form gives us
+ * free spam protection and file uploads if we add them later, and we never
+ * have to build a registration database or email pipeline for it.
+ *
+ * This component is a gate — it tells the student what's going on and opens
+ * the form in a new tab, prefilling the event title if an entry ID is set.
+ */
 export function RegistrationForm({
   eventTitle,
-  tracks,
-  levels = DEFAULT_LEVELS,
-  status = 'idle',
-  errors = {},
-  onSubmit,
-  onReset,
+  formUrl,
+  eventFieldId,
+  open = true,
   className,
 }: RegistrationFormProps) {
-  const [data, setData] = useState<RegistrationData>({
-    name: '',
-    matric: '',
-    level: '',
-    track: '',
-  });
-
-  const isSubmitting = status === 'submitting';
-  const isDone = status === 'done';
-
-  const handleChange = (field: keyof RegistrationData, value: string) => {
-    setData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(data);
-  };
-
-  if (isDone) {
+  if (!open) {
     return (
-      <Window title="Registration" meta="complete" className={className}>
-        <div className="amees-reg__done">
-          <h3 className="amees-reg__done-title">You're registered.</h3>
-          <p className="amees-reg__done-text">
-            See you at {eventTitle}. Bring a laptop if you have one.
+      <Window title="Register" meta={eventTitle} className={className}>
+        <div className="amees-reg__gate">
+          <p className="amees-reg__lede">
+            Registration for <b>{eventTitle}</b> is closed.
           </p>
-          {onReset ? (
-            <Button onClick={onReset} className="amees-reg__reset-btn">
-              Register someone else
-            </Button>
-          ) : null}
+          <p className="amees-reg__note">
+            Keep an eye on the events page — the next session opens registration
+            a few weeks before it starts.
+          </p>
         </div>
       </Window>
     );
   }
 
+  if (!formUrl) {
+    return (
+      <Window title="Register" meta={eventTitle} className={className}>
+        <div className="amees-reg__gate">
+          <p className="amees-reg__lede">
+            Registration isn&rsquo;t set up yet.
+          </p>
+          <p className="amees-reg__note">
+            The exec team is still preparing the form for {eventTitle}. Check
+            back soon, or reach out on Instagram.
+          </p>
+        </div>
+      </Window>
+    );
+  }
+
+  const targetUrl = buildFormUrl(formUrl, eventFieldId, eventTitle);
+
   return (
     <Window title="Register" meta={eventTitle} className={className}>
-      <form className="amees-reg__form" onSubmit={handleSubmit}>
-        {status === 'error' && (
-          <div className="amees-reg__form-error" role="alert">
-            <strong>Error:</strong> There was a problem submitting. Please check your details and try again.
-          </div>
-        )}
-
-        <Field label="Full name" error={errors.name}>
-          <TextInput
-            type="text"
-            value={data.name}
-            onChange={(v) => handleChange('name', v)}
-            required
-            autoComplete="name"
-            disabled={isSubmitting}
-          />
-        </Field>
-
-        <Field label="Matric number" error={errors.matric}>
-          <TextInput
-            type="text"
-            value={data.matric}
-            onChange={(v) => handleChange('matric', v)}
-            required
-            disabled={isSubmitting}
-          />
-        </Field>
-
-        <div className="amees-reg__row">
-          <Field label="Level" error={errors.level}>
-            <Select
-              options={levels.map(l => ({ value: l, label: l }))}
-              value={data.level}
-              onChange={(v) => handleChange('level', v)}
-              placeholder="Select"
-              disabled={isSubmitting}
-            />
-          </Field>
-
-          <Field label="First-choice track" error={errors.track}>
-            <Select
-              options={tracks.map(t => ({ value: t, label: t }))}
-              value={data.track}
-              onChange={(v) => handleChange('track', v)}
-              placeholder="Select"
-              disabled={isSubmitting}
-            />
-          </Field>
-        </div>
-
-        <div className="amees-reg__actions">
-          <Button type="submit" variant="primary" loading={isSubmitting}>
-            Register for {eventTitle}
-          </Button>
-        </div>
-      </form>
+      <div className="amees-reg__gate">
+        <p className="amees-reg__lede">
+          Registration for <b>{eventTitle}</b> runs through Google Forms.
+        </p>
+        <p className="amees-reg__note">
+          The form asks for your name, matric number, level, and track — plus a
+          few extras the exec team needs to plan sessions. Have your matric
+          number handy.
+        </p>
+        <Button
+          as="a"
+          href={targetUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          variant="primary"
+        >
+          Open registration form →
+        </Button>
+      </div>
     </Window>
   );
+}
+
+/**
+ * Build a Google Forms prefill URL. The `usp=pp_url` query flag tells Google
+ * "this is a prefilled link", and `entry.<id>=<value>` sets each prefilled
+ * field. Using URL() means we don't break if the base URL already has
+ * query params (e.g. ?usp=sf_link from the Copy Link button).
+ */
+function buildFormUrl(
+  base: string,
+  fieldId: string | undefined,
+  eventTitle: string,
+): string {
+  try {
+    const url = new URL(base);
+    url.searchParams.set('usp', 'pp_url');
+    if (fieldId) {
+      url.searchParams.set(`entry.${fieldId}`, eventTitle);
+    }
+    return url.toString();
+  } catch {
+    // Malformed URL — open as-is. Better to send students to a broken form
+    // than to nothing.
+    return base;
+  }
 }

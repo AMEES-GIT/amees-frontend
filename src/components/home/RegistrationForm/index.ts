@@ -1,2 +1,2 @@
 export { RegistrationForm } from './RegistrationForm';
-export type { RegistrationFormProps, RegistrationData, FormStatus } from './RegistrationForm';
+export type { RegistrationFormProps } from './RegistrationForm';

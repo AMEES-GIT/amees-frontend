@@ -21,4 +21,12 @@ export default defineConfig({
       { find: /^@atlis\/deract$/, replacement: lib('index.ts') },
     ],
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
 });

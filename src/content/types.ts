@@ -118,6 +118,7 @@ export interface Opportunity {
 }
 
 export interface ExecutiveMember {
+  id: string;
   role: string;
   name: string;
   photoUrl?: string;
@@ -128,7 +129,11 @@ export interface Partner {
   id: string;
   name: string;
   type: 'Sponsor' | 'Partner';
-  url?: string;
+  tier?: string;
+  logoUrl?: string;
+  websiteUrl?: string;
+  order?: number;
+  active?: boolean;
 }
 
 export interface SponsorTier {
@@ -169,6 +174,8 @@ export interface SiteContent {
   archive: ArchiveFile[];
   opportunities: Opportunity[];
   activeMarquee?: 'caution' | 'showcase';
+  membershipFormUrl: string;    // <-- ADDED
+  projectSubmissionUrl: string;
 
   sponsorPitch: { title: string; text: string; cta: string };
   

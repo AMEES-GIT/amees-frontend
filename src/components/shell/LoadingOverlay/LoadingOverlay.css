@@ -1,0 +1,55 @@
+.amees-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.amees-loading-body {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-4) var(--sp-4);
+  background: var(--panel-2);
+  border-top: var(--bw-sm) solid var(--line);
+}
+
+.amees-loading-gears {
+  width: 210px;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.amees-loading-text {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-base);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-caps);
+  color: var(--fg);
+  margin: 0;
+  line-height: var(--lh-tight);
+}
+
+.amees-loading-dots::after {
+  content: '';
+  animation: amees-dots 1.2s steps(1) infinite;
+}
+
+@keyframes amees-dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+}
+
+[data-motion='reduce'] .amees-loading-dots::after {
+  animation: none;
+}

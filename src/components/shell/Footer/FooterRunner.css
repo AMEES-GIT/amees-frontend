@@ -1,0 +1,72 @@
+.amees-footer-runner {
+  position: relative;
+  height: 80px;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--panel-2);
+  border-top: var(--bw) solid var(--line);
+  border-bottom: var(--bw) solid var(--line);
+  user-select: none;
+  cursor: pointer;
+}
+
+.amees-footer-runner__score {
+  position: absolute;
+  right: var(--sp-4);
+  top: var(--sp-2);
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+
+.amees-footer-runner__bot {
+  position: absolute;
+  left: 50px;
+  bottom: 0;
+  width: 24px;
+  height: 28px;
+  color: var(--blue);
+  will-change: transform;
+}
+
+.amees-footer-runner__cactus {
+  position: absolute;
+  bottom: 0;
+  width: 18px;
+  height: 30px;
+  color: var(--blue);
+  will-change: transform;
+}
+
+.amees-footer-runner__gameover {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(251, 242, 225, 0.9);
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+  color: var(--c-bad);
+  letter-spacing: 1px;
+  backdrop-filter: blur(2px);
+  z-index: 10;
+}
+
+[data-theme="dark"] .amees-footer-runner__gameover {
+  background: rgba(19, 15, 49, 0.9);
+}
+
+/* Add a fake ground line */
+.amees-footer-runner::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--line);
+  opacity: 0.3;
+}

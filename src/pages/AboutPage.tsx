@@ -3,14 +3,10 @@ import { PageHeader } from '../components/containers/PageHeader';
 import { Window } from '../components/containers/Window';
 import { Button } from '../components/primitives/Button';
 import { useContent } from '../content/contentProvider';
-import type { PageId } from './types';
 import './AboutPage.css';
 
-interface AboutPageProps {
-  onNavigate: (page: PageId) => void;
-}
 
-export function AboutPage({ onNavigate }: AboutPageProps) {
+export function AboutPage() {
   const content = useContent();
   const { about } = content;
 
@@ -90,14 +86,14 @@ export function AboutPage({ onNavigate }: AboutPageProps) {
         </Window>
       </Block>
 
-      <Block>
-        <Window title="Join us" tone="gray">
+            <Block>
+        <Window title="Become a member" tone="gray">
           <p style={{ fontFamily: 'var(--font)', fontSize: 'var(--fs-body)', marginBottom: 'var(--sp-4)' }}>
-            First-year or final-year, if you build things or want to, you belong here. Start with the Wired bootcamp.
+            First-year or final-year, if you build things or want to, you belong here. Join the AMEES community.
           </p>
           <Row>
-            <Button variant="primary" onClick={() => onNavigate('events')}>
-              Register for Wired 1.0 →
+            <Button as="a" href={content.membershipFormUrl || '#events'} target="_blank" rel="noopener noreferrer" variant="primary">
+              Join AMEES →
             </Button>
           </Row>
         </Window>

@@ -4,15 +4,11 @@ import { Window } from '../components/containers/Window';
 import { Badge } from '../components/primitives/Badge';
 import { Button } from '../components/primitives/Button';
 import { useContent } from '../content/contentProvider';
-import type { PageId } from './types';
 
 import './ProjectsPage.css';
 
-interface ProjectsPageProps {
-  onNavigate: (page: PageId) => void;
-}
 
-export function ProjectsPage({ onNavigate }: ProjectsPageProps) {
+export function ProjectsPage() {
   const content = useContent();
   const { projects } = content;
 
@@ -79,7 +75,7 @@ export function ProjectsPage({ onNavigate }: ProjectsPageProps) {
           <p style={{ fontFamily: 'var(--font)', fontSize: 'var(--fs-body)', marginBottom: 'var(--sp-4)' }}>
             Have something you built that solves a real problem? We want to see it.
           </p>
-          <Button variant="primary" onClick={() => onNavigate('about')}>
+          <Button as="a" href={content.projectSubmissionUrl} target="_blank" rel="noopener noreferrer" variant="primary">
             Contact us now! →
           </Button>
         </Window>

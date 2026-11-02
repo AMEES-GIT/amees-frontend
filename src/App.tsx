@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Wrap, Block } from './components/containers/Layout';
-import { PageHeader } from './components/containers/PageHeader';
 import { Header } from './components/shell/Header';
 import { Footer } from './components/shell/Footer';
 import { SearchBox } from './components/shell/SearchBox';
+import { RequireAuth } from './components/admin/requireAuth';
 
 // Pages
 import { HomePage } from './pages/HomePage';
@@ -14,12 +13,12 @@ import { WorkbenchPage } from './pages/WorkbenchPage';
 import { ToolboxPage } from './pages/ToolboxPage';
 import { OpportunitiesPage } from './pages/OpportunitiesPage';
 import { ProjectsPage } from './pages/ProjectsPage';
+import { SponsorsPage } from './pages/SponsorsPage';
 import { AboutPage } from './pages/AboutPage';
 import { ProjectProfilePage } from './pages/ProjectProfilePage';
-import { SponsorsPage } from './pages/SponsorsPage';
 import { LoginPage } from './pages/LoginPage';
 import { AdminPage } from './pages/AdminPage';
-
+import { NotFoundPage } from './pages/NotFoundPage';
 
 import { NAV, HEADER_NAV } from './nav';
 import { THEME_KEY } from './styles/tokens';
@@ -41,28 +40,10 @@ function readTheme(): Theme {
   return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 }
 
-function ComingSoon({ id, query }: { id: PageId; query: string }) {
-  const label = NAV.find((n) => n.key === id)?.label ?? id;
-  const isSearch = String(id) === 'search';
-  const lede =
-    isSearch && query
-      ? `You searched for "${query}". Search results are not built yet.`
-      : "This page isn't built yet.";
-
-  return (
-    <Wrap>
-      <Block>
-        <PageHeader kicker="AMEES" title={label} lede={lede} />
-      </Block>
-    </Wrap>
-  );
-}
-
 export default function App() {
   const content = useContent();
   const [page, setPage] = useState<PageId>(pageFromHash);
-  
-  // Track the project ID for the #project/:id route
+
   const [projectId, setProjectId] = useState<string | null>(() => {
     const hash = window.location.hash.replace('#', '');
     const parts = hash.split('/');
@@ -84,17 +65,17 @@ export default function App() {
     const onHash = () => {
       const hash = window.location.hash.replace('#', '');
       const parts = hash.split('/');
-      
+
       if (parts[0] === 'project' && parts[1]) {
         setProjectId(parts[1]);
       } else {
         setProjectId(null);
       }
-      
+
       setPage(pageFromHash());
       window.scrollTo(0, 0);
     };
-    
+
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
@@ -117,9 +98,7 @@ export default function App() {
     setTheme(next);
     try {
       localStorage.setItem(THEME_KEY, next);
-    } catch {
-      /* storage blocked */
-    }
+    } catch {}
   }, [theme]);
 
   const onSearchSubmit = useCallback((q: string) => {
@@ -159,19 +138,21 @@ export default function App() {
         ) : page === 'opportunities' ? (
           <OpportunitiesPage />
         ) : page === 'projects' ? (
-          <ProjectsPage onNavigate={onNavigate} />
-        ) : page === 'about' ? (
-          <AboutPage onNavigate={onNavigate} />
+          <ProjectsPage />
         ) : page === 'sponsors' ? (
           <SponsorsPage />
+        ) : page === 'about' ? (
+          <AboutPage />
         ) : page === 'project' && projectId ? (
           <ProjectProfilePage projectId={projectId} onNavigate={onNavigate} />
         ) : page === 'login' ? (
           <LoginPage />
         ) : page === 'admin' ? (
-          <AdminPage />
+          <RequireAuth>
+            <AdminPage />
+          </RequireAuth>
         ) : (
-          <ComingSoon id={page} query={query} />
+          <NotFoundPage onNavigate={onNavigate} />
         )}
       </main>
       <Footer {...footerProps(content)} />

@@ -10,35 +10,23 @@ export interface FooterLink {
 
 export interface FooterGroup {
   title: string;
-  links: readonly FooterLink[];
+  links: FooterLink[];
 }
 
 export interface FooterProps {
   tagline: string;
-  groups: readonly FooterGroup[];
-  /** Outbound links, such as the WhatsApp group. Opens in a new tab. */
-  external?: readonly FooterLink[];
-  /** Optional slot for the FooterRunner or other decorative content. */
+  groups: FooterGroup[];
+  external?: { label: string; href: string }[];
   runner?: ReactNode;
-  /** Optional custom link component. */
   LinkComponent?: ElementType;
-  /** Brand href. Default '#home'. */
   brandHref?: string;
   year?: number;
   className?: string;
 }
 
-function backToTop() {
-  const reduce =
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-    document.documentElement.dataset.motion === 'reduce';
-  window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
-}
-
 export function Footer({
   tagline,
   groups,
-  external = [],
   runner,
   LinkComponent,
   brandHref = '#home',
@@ -46,25 +34,29 @@ export function Footer({
   className,
 }: FooterProps) {
   const Link = LinkComponent ?? 'a';
+  
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
-    <footer className={['ftr', className].filter(Boolean).join(' ')}>
-      {runner ? <div className="ftr__runner">{runner}</div> : null}
-
-      <div className="ftr__wrap">
-        <div className="ftr__brand">
+    <footer className={['amees-footer', className].filter(Boolean).join(' ')}>
+      {runner ? <div className="amees-footer__runner-slot">{runner}</div> : null}
+      
+      <div className="amees-footer__wrap">
+        <div className="amees-footer__brand">
           <Logo variant="full" height={54} href={brandHref} LinkComponent={LinkComponent} label="AMEES home" />
-          <p className="ftr__tagline">{tagline}</p>
+          <p className="amees-footer__tagline">{tagline}</p>
         </div>
-
-        <nav className="ftr__groups" aria-label="Footer">
-          {groups.map((g) => (
-            <div key={g.title} className="ftr__group">
-              <h2 className="ftr__title">{g.title}</h2>
-              <ul className="ftr__list">
-                {g.links.map((l) => (
-                  <li key={l.href + l.label}>
-                    <Link href={l.href} className="ftr__link">
+        
+        <div className="amees-footer__nav-groups">
+          {groups.map((group) => (
+            <div key={group.title} className="amees-footer__group">
+              <h3 className="amees-footer__group-title">{group.title}</h3>
+              <ul className="amees-footer__list">
+                {group.links.map((l) => (
+                  <li key={l.label}>
+                    <Link href={l.href} className="amees-footer__link">
                       {l.label}
                     </Link>
                   </li>
@@ -72,35 +64,16 @@ export function Footer({
               </ul>
             </div>
           ))}
-
-          {external.length > 0 && (
-            <div className="ftr__group">
-              <h2 className="ftr__title">Find us</h2>
-              <ul className="ftr__list">
-                {external.map((l) => (
-                  <li key={l.href}>
-                    <a className="ftr__link" href={l.href} target="_blank" rel="noopener noreferrer">
-                      {l.label}
-                      <Icon name="external" />
-                      <span className="sr"> (opens in a new tab)</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </nav>
+        </div>
       </div>
 
-      <div className="ftr__bar">
-        <div className="ftr__bar-in">
-          <p>
-            © {year} AMEES, Lead City University, Ibadan
-          </p>
-          <button type="button" className="ftr__top" onClick={backToTop}>
-            Back to top
-          </button>
-        </div>
+      <div className="amees-footer__bottom">
+        <span className="amees-footer__copyright">
+          © {year} AMEES, Lead City University, Ibadan
+        </span>
+        <button type="button" onClick={scrollToTop} className="amees-footer__top-btn">
+          Back to top <Icon name="arrow-left" size={14} className="footer-rotate-up" />
+        </button>
       </div>
     </footer>
   );

@@ -1,19 +1,18 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Wrap, Block } from '../components/containers/Layout';
-import { Button } from '../components/primitives/Button';
 import type { ContentSource } from './source';
 import type { SiteContent } from './types';
-import { parseFeatured, type ParsedFeatured } from './selectors';
+import { LoadingOverlay } from '../components/shell/LoadingOverlay';
+import { ErrorPage } from '../pages/ErrorPage';
 
 type State =
   | { status: 'loading' }
   | { status: 'error' }
   | { status: 'ready'; content: SiteContent };
 
-// Added an update function to the context
+// Update the Context to include a refresh function
 interface ContentContextType {
   content: SiteContent;
-  updateContent: (newContent: Partial<SiteContent>) => void;
+  refresh: () => void;
 }
 
 const ContentContext = createContext<ContentContextType | null>(null);
@@ -21,73 +20,84 @@ const ContentContext = createContext<ContentContextType | null>(null);
 export function ContentProvider({ source, children }: { source: ContentSource; children: ReactNode }) {
   const [state, setState] = useState<State>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Only show the gears on the VERY FIRST load, not on background refreshes
+  const [showOverlay, setShowOverlay] = useState(true);
+
+  const refresh = () => setRefreshKey((k) => k + 1);
 
   useEffect(() => {
     let cancelled = false;
     source.load().then(
-      (content) => !cancelled && setState({ status: 'ready', content }),
+      (content) => {
+        if (!cancelled) {
+          setState({ status: 'ready', content });
+          setShowOverlay(false);
+        }
+      },
       () => !cancelled && setState({ status: 'error' }),
     );
-    return () => {
-      cancelled = true;
-    };
-  }, [source, attempt]);
-
-  const updateContent = (newContent: Partial<SiteContent>) => {
-    setState(prev => {
-      if (prev.status !== 'ready') return prev;
-      // Save to localStorage so it persists across reloads (mock backend)
-      const merged = { ...prev.content, ...newContent };
-      try {
-        localStorage.setItem('amees_content_override', JSON.stringify(merged));
-      } catch {}
-      return { ...prev, content: merged };
-    });
-  };
-
-  if (state.status === 'loading') {
-    return (
-      <Wrap>
-        <Block>
-          <p role="status">Loading</p>
-        </Block>
-      </Wrap>
-    );
-  }
+    return () => { cancelled = true; };
+  }, [source, attempt, refreshKey]);
 
   if (state.status === 'error') {
     return (
-      <Wrap>
-        <Block>
-          <p role="alert">Could not load the site content. Check your connection and try again.</p>
-          <Button onClick={() => { setState({ status: 'loading' }); setAttempt((n) => n + 1); }}>
-            Try again
-          </Button>
-        </Block>
-      </Wrap>
+      <ErrorPage 
+        onRetry={() => { 
+          setState({ status: 'loading' }); 
+          setShowOverlay(true); 
+          setAttempt((n) => n + 1); 
+        }} 
+      />
     );
   }
 
   return (
-    <ContentContext.Provider value={{ content: state.content, updateContent }}>
-      {children}
-    </ContentContext.Provider>
+    <>
+      {showOverlay && (
+        <LoadingOverlay
+          open={showOverlay}
+          minMs={1500}
+          ready={state.status === 'ready'}
+          onDone={() => setShowOverlay(false)}
+        />
+      )}
+      
+      {state.status === 'ready' && (
+        <ContentContext.Provider value={{ content: state.content, refresh }}>
+          {children}
+        </ContentContext.Provider>
+      )}
+    </>
   );
 }
 
-export function useContent() {
-  const ctx = useContext(ContentContext);
-  if (!ctx) throw new Error('useContent must be used inside ContentProvider');
-  return ctx.content;
+export function useContent(): SiteContent {
+  const c = useContext(ContentContext);
+  if (!c) throw new Error('useContent must be used inside ContentProvider');
+  return c.content;
 }
 
-export function useUpdateContent() {
-  const ctx = useContext(ContentContext);
-  if (!ctx) throw new Error('useUpdateContent must be used inside ContentProvider');
-  return ctx.updateContent;
+export function useRefreshContent(): () => void {
+  const c = useContext(ContentContext);
+  if (!c) throw new Error('useRefreshContent must be used inside ContentProvider');
+  return c.refresh;
 }
 
-export function useFeatured(): ParsedFeatured {
+export interface ParsedFeatured extends Omit<SiteContent['featured'], 'start' | 'end'> {
+  start: Date;
+  end: Date;
+}
+
+export function useFeatured(): ParsedFeatured | null {
   const { featured } = useContent();
-  return useMemo(() => parseFeatured(featured), [featured]);
+  
+  return useMemo(() => {
+    if (!featured || !featured.title || !featured.start || !featured.end) return null;
+    const start = new Date(featured.start);
+    const end = new Date(featured.end);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+    return { ...featured, start, end };
+  }, [featured]);
 }

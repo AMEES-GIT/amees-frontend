@@ -1,0 +1,41 @@
+.sponsor-wall {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--sp-4);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sponsor-wall__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 3 / 2;
+  background: var(--panel);
+  border: var(--bw-sm) solid var(--line);
+  padding: var(--sp-3);
+}
+
+.sponsor-wall__item > a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.sponsor-wall__logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.sponsor-wall__name {
+  font-family: var(--font);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  font-size: var(--fs-sm);
+  color: var(--fg);
+  text-align: center;
+}

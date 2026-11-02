@@ -53,6 +53,17 @@ function HeroArt() {
 function EventHero({ onNavigate }: HomePageProps) {
   const f = useFeatured();
   const now = useNow(1000);
+  
+  // Handle empty database gracefully
+  if (!f) {
+    return (
+      <div style={{ padding: 'var(--sp-6) 0', textAlign: 'center' }}>
+        <h1 style={{ fontFamily: 'var(--font)', color: 'var(--blue)', textTransform: 'uppercase' }}>AMEES</h1>
+        <p style={{ fontFamily: 'var(--font)', color: 'var(--muted)' }}>No featured event at the moment.</p>
+      </div>
+    );
+  }
+
   const state = eventState(now, f.start, f.end);
   const canRegister = f.registrationOpen && state !== 'after';
 
@@ -85,13 +96,17 @@ function NextUp({ onNavigate }: HomePageProps) {
   const f = useFeatured();
   const now = useNow(60_000);
   const t = now.getTime();
-  const name = `${f.title} ${f.version}`;
-  const featuredRow =
-    t < f.start.getTime()
-      ? { lead: fmtDay(f.start), title: `${name} opens`, meta: f.venue }
-      : t < f.end.getTime()
-        ? { lead: 'Now', title: `${name} is on`, meta: f.venue }
-        : null;
+  
+  let featuredRow = null;
+  if (f) {
+    const name = `${f.title} ${f.version}`;
+    featuredRow =
+      t < f.start.getTime()
+        ? { lead: fmtDay(f.start), title: `${name} opens`, meta: f.venue }
+        : t < f.end.getTime()
+          ? { lead: 'Now', title: `${name} is on`, meta: f.venue }
+          : null;
+  }
 
   return (
     <Window title="Next up">
@@ -108,7 +123,9 @@ function NextUp({ onNavigate }: HomePageProps) {
 function EventDetails({ onNavigate }: HomePageProps) {
   const f = useFeatured();
   const now = useNow(60_000);
-  if (now.getTime() >= f.end.getTime()) return null;
+  
+  // If no event, or the event has passed, hide details
+  if (!f || now.getTime() >= f.end.getTime()) return null;
 
   return (
     <Block>
@@ -154,11 +171,12 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
   // Determine which marquee to show based on the content flag
   const showcaseItems = projects?.projects
-    .filter(p => p.showcased)
+    ?.filter(p => p.showcased)
     .map(p => ({
       id: p.id,
       title: p.title,
     })) || [];
+
   return (
     <>
       <Wrap>
@@ -214,17 +232,18 @@ export function HomePage({ onNavigate }: HomePageProps) {
           </Block>
         )}
 
-        <Block>
-          <Window title={sponsorPitch.title} meta="sponsors" tone="gray">
-            {/* Fixed: Removed <Row> here so text and button stack properly */}
-            <p style={{ fontFamily: 'var(--font)', fontSize: 'var(--fs-body)', marginBottom: 'var(--sp-4)', maxWidth: '60ch' }}>
-              {sponsorPitch.text}
-            </p>
-            <Button variant="primary" onClick={() => onNavigate('sponsors')}>
-              {sponsorPitch.cta} <Icon name="arrow-right" />
-            </Button>
-          </Window>
-        </Block>
+        {sponsorPitch?.title && (
+          <Block>
+            <Window title={sponsorPitch.title} meta="sponsors" tone="gray">
+              <p style={{ fontFamily: 'var(--font)', fontSize: 'var(--fs-body)', marginBottom: 'var(--sp-4)', maxWidth: '60ch' }}>
+                {sponsorPitch.text}
+              </p>
+              <Button variant="primary" onClick={() => onNavigate('sponsors')}>
+                {sponsorPitch.cta} <Icon name="arrow-right" />
+              </Button>
+            </Window>
+          </Block>
+        )}
       </Wrap>
     </>
   );

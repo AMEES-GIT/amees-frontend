@@ -5,32 +5,32 @@ import { StatGrid, StatTile } from '../components/primitives/StatTile';
 import { DotList } from '../components/containers/DotList';
 import { Badge } from '../components/primitives/Badge';
 import { SponsorEnquiryForm } from '../components/sponsors/SponsorEnquiryForm';
-import { ShowcaseMarquee } from '../components/shell/ShowcaseMarquee/ShowcaseMarquee';
+import { SponsorWall } from '../components/sponsors/SponsorsWall';
 import { useContent } from '../content/contentProvider';
 import './SponsorsPage.css';
 
 export function SponsorsPage() {
   const content = useContent();
-
-  const partnerItems = content.partners.map(p => ({
-    id: p.id,
-    title: p.name
-  }));
+  const activeSponsors = content.partners.filter(p => p.active !== false);
 
   return (
     <Wrap>
       <Block>
-        <PageHeader 
+        <PageHeader
           className="sponsors-header"
-          kicker={content.pages.sponsors.kicker} 
-          title={content.pages.sponsors.title} 
-          lede={content.pages.sponsors.lede} 
+          kicker={content.pages.sponsors.kicker}
+          title={content.pages.sponsors.title}
+          lede={content.pages.sponsors.lede}
         />
       </Block>
 
-      <Block>
-        <ShowcaseMarquee items={partnerItems} />
-      </Block>
+      {activeSponsors.length > 0 && (
+        <Block>
+          <Window title="Our sponsors" meta={`${activeSponsors.length} on board`}>
+            <SponsorWall sponsors={activeSponsors} />
+          </Window>
+        </Block>
+      )}
 
       <Block>
         <Grid min={320}>
@@ -85,9 +85,9 @@ export function SponsorsPage() {
         <div className="sponsors-tiers">
           {content.sponsorTiers.map(tier => (
             <div key={tier.id} className={tier.hot ? 'tier-hot-wrapper' : ''}>
-              <Window 
-                title={tier.name} 
-                meta={tier.price} 
+              <Window
+                title={tier.name}
+                meta={tier.price}
                 className={tier.hot ? 'tier-hot' : ''}
               >
                 {tier.hot && <Badge tone="info" filled>Most Popular</Badge>}
@@ -105,9 +105,9 @@ export function SponsorsPage() {
         <Grid min={320}>
           <div>
             <h2 className="sponsors-section-title">Start a conversation</h2>
-            <SponsorEnquiryForm 
-              tiers={[...content.sponsorTiers.map(t => t.name), 'Custom / Other']} 
-              onSubmit={() => alert('Mock: Enquiry submitted!')} 
+            <SponsorEnquiryForm
+              tiers={[...content.sponsorTiers.map(t => t.name), 'Custom / Other']}
+              endpoint={`${import.meta.env.VITE_API_URL ?? ''}/api/sponsor-enquiry`}
             />
           </div>
           <Window title="What sponsors get back" tone="gray">

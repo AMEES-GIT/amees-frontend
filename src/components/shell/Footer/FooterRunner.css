@@ -1,72 +1,158 @@
 .amees-footer-runner {
   position: relative;
-  height: 80px;
   width: 100%;
+  height: 120px;
+  background: var(--panel); /* Match site background */
   overflow: hidden;
-  background-color: var(--panel-2);
-  border-top: var(--bw) solid var(--line);
-  border-bottom: var(--bw) solid var(--line);
-  user-select: none;
   cursor: pointer;
+  user-select: none;
+  border-top: var(--bw-sm) solid var(--line);
+  border-bottom: var(--bw-sm) solid var(--line);
+  font-family: monospace; /* Arcade feel */
 }
 
-.amees-footer-runner__score {
+/* --------------------------------------------------
+   UI & Scores
+   -------------------------------------------------- */
+.amees-footer-runner__ui {
   position: absolute;
-  right: var(--sp-4);
-  top: var(--sp-2);
-  font-family: var(--font);
-  font-weight: var(--fw-bold);
-  font-size: var(--fs-sm);
+  top: 12px;
+  right: 20px;
+  z-index: 10;
   color: var(--muted);
+  font-size: 14px;
+  font-weight: bold;
   letter-spacing: 2px;
 }
 
-.amees-footer-runner__bot {
-  position: absolute;
-  left: 50px;
-  bottom: 0;
-  width: 24px;
-  height: 28px;
-  color: var(--blue);
-  will-change: transform;
+.amees-footer-runner__score {
+  display: flex;
+  gap: 15px;
 }
 
-.amees-footer-runner__cactus {
-  position: absolute;
-  bottom: 0;
-  width: 18px;
-  height: 30px;
-  color: var(--blue);
-  will-change: transform;
-}
-
-.amees-footer-runner__gameover {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: rgba(251, 242, 225, 0.9);
-  font-family: var(--font);
-  font-weight: var(--fw-bold);
-  font-size: var(--fs-md);
-  color: var(--c-bad);
-  letter-spacing: 1px;
-  backdrop-filter: blur(2px);
-  z-index: 10;
-}
-
-[data-theme="dark"] .amees-footer-runner__gameover {
-  background: rgba(19, 15, 49, 0.9);
-}
-
-/* Add a fake ground line */
-.amees-footer-runner::after {
-  content: '';
+/* --------------------------------------------------
+   Ground & Background
+   -------------------------------------------------- */
+.amees-footer-runner__ground {
   position: absolute;
   bottom: 0;
   left: 0;
-  right: 0;
+  width: 200%;
   height: 2px;
-  background: var(--line);
-  opacity: 0.3;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--line) 0,
+    var(--line) 10px,
+    transparent 10px,
+    transparent 20px
+  );
+  animation: ground-scroll 0.5s linear infinite;
+}
+
+.amees-footer-runner__clouds {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 200%;
+  height: 40px;
+  background-image: 
+    radial-gradient(circle, var(--line) 2px, transparent 3px),
+    radial-gradient(circle, var(--line) 2px, transparent 3px);
+  background-size: 80px 40px;
+  background-position: 0 0, 40px 20px;
+  opacity: 0.4;
+  animation: cloud-scroll 4s linear infinite;
+}
+
+@keyframes ground-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes cloud-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* --------------------------------------------------
+   Player Bot
+   -------------------------------------------------- */
+.amees-footer-runner__bot {
+  position: absolute;
+  bottom: 10px;
+  left: 50px;
+  width: 24px;
+  height: 30px;
+  color: var(--fg);
+  z-index: 5;
+  transition: transform 0.05s linear;
+}
+
+.amees-footer-runner__bot.is-running svg {
+  animation: bot-bob 0.15s alternate infinite;
+}
+
+@keyframes bot-bob {
+  from { transform: translateY(0); }
+  to { transform: translateY(-2px); }
+}
+
+/* --------------------------------------------------
+   Obstacles
+   -------------------------------------------------- */
+.amees-footer-runner__obstacles {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.amees-footer-runner__obstacle {
+  position: absolute;
+  bottom: 10px;
+  color: var(--c-bad); /* Red cacti/drones for danger */
+  transition: transform 0.05s linear;
+}
+
+.amees-footer-runner__obstacle svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* --------------------------------------------------
+   Overlays (Start / Game Over)
+   -------------------------------------------------- */
+.amees-footer-runner__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  color: #fff;
+  z-index: 20;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+.amees-footer-runner__gameover-text {
+  color: var(--c-bad);
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.amees-footer-runner__restart-text {
+  font-size: 12px;
+  opacity: 0.8;
+  animation: blink 1.5s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
 }

@@ -295,7 +295,7 @@ export function WorkbenchPage() {
     }
     const newEntry = { 
       id: Date.now().toString(), ts: Date.now(), type: 'milestone', 
-      title: 'Project Submitted for Showcase', text: 'Submitted to executive for review.'
+      title: 'Project Submitted for Showcase', text: 'Submitted for review.'
     };
     updateWb({ entries: [newEntry, ...wb.entries] });
     showToast('Project submitted successfully!');
@@ -477,7 +477,7 @@ export function WorkbenchPage() {
            
            <div className="wb-span-full">
              <Window title="Submit to Showcase" tone="gray">
-               <p style={{ fontFamily: 'var(--font)', marginBottom: 'var(--sp-4)' }}>Ready to go public? Once you submit, the AMEES executive will review your project and add it to the public Projects page.</p>
+               <p style={{ fontFamily: 'var(--font)', marginBottom: 'var(--sp-4)' }}>Ready to go public? Once you submit, We'll review your project and add it to the public Projects page.</p>
                <Button variant="primary" onClick={handleSubmitProject}>Submit Project for Review →</Button>
              </Window>
            </div>

@@ -48,7 +48,7 @@ export function AboutPage() {
       </Block>
 
       <Block>
-        <Window title="The Executive" meta="2025/2026 session">
+        <Window title="The Executives" meta="2026/2027 session">
           <div className="about-exec-grid">
             {about.executive.map((member) => {
               const initials = member.name

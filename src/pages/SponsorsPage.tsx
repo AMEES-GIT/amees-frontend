@@ -81,7 +81,7 @@ export function SponsorsPage() {
       <Block>
         <h2 className="sponsors-section-title">Sponsorship Tiers</h2>
         <p className="sponsors-text" style={{ marginBottom: 'var(--sp-4)' }}>
-          Financial sponsorship packages. Amounts are agreed with the executive based on the scale of the event.
+          Financial sponsorship packages. Amounts are agreed based on the scale of the event.
         </p>
         <div className="sponsors-tiers">
           {content.sponsorTiers.map(tier => (

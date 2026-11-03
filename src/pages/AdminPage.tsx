@@ -3,11 +3,13 @@ import { AdminShell } from '../components/admin/AdminShell';
 import { SaveStatus, type SaveState } from '../components/admin/SaveStatus';
 import { Window } from '../components/containers/Window';
 import { ConfirmDialog } from '../components/containers/ConfirmDialog';
+import { Toast } from '../components/shell/Toast';
 import { Field } from '../components/primitives/Field';
 import { TextInput } from '../components/primitives/TextInput';
 import { Textarea } from '../components/primitives/Textarea';
 import { Button } from '../components/primitives/Button';
 import { Badge } from '../components/primitives/Badge';
+import { Select } from '../components/primitives/Select';
 import { useContent, useRefreshContent } from '../content/contentProvider';
 import type { FeaturedEvent, ExecutiveMember, Opportunity } from '../content/types';
 import { getValidToken, getAdminEmail, getAdminRole, clearToken } from '../lib/authToken';
@@ -41,6 +43,10 @@ export function AdminPage() {
 
   const [tab, setTab] = useState<AdminTab>('event');
   const [status, setStatus] = useState<SaveState>('saved');
+  
+  // Toast State
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => setToast({ message, type });
 
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; body: string; action: () => void; type: 'confirm' | 'success' | 'info' | 'error'; confirmLabel: string; }>({
     open: false, title: '', body: '', action: () => {}, type: 'confirm', confirmLabel: 'Confirm',
@@ -79,6 +85,8 @@ export function AdminPage() {
   // States for Students
   const [newStudent, setNewStudent] = useState({ name: '', matric: '', email: '', level: '100' });
   const [csvText, setCsvText] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
+  const [studentList, setStudentList] = useState<any[]>([]);
 
   const [marqueeMode, setMarqueeMode] = useState(content.activeMarquee || 'caution');
   const [footerTagline, setFooterTagline] = useState(content.footer.tagline);
@@ -101,6 +109,22 @@ export function AdminPage() {
     if (!getValidToken()) window.location.hash = 'login';
   }, []);
 
+  // Fetch students on tab change
+  useEffect(() => {
+    if (tab === 'students') searchStudents('');
+  }, [tab]);
+
+  const searchStudents = async (q: string) => {
+    setStudentSearch(q);
+    try {
+      const res = await adminFetch(`/students?q=${encodeURIComponent(q)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setStudentList(data);
+      }
+    } catch {}
+  };
+
   const nav = [
     { id: 'event', label: 'Featured Event' }, 
     { id: 'events', label: 'Events & Calendar' }, 
@@ -113,8 +137,8 @@ export function AdminPage() {
     { id: 'general', label: 'Site Settings' },
   ];
 
-  const saveEvent = async () => { setStatus('saving'); try { const res = await adminFetch('/event', { method: 'PUT', body: JSON.stringify(formData) }); if (res.ok) { setStatus('saved'); refresh(); } else setStatus('error'); } catch { setStatus('error'); } };
-  const saveSettings = async () => { setStatus('saving'); try { const res = await adminFetch('/settings', { method: 'PUT', body: JSON.stringify({ activeMarquee: marqueeMode, footer: { ...content.footer, tagline: footerTagline }, membershipFormUrl, projectSubmissionUrl, eventRegistrationFormUrl, eventRegistrationEventFieldId }) }); if (res.ok) { setStatus('saved'); refresh(); } else setStatus('error'); } catch { setStatus('error'); } };
+  const saveEvent = async () => { setStatus('saving'); try { const res = await adminFetch('/event', { method: 'PUT', body: JSON.stringify(formData) }); if (res.ok) { setStatus('saved'); refresh(); showToast('Event saved'); } else setStatus('error'); } catch { setStatus('error'); } };
+  const saveSettings = async () => { setStatus('saving'); try { const res = await adminFetch('/settings', { method: 'PUT', body: JSON.stringify({ activeMarquee: marqueeMode, footer: { ...content.footer, tagline: footerTagline }, membershipFormUrl, projectSubmissionUrl, eventRegistrationFormUrl, eventRegistrationEventFieldId }) }); if (res.ok) { setStatus('saved'); refresh(); showToast('Settings saved'); } else setStatus('error'); } catch { setStatus('error'); } };
   
   // --- EVENTS & CALENDAR ---
   const saveCalendarEntry = async () => {
@@ -128,11 +152,12 @@ export function AdminPage() {
       if (res.ok) {
         refresh();
         setNewCalDate(''); setNewCalTitle(''); setNewCalDesc(''); setEditingCalId(null);
+        showToast('Calendar event saved');
       }
     } catch {}
   };
   const startEditCal = (e: any) => { setEditingCalId(e.id); setNewCalTitle(e.title); setNewCalDesc(e.description || ''); setNewCalDate(e.day); window.scrollTo(0,0); };
-  const deleteCalendarEntry = async (id: string) => { try { const res = await adminFetch(`/calendar/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
+  const deleteCalendarEntry = async (id: string) => { try { const res = await adminFetch(`/calendar/${id}`, { method: 'DELETE' }); if (res.ok) { refresh(); showToast('Event deleted'); } } catch {} };
 
   const saveWeeklyItem = async () => {
     const payload = { title: newWeekTitle, text: newWeekText, weekday: Number(newWeekDay) === -1 ? null : Number(newWeekDay) };
@@ -143,11 +168,12 @@ export function AdminPage() {
       if (res.ok) {
         refresh();
         setNewWeekTitle(''); setNewWeekText(''); setNewWeekDay('2'); setEditingWeekId(null);
+        showToast('Recurring item saved');
       }
     } catch {}
   };
   const startEditWeek = (w: any) => { setEditingWeekId(w.id); setNewWeekTitle(w.title); setNewWeekText(w.text); setNewWeekDay(String(w.weekday ?? -1)); window.scrollTo(0,0); };
-  const deleteWeeklyItem = async (id: string) => { try { const res = await adminFetch(`/weekly/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
+  const deleteWeeklyItem = async (id: string) => { try { const res = await adminFetch(`/weekly/${id}`, { method: 'DELETE' }); if (res.ok) { refresh(); showToast('Item deleted'); } } catch {} };
 
   // --- EXECUTIVES ---
   const saveExecutive = async () => {
@@ -159,11 +185,12 @@ export function AdminPage() {
       if (res.ok) {
         refresh();
         setNewExec({ role: '', name: '', linkedin: '', photoUrl: '' }); setEditingExecId(null);
+        showToast('Executive saved');
       }
     } catch {}
   };
   const startEditExec = (e: any) => { setEditingExecId(e.id); setNewExec({ role: e.role, name: e.name, linkedin: e.linkedin || '', photoUrl: e.photoUrl || '' }); window.scrollTo(0,0); };
-  const deleteExecutive = async (id: string) => { try { const res = await adminFetch(`/executives/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
+  const deleteExecutive = async (id: string) => { try { const res = await adminFetch(`/executives/${id}`, { method: 'DELETE' }); if (res.ok) { refresh(); showToast('Executive removed'); } } catch {} };
 
   // --- PARTNERS ---
   const savePartner = async () => {
@@ -175,11 +202,12 @@ export function AdminPage() {
       if (res.ok) {
         refresh();
         setNewPartner({ name: '', type: 'Sponsor', tier: '', logoUrl: '', websiteUrl: '' }); setEditingPartnerId(null);
+        showToast('Sponsor saved');
       }
     } catch {}
   };
   const startEditPartner = (p: any) => { setEditingPartnerId(p.id); setNewPartner({ name: p.name, type: p.type, tier: p.tier || '', logoUrl: p.logoUrl || '', websiteUrl: p.websiteUrl || '' }); window.scrollTo(0,0); };
-  const deletePartner = async (id: string) => { try { const res = await adminFetch(`/partners/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
+  const deletePartner = async (id: string) => { try { const res = await adminFetch(`/partners/${id}`, { method: 'DELETE' }); if (res.ok) { refresh(); showToast('Sponsor removed'); } } catch {} };
 
   // --- ARCHIVE ---
   const saveArchiveFile = async () => {
@@ -190,14 +218,15 @@ export function AdminPage() {
       if (res.ok) {
         refresh();
         setNewArchive({ title: '', course: '', level: '100', year: String(new Date().getFullYear()), kind: 'PDF', fileUrl: '' }); setEditingArchiveId(null);
+        showToast('Archive link saved');
       }
     } catch {}
   };
   const startEditArchive = (f: any) => { setEditingArchiveId(f.id); setNewArchive({ title: f.title, course: f.course, level: String(f.level), year: String(f.year), kind: f.kind, fileUrl: f.fileUrl || '' }); window.scrollTo(0,0); };
-  const deleteArchiveFile = async (id: string) => { try { const res = await adminFetch(`/archive-files/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
+  const deleteArchiveFile = async (id: string) => { try { const res = await adminFetch(`/archive-files/${id}`, { method: 'DELETE' }); if (res.ok) { refresh(); showToast('Archive link removed'); } } catch {} };
 
   // --- PROJECTS ---
-  const toggleProject = async (id: string) => { try { const res = await adminFetch(`/projects/${id}/toggle`, { method: 'PUT' }); if (res.ok) refresh(); } catch {} };
+  const toggleProject = async (id: string) => { try { const res = await adminFetch(`/projects/${id}/toggle`, { method: 'PUT' }); if (res.ok) { refresh(); showToast('Project visibility updated'); } } catch {} };
 
   // --- OPPORTUNITIES ---
   const saveOpportunity = async () => {
@@ -210,18 +239,23 @@ export function AdminPage() {
       if (res.ok) {
         refresh();
         setNewOpp({ name: '', type: 'IT', description: '', externalLink: '', startDate: '', endDate: '', tags: '' }); setEditingOppId(null);
+        showToast('Opportunity saved');
       }
     } catch {}
   };
   const startEditOpp = (opp: Opportunity) => { setEditingOppId(opp.id); setNewOpp({ name: opp.name, type: opp.type, description: opp.description, externalLink: opp.externalLink || '', startDate: new Date(opp.startDate).toISOString().slice(0, 16), endDate: new Date(opp.endDate).toISOString().slice(0, 16), tags: opp.tags?.join(', ') || '' }); window.scrollTo(0,0); };
-  const deleteOpportunity = async (id: string) => { try { const res = await adminFetch(`/opportunities/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
+  const deleteOpportunity = async (id: string) => { try { const res = await adminFetch(`/opportunities/${id}`, { method: 'DELETE' }); if (res.ok) { refresh(); showToast('Opportunity removed'); } } catch {} };
 
   // --- STUDENTS ---
   const addStudent = async () => {
     try {
       const res = await adminFetch('/students', { method: 'POST', body: JSON.stringify(newStudent) });
-      if (res.ok) { alert('Student added successfully!'); setNewStudent({ name: '', matric: '', email: '', level: '100' }); } 
-      else { const data = await res.json(); alert(data.error); }
+      if (res.ok) { 
+        showToast('Student added successfully!'); 
+        setNewStudent({ name: '', matric: '', email: '', level: '100' }); 
+        searchStudents(studentSearch); // Refresh list
+      } 
+      else { const data = await res.json(); showToast(data.error, 'error'); }
     } catch {}
   };
   const uploadCSV = async () => {
@@ -229,13 +263,19 @@ export function AdminPage() {
     try {
       const res = await adminFetch('/students/bulk', { method: 'POST', body: JSON.stringify({ csv: csvText }) });
       const data = await res.json();
-      if (res.ok) { alert(data.message); setCsvText(''); } else { alert(data.error); }
+      if (res.ok) { 
+        showToast(data.message); 
+        setCsvText(''); 
+        searchStudents(studentSearch);
+      } else { 
+        showToast(data.error, 'error'); 
+      }
     } catch {}
   };
 
   const confirmAction = (title: string, body: string, action: () => void, type: 'success'|'confirm' = 'success', confirmLabel = 'Confirm') => setConfirmDialog({ open: true, title, body, action, type, confirmLabel });
 
-  const DAYS = [{ label: 'Every Monday', value: 1 }, { label: 'Every Tuesday', value: 2 }, { label: 'Every Wednesday', value: 3 }, { label: 'Every Thursday', value: 4 }, { label: 'Every Friday', value: 5 }, { label: 'Every Saturday', value: 6 }, { label: 'Every Sunday', value: 0 }, { label: 'Not a specific day', value: -1 }];
+  const DAYS = [{ label: 'Every Monday', value: '1' }, { label: 'Every Tuesday', value: '2' }, { label: 'Every Wednesday', value: '3' }, { label: 'Every Thursday', value: '4' }, { label: 'Every Friday', value: '5' }, { label: 'Every Saturday', value: '6' }, { label: 'Every Sunday', value: '0' }, { label: 'Not a specific day', value: '-1' }];
 
   return (
     <div style={{ padding: 'var(--sp-4) 0' }}>
@@ -288,9 +328,7 @@ export function AdminPage() {
                   <div className="admin-grid-2">
                     <Field label="Title"><TextInput type="text" value={newWeekTitle} onChange={setNewWeekTitle} placeholder="Trivia Tuesday" /></Field>
                     <Field label="Schedule">
-                      <select className="amees-input" value={newWeekDay} onChange={(e) => setNewWeekDay(e.target.value)}>
-                        {DAYS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
-                      </select>
+                      <Select options={DAYS} value={newWeekDay} onChange={setNewWeekDay} />
                     </Field>
                   </div>
                   <Field label="Short Description"><TextInput type="text" value={newWeekText} onChange={setNewWeekText} placeholder="Quick-fire engineering questions" /></Field>
@@ -329,7 +367,7 @@ export function AdminPage() {
                       <div>
                         <div style={{ fontWeight: 'bold' }}>{item.title}</div>
                         <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
-                          {item.weekday !== undefined ? DAYS.find((d) => d.value === item.weekday)?.label : item.label} · {item.text}
+                          {item.weekday !== undefined ? DAYS.find((d) => Number(d.value) === item.weekday)?.label : item.label} · {item.text}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
@@ -416,16 +454,19 @@ export function AdminPage() {
                   <div className="admin-grid-3">
                     <Field label="Name"><TextInput type="text" value={newPartner.name} onChange={(v) => setNewPartner({ ...newPartner, name: v })} placeholder="Acme Ltd" /></Field>
                     <Field label="Type">
-                      <select className="amees-input" value={newPartner.type} onChange={(e) => setNewPartner({ ...newPartner, type: e.target.value as 'Sponsor' | 'Partner' })}>
-                        <option value="Sponsor">Sponsor</option>
-                        <option value="Partner">Partner</option>
-                      </select>
+                      <Select 
+                        options={[{ value: 'Sponsor', label: 'Sponsor' }, { value: 'Partner', label: 'Partner' }]} 
+                        value={newPartner.type} 
+                        onChange={(v) => setNewPartner({ ...newPartner, type: v as 'Sponsor' | 'Partner' })} 
+                      />
                     </Field>
                     <Field label="Tier">
-                      <select className="amees-input" value={newPartner.tier} onChange={(e) => setNewPartner({ ...newPartner, tier: e.target.value })} disabled={newPartner.type !== 'Sponsor'}>
-                        <option value="">(no tier)</option>
-                        {content.sponsorTiers.map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}
-                      </select>
+                      <Select 
+                        options={[{ value: '', label: '(no tier)' }, ...content.sponsorTiers.map(t => ({ value: t.name, label: t.name }))]} 
+                        value={newPartner.tier} 
+                        onChange={(v) => setNewPartner({ ...newPartner, tier: v })} 
+                        disabled={newPartner.type !== 'Sponsor'} 
+                      />
                     </Field>
                   </div>
                   <Field label="Logo URL (Optional)"><TextInput type="text" value={newPartner.logoUrl} onChange={(v) => setNewPartner({ ...newPartner, logoUrl: v })} placeholder="https://.../logo.png" /></Field>
@@ -478,9 +519,11 @@ export function AdminPage() {
                   <div className="admin-grid-2">
                     <Field label="Name"><TextInput value={newOpp.name} onChange={(v) => setNewOpp({ ...newOpp, name: v })} placeholder="Google Summer of Code" /></Field>
                     <Field label="Type">
-                      <select className="amees-input" value={newOpp.type} onChange={(e) => setNewOpp({ ...newOpp, type: e.target.value })}>
-                        {['IT', 'Scholarship', 'Competition', 'Excursion'].map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
+                      <Select 
+                        options={['IT', 'Scholarship', 'Competition', 'Excursion'].map(t => ({ value: t, label: t }))} 
+                        value={newOpp.type} 
+                        onChange={(v) => setNewOpp({ ...newOpp, type: v })} 
+                      />
                     </Field>
                   </div>
                   <Field label="Description"><Textarea value={newOpp.description} onChange={(v) => setNewOpp({ ...newOpp, description: v })} /></Field>
@@ -531,34 +574,75 @@ export function AdminPage() {
 
           {/* STUDENTS TAB */}
           {tab === 'students' && (
-            <div className="admin-students-grid">
-              <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add Single Student</h3>
-                <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
-                  <Field label="Full Name"><TextInput value={newStudent.name} onChange={(v) => setNewStudent({ ...newStudent, name: v })} /></Field>
-                  <Field label="Matric Number"><TextInput value={newStudent.matric} onChange={(v) => setNewStudent({ ...newStudent, matric: v })} /></Field>
-                  <Field label="Email"><TextInput type="email" value={newStudent.email} onChange={(v) => setNewStudent({ ...newStudent, email: v })} /></Field>
-                  <Field label="Level">
-                    <select className="amees-input" value={newStudent.level} onChange={(e) => setNewStudent({ ...newStudent, level: e.target.value })}>
-                      {['100', '200', '300', '400', '500'].map((l) => <option key={l} value={l}>{l}</option>)}
-                    </select>
-                  </Field>
-                  <Button variant="primary" onClick={addStudent}>Add Student</Button>
+            <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
+              <div className="admin-students-grid">
+                <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
+                  <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add Single Student</h3>
+                  <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
+                    <Field label="Full Name"><TextInput value={newStudent.name} onChange={(v) => setNewStudent({ ...newStudent, name: v })} /></Field>
+                    <Field label="Matric Number"><TextInput value={newStudent.matric} onChange={(v) => setNewStudent({ ...newStudent, matric: v })} /></Field>
+                    <Field label="Email"><TextInput type="email" value={newStudent.email} onChange={(v) => setNewStudent({ ...newStudent, email: v })} /></Field>
+                    <Field label="Level">
+                      <Select 
+                        options={['100', '200', '300', '400', '500'].map(l => ({ value: l, label: l }))} 
+                        value={newStudent.level} 
+                        onChange={(v) => setNewStudent({ ...newStudent, level: v })} 
+                      />
+                    </Field>
+                    <Button variant="primary" onClick={addStudent}>Add Student</Button>
+                  </div>
+                </div>
+
+                <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
+                  <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Bulk CSV Upload</h3>
+                  <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', marginBottom: 'var(--sp-3)' }}>
+                    Format: <code>Name, Matric, Email, Level</code> (one per line, no header row).
+                  </p>
+                  <textarea
+                    value={csvText}
+                    onChange={(e) => setCsvText(e.target.value)}
+                    placeholder="Ada Lovelace, 12345, ada@lcu.edu.ng, 300&#10;Tunde, 67890, tunde@lcu.edu.ng, 200"
+                    style={{ width: '100%', height: '150px', padding: 'var(--sp-2)', fontFamily: 'monospace', marginBottom: 'var(--sp-3)', border: 'var(--bw-sm) solid var(--line)', background: 'var(--bg)', color: 'var(--fg)' }}
+                  />
+                  <Button variant="primary" onClick={uploadCSV}>Upload CSV</Button>
                 </div>
               </div>
 
-              <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Bulk CSV Upload</h3>
-                <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', marginBottom: 'var(--sp-3)' }}>
-                  Format: <code>Name, Matric, Email, Level</code> (one per line, no header row).
-                </p>
-                <textarea
-                  value={csvText}
-                  onChange={(e) => setCsvText(e.target.value)}
-                  placeholder="Ada Lovelace, 12345, ada@lcu.edu.ng, 300&#10;Tunde, 67890, tunde@lcu.edu.ng, 200"
-                  style={{ width: '100%', height: '150px', padding: 'var(--sp-2)', fontFamily: 'monospace', marginBottom: 'var(--sp-3)', border: 'var(--bw-sm) solid var(--line)', background: 'var(--bg)', color: 'var(--fg)' }}
-                />
-                <Button variant="primary" onClick={uploadCSV}>Upload CSV</Button>
+              {/* Student List / Search */}
+              <div style={{ marginTop: 'var(--sp-4)' }}>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Registered Students</h3>
+                <div style={{ marginBottom: 'var(--sp-3)' }}>
+                  <TextInput value={studentSearch} onChange={searchStudents} placeholder="Search by name, matric, or email..." />
+                </div>
+                <div style={{ overflowX: 'auto', border: 'var(--bw-sm) solid var(--line)' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 'var(--fs-sm)' }}>
+                    <thead style={{ background: 'var(--panel-2)' }}>
+                      <tr style={{ borderBottom: '2px solid var(--line)' }}>
+                        <th style={{ padding: 'var(--sp-3)' }}>Name</th>
+                        <th style={{ padding: 'var(--sp-3)' }}>Matric</th>
+                        <th style={{ padding: 'var(--sp-3)' }}>Email</th>
+                        <th style={{ padding: 'var(--sp-3)' }}>Level</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {studentList.map(s => (
+                        <tr key={s.id} style={{ borderBottom: '1px solid var(--line)' }}>
+                          <td style={{ padding: 'var(--sp-3)' }}>{s.name}</td>
+                          <td style={{ padding: 'var(--sp-3)' }}>{s.matric}</td>
+                          <td style={{ padding: 'var(--sp-3)' }}>{s.email}</td>
+                          <td style={{ padding: 'var(--sp-3)' }}>{s.level}L</td>
+                        </tr>
+                      ))}
+                      {studentList.length === 0 && (
+                        <tr>
+                          <td colSpan={4} style={{ padding: 'var(--sp-4)', textAlign: 'center', color: 'var(--muted)' }}>
+                            No students found matching "{studentSearch}".
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -577,15 +661,19 @@ export function AdminPage() {
                   </div>
                   <div className="admin-grid-3">
                     <Field label="Level">
-                      <select className="amees-input" value={newArchive.level} onChange={(e) => setNewArchive({ ...newArchive, level: e.target.value })}>
-                        {['100', '200', '300', '400', '500'].map((l) => <option key={l} value={l}>{l}</option>)}
-                      </select>
+                      <Select 
+                        options={['100', '200', '300', '400', '500'].map(l => ({ value: l, label: l }))} 
+                        value={newArchive.level} 
+                        onChange={(v) => setNewArchive({ ...newArchive, level: v })} 
+                      />
                     </Field>
                     <Field label="Year"><TextInput type="text" value={newArchive.year} onChange={(v) => setNewArchive({ ...newArchive, year: v })} /></Field>
                     <Field label="Kind">
-                      <select className="amees-input" value={newArchive.kind} onChange={(e) => setNewArchive({ ...newArchive, kind: e.target.value })}>
-                        {['PDF', 'DOCX', 'PPTX', 'XLSX'].map((k) => <option key={k} value={k}>{k}</option>)}
-                      </select>
+                      <Select 
+                        options={['PDF', 'DOCX', 'PPTX', 'XLSX'].map(k => ({ value: k, label: k }))} 
+                        value={newArchive.kind} 
+                        onChange={(v) => setNewArchive({ ...newArchive, kind: v })} 
+                      />
                     </Field>
                   </div>
                   <Field label="Google Drive share link">
@@ -626,10 +714,14 @@ export function AdminPage() {
           {tab === 'general' && (
             <div className="admin-form-grid">
               <Field label="Home Page Marquee Mode">
-                <select className="amees-input" value={marqueeMode} onChange={(e) => setMarqueeMode(e.target.value as 'caution' | 'showcase')}>
-                  <option value="caution">Caution Tape (Event Countdown)</option>
-                  <option value="showcase">Showcase Marquee (Student Projects)</option>
-                </select>
+                <Select 
+                  options={[
+                    { value: 'caution', label: 'Caution Tape (Event Countdown)' }, 
+                    { value: 'showcase', label: 'Showcase Marquee (Student Projects)' }
+                  ]} 
+                  value={marqueeMode} 
+                  onChange={(v) => setMarqueeMode(v as 'caution' | 'showcase')} 
+                />
               </Field>
               <Field label="Footer Tagline"><Textarea value={footerTagline} onChange={setFooterTagline} /></Field>
               <h3 style={{ margin: 'var(--sp-4) 0 0', fontFamily: 'var(--font)', fontSize: 'var(--fs-md)', textTransform: 'uppercase', color: 'var(--muted)' }}>External form links</h3>
@@ -644,6 +736,8 @@ export function AdminPage() {
       </AdminShell>
 
       <ConfirmDialog open={confirmDialog.open} title={confirmDialog.title} body={confirmDialog.body} confirmLabel={confirmDialog.confirmLabel} type={confirmDialog.type} onCancel={() => setConfirmDialog((prev) => ({ ...prev, open: false }))} onConfirm={() => { confirmDialog.action(); setConfirmDialog((prev) => ({ ...prev, open: false })); }} />
+      
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

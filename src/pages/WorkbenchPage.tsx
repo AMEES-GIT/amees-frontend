@@ -1,10 +1,12 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Wrap, Block, Row } from '../components/containers/Layout';
 import { PageHeader } from '../components/containers/PageHeader';
 import { Window } from '../components/containers/Window';
 import { Button } from '../components/primitives/Button';
 import { TextInput } from '../components/primitives/TextInput';
+import { Select } from '../components/primitives/Select'; 
 import { ConfirmDialog } from '../components/containers/ConfirmDialog';
+import { Toast } from '../components/shell/Toast';
 import { useNow } from '../lib/useNow';
 import { useContent } from '../content/contentProvider';
 import { API_BASE } from '../lib/apiBase';
@@ -53,46 +55,72 @@ export function WorkbenchPage() {
   const [modal, setModal] = useState<{ open: boolean; action?: () => void }>({ open: false });
   const [timelineFilter, setTimelineFilter] = useState('all');
 
-  // 1. Handle URL Join Parameter
+  // Toast State
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => setToast({ message, type });
+
+  const pendingJoinRef = useRef<string | null>(null);
+
+  // 1. Handle URL Join Parameter on Mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const joinId = params.get('join');
-    if (joinId && token) {
-      fetch(`${API_BASE}/api/student/workbench/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ projectId: joinId })
-      }).then(() => {
-        // Remove the param from URL and reload data
-        window.history.replaceState({}, '', '/workbench');
-        window.location.reload();
-      });
+    if (joinId) {
+      pendingJoinRef.current = joinId;
+      window.history.replaceState({}, '', '/workbench');
     }
-  }, [token]);
+  }, []);
 
-  // 2. Fetch Workbench Data
+  // 2. Fetch Workbench Data & Process Pending Join
   useEffect(() => {
     if (!token) { setLoading(false); return; }
     
-    fetch(`${API_BASE}/api/student/workbench`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => {
+    let isMounted = true;
+
+    const initialize = async () => {
+      setLoading(true);
+      try {
+        if (pendingJoinRef.current) {
+          await fetch(`${API_BASE}/api/student/workbench/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ projectId: pendingJoinRef.current })
+          });
+        }
+
+        const res = await fetch(`${API_BASE}/api/student/workbench`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (!isMounted) return;
+
         if (data.student) {
           setStudent(data.student);
           setProjects(data.projects || []);
+          
           if (data.projects?.length > 0) {
-            setActiveProjectId(data.projects[0].id);
+            const targetId = pendingJoinRef.current && data.projects.find((p:any) => p.id === pendingJoinRef.current) 
+              ? pendingJoinRef.current 
+              : data.projects[0].id;
+            setActiveProjectId(targetId);
           } else {
             setIsCreatingProject(true);
           }
         } else {
           handleSignOut();
         }
-      })
-      .catch(() => handleSignOut())
-      .finally(() => setLoading(false));
+      } catch (err) {
+        if (isMounted) handleSignOut();
+      } finally {
+        if (isMounted) setLoading(false);
+        pendingJoinRef.current = null;
+      }
+    };
+
+    initialize();
+    
+    return () => { isMounted = false; };
   }, [token]);
 
   const project = projects.find(p => p.id === activeProjectId) || null;
@@ -178,8 +206,9 @@ export function WorkbenchPage() {
         setIsCreatingProject(true);
         setActiveProjectId(null);
       }
+      showToast('Project deleted');
     } catch {
-      alert('Failed to delete project');
+      showToast('Failed to delete project', 'error');
     }
   };
 
@@ -226,7 +255,6 @@ export function WorkbenchPage() {
     );
   }
 
-  // --- THE FIX: Sanitize the workbench data so arrays are never undefined ---
   const rawWb = project.workbenchData || project;
   const wb = {
     ...rawWb,
@@ -247,7 +275,6 @@ export function WorkbenchPage() {
   const isLead = myRole === 'Lead';
   const teamNames = project.members?.map((m: any) => m.student.name) || [];
 
-  // Now we pass the safe `wb` object to calculateHealth
   const health = calculateHealth(wb, now.getTime());
   const daysLeft = Math.max(0, Math.ceil((new Date('2026-12-03T17:00:00+01:00').getTime() - now.getTime()) / DAY));
   const tasksLeft = wb.tasks.filter((t: Task) => t.col !== 'done').length;
@@ -263,7 +290,7 @@ export function WorkbenchPage() {
 
   const handleSubmitProject = () => {
     if (wb.stage < 5) {
-      alert("You must reach the 'Demo' stage before submitting your project.");
+      showToast("You must reach the 'Demo' stage before submitting.", 'error');
       return;
     }
     const newEntry = { 
@@ -271,7 +298,7 @@ export function WorkbenchPage() {
       title: 'Project Submitted for Showcase', text: 'Submitted to executive for review.'
     };
     updateWb({ entries: [newEntry, ...wb.entries] });
-    alert('Project submitted successfully! The admin will review it for the public showcase.');
+    showToast('Project submitted successfully!');
   };
 
   const autoLog = (title: string, type: any = 'log') => {
@@ -296,18 +323,19 @@ export function WorkbenchPage() {
       <Block>
         {/* Project Library Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 'var(--sp-3)', marginBottom: 'var(--sp-4)' }}>
-          <div>
-            <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Project Library</span>
-            <select 
-              className="amees-input" 
-              value={activeProjectId || ''} 
-              onChange={(e) => setActiveProjectId(e.target.value)}
-              style={{ fontSize: 'var(--fs-lg)', fontWeight: 'bold', fontFamily: 'var(--font)', border: 'none', background: 'transparent', padding: 0, margin: '4px 0' }}
-            >
-              {projects.map(p => <option key={p.id} value={p.id}>{p.title || p.name}</option>)}
-            </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Project Library</span>
+              <div style={{ minWidth: '250px' }}>
+                <Select 
+                  options={projects.map(p => ({ value: p.id, label: p.title || p.name || 'Untitled Project' }))}
+                  value={activeProjectId || ''} 
+                  onChange={(v) => setActiveProjectId(v)}
+                />
+              </div>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+          <div style={{ display: 'flex', gap: 'var(--sp-2)', paddingBottom: '2px' }}>
             <Button onClick={() => setIsCreatingProject(true)}>+ New Project</Button>
             <Button variant="default" className="btn-danger" onClick={() => confirmDelete(deleteProject)}>Delete</Button>
             <Button variant="default" onClick={handleSignOut}>Sign out</Button>
@@ -464,6 +492,8 @@ export function WorkbenchPage() {
       )}
 
       <ConfirmDialog open={modal.open} title="Confirm Action" body="Are you sure you want to delete this?" confirmLabel="Delete" type="confirm" onCancel={() => setModal({ open: false })} onConfirm={() => { modal.action?.(); setModal({ open: false }); }} />
+      
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </Wrap>
   );
 }

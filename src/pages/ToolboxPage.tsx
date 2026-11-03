@@ -33,6 +33,10 @@ export function ToolboxPage() {
   const content = useContent();
   const [activeTool, setActiveTool] = useState<ToolId>('resistor');
 
+  // Example of how you would use the toast in this page if needed:
+  // const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  // const showToast = (message: string, type: 'success' | 'error' = 'success') => setToast({ message, type });
+
   const activeComponent = TOOLS.find(t => t.id === activeTool)?.component;
 
   return (
@@ -64,6 +68,10 @@ export function ToolboxPage() {
           {activeComponent}
         </div>
       </Block>
+
+      {/* Render Toast if you decide to add it later
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />} 
+      */}
     </Wrap>
   );
 }

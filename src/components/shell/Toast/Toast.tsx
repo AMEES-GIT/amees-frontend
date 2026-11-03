@@ -1,60 +1,22 @@
-import { useEffect, useRef } from 'react';
-import { motionAllowed } from '../../../lib/motion';
+import { useEffect } from 'react';
 import './Toast.css';
 
 export interface ToastProps {
-  /** Message shown in the toast. Empty string = nothing rendered (safety). */
   message: string;
-  /** When true, toast is visible. Host controls the timer. */
-  visible: boolean;
-  className?: string;
+  type?: 'success' | 'error'; 
+  onClose: () => void;
 }
 
-export function Toast({ message, visible, className }: ToastProps) {
-  const ref = useRef<HTMLDivElement>(null);
-
+export function Toast({ message, type = 'success', onClose }: ToastProps) {
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    let cancelled = false;
-
-    if (!motionAllowed(el)) {
-      el.style.opacity = visible ? '1' : '0';
-      el.style.transform = visible
-        ? 'translateX(-50%) translateY(0)'
-        : 'translateX(-50%) translateY(20px)';
-      return;
-    }
-
-    import('gsap').then(({ gsap }) => {
-      if (cancelled) return;
-      gsap.to(el, {
-        opacity: visible ? 1 : 0,
-        y: visible ? 0 : 20,
-        xPercent: -50,
-        duration: 0.15,
-        ease: visible ? 'power2.out' : 'power2.in',
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [visible]);
-
-  if (!message) return null;
+    const timer = setTimeout(onClose, 3500); // Auto-dismiss after 3.5s
+    return () => clearTimeout(timer);
+  }, [onClose]);
 
   return (
-    <div
-      ref={ref}
-      className={['amees-toast', visible && 'amees-toast--visible', className]
-        .filter(Boolean)
-        .join(' ')}
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
-    >
-      {message}
+    <div className={`amees-toast amees-toast--${type}`} role="alert">
+      <span style={{ fontFamily: 'var(--font)' }}>{message}</span>
+      <button onClick={onClose} aria-label="Close">✕</button>
     </div>
   );
 }

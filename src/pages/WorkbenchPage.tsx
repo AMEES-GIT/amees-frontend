@@ -44,7 +44,6 @@ export function WorkbenchPage() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('amees_student_token'));
   const [student, setStudent] = useState<any>(null);
   
-  // Project Library State
   const [projects, setProjects] = useState<any[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
@@ -54,7 +53,24 @@ export function WorkbenchPage() {
   const [modal, setModal] = useState<{ open: boolean; action?: () => void }>({ open: false });
   const [timelineFilter, setTimelineFilter] = useState('all');
 
-  // 1. Fetch Workbench Data
+  // 1. Handle URL Join Parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const joinId = params.get('join');
+    if (joinId && token) {
+      fetch(`${API_BASE}/api/student/workbench/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ projectId: joinId })
+      }).then(() => {
+        // Remove the param from URL and reload data
+        window.history.replaceState({}, '', '/workbench');
+        window.location.reload();
+      });
+    }
+  }, [token]);
+
+  // 2. Fetch Workbench Data
   useEffect(() => {
     if (!token) { setLoading(false); return; }
     
@@ -81,12 +97,11 @@ export function WorkbenchPage() {
 
   const project = projects.find(p => p.id === activeProjectId) || null;
 
-  // 2. Auto-Save Data (Debounced 1s)
+  // 3. Auto-Save Data (Debounced 1s)
   useEffect(() => {
     if (!project || !token) return;
     
     const timeoutId = setTimeout(() => {
-      // Strip temporary ID so backend creates a new project
       const payloadProject = { ...project };
       if (payloadProject.id === 'temp') {
         delete payloadProject.id;
@@ -97,12 +112,11 @@ export function WorkbenchPage() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ 
           project: payloadProject,
-          studentName: student.name
+          studentName: student?.name || 'Unknown'
         })
       })
       .then(res => res.json())
       .then(data => {
-        // Once the backend returns the real ID, update the state
         if (project.id === 'temp' && data.id) {
           setProjects(prev => prev.map(p => p.id === 'temp' ? { ...p, id: data.id } : p));
           setActiveProjectId(data.id);
@@ -130,7 +144,7 @@ export function WorkbenchPage() {
 
   const handleNewProject = (data: NewProjectData) => {
     const newProj = {
-      id: 'temp', // Temporary ID to prevent TS errors and track unsaved state
+      id: 'temp',
       name: data.name, 
       category: data.category, 
       goal: data.goal, 
@@ -171,7 +185,7 @@ export function WorkbenchPage() {
 
   const confirmDelete = (action: () => void) => setModal({ open: true, action });
 
-  // 3. Dynamic Heatmap Calculation
+  // 4. Dynamic Heatmap Calculation
   const heatmapCounts = useMemo(() => {
     const counts = Array(56).fill(0);
     const entries = project?.workbenchData?.entries || project?.entries || [];
@@ -212,23 +226,39 @@ export function WorkbenchPage() {
     );
   }
 
-  // Extract data safely from workbenchData
-  const wb = project.workbenchData || project;
+  // --- THE FIX: Sanitize the workbench data so arrays are never undefined ---
+  const rawWb = project.workbenchData || project;
+  const wb = {
+    ...rawWb,
+    name: rawWb.name || project.title || '',
+    category: rawWb.category || (project.tags && project.tags[0]) || 'Other',
+    goal: rawWb.goal || project.description || '',
+    start: rawWb.start || project.createdAt || Date.now(),
+    stage: typeof rawWb.stage === 'number' ? rawWb.stage : (Number(project.stage) || 0),
+    tasks: rawWb.tasks || [],
+    entries: rawWb.entries || [],
+    parts: rawWb.parts || [],
+    tests: rawWb.tests || [],
+    checks: rawWb.checks || [],
+    pitch: rawWb.pitch || {},
+  };
+
   const myRole = project.myRole || 'Lead';
   const isLead = myRole === 'Lead';
   const teamNames = project.members?.map((m: any) => m.student.name) || [];
 
+  // Now we pass the safe `wb` object to calculateHealth
   const health = calculateHealth(wb, now.getTime());
   const daysLeft = Math.max(0, Math.ceil((new Date('2026-12-03T17:00:00+01:00').getTime() - now.getTime()) / DAY));
-  const tasksLeft = wb.tasks?.filter((t: Task) => t.col !== 'done').length || 0;
-  const blockers = wb.entries?.filter((e: TimelineEntry) => e.type === 'blocker' && !e.resolved).length || 0;
+  const tasksLeft = wb.tasks.filter((t: Task) => t.col !== 'done').length;
+  const blockers = wb.entries.filter((e: TimelineEntry) => e.type === 'blocker' && !e.resolved).length;
 
   const exportData = {
-    name: wb.name || project.title, track: wb.category || project.tags[0], goal: wb.goal || project.description, team: teamNames,
-    pitch: { pitch: wb.pitch?.pitch || '', problem: wb.pitch?.problem || '', works: wb.pitch?.solution || '', broken: wb.pitch?.status || '', ask: wb.pitch?.ask || '' },
-    milestones: wb.entries?.filter((e:any) => e.type === 'milestone').map((e:any) => ({ title: e.title, date: new Date(e.ts).toLocaleDateString() })) || [],
-    tests: wb.tests?.map((t:any) => ({ name: t.name, type: t.type, result: t.pass ? 'Pass' : 'Fail' })) || [],
-    parts: wb.parts?.map((p:any) => ({ name: p.name, qty: p.qty, status: p.status })) || []
+    name: wb.name, track: wb.category, goal: wb.goal, team: teamNames,
+    pitch: { pitch: wb.pitch.pitch || '', problem: wb.pitch.problem || '', works: wb.pitch.solution || '', broken: wb.pitch.status || '', ask: wb.pitch.ask || '' },
+    milestones: wb.entries.filter((e:any) => e.type === 'milestone').map((e:any) => ({ title: e.title, date: new Date(e.ts).toLocaleDateString() })),
+    tests: wb.tests.map((t:any) => ({ name: t.name, type: t.type, result: t.pass ? 'Pass' : 'Fail' })),
+    parts: wb.parts.map((p:any) => ({ name: p.name, qty: p.qty, status: p.status }))
   };
 
   const handleSubmitProject = () => {
@@ -240,13 +270,13 @@ export function WorkbenchPage() {
       id: Date.now().toString(), ts: Date.now(), type: 'milestone', 
       title: 'Project Submitted for Showcase', text: 'Submitted to executive for review.'
     };
-    updateWb({ entries: [newEntry, ...(wb.entries || [])] });
+    updateWb({ entries: [newEntry, ...wb.entries] });
     alert('Project submitted successfully! The admin will review it for the public showcase.');
   };
 
   const autoLog = (title: string, type: any = 'log') => {
     const entry = { id: Date.now().toString() + Math.random(), ts: Date.now(), type, title };
-    return [entry, ...(wb.entries || [])];
+    return [entry, ...wb.entries];
   };
 
   const updateWb = (updates: any) => {
@@ -284,7 +314,7 @@ export function WorkbenchPage() {
           </div>
         </div>
 
-        <PageHeader kicker={content.pages.workbench.kicker} title={wb.name || project.title} lede={`Track: ${wb.category || project.tags[0]} · Signed in as ${student?.name} (${myRole})`} />
+        <PageHeader kicker={content.pages.workbench.kicker} title={wb.name} lede={`Track: ${wb.category} · Signed in as ${student?.name} (${myRole})`} />
       </Block>
 
       <Block>
@@ -352,10 +382,10 @@ export function WorkbenchPage() {
         <div className="wb-grid"><div className="wb-span-full">
           <EntryForm onSubmit={(data) => {
             const entry = { id: Date.now().toString(), ts: Date.now(), ...data };
-            updateWb({ entries: [entry, ...(wb.entries || [])] });
+            updateWb({ entries: [entry, ...wb.entries] });
           }} />
           <div style={{ marginTop: 'var(--sp-4)' }}>
-            <Timeline entries={wb.entries || []} filter={timelineFilter} onFilterChange={setTimelineFilter} projectStart={wb.start} now={now.getTime()}
+            <Timeline entries={wb.entries} filter={timelineFilter} onFilterChange={setTimelineFilter} projectStart={wb.start} now={now.getTime()}
               onResolveBlocker={(id) => updateWb({ entries: wb.entries.map((e: any) => e.id === id ? { ...e, resolved: !e.resolved } : e) })}
               onDeleteEntry={(id) => confirmDelete(() => updateWb({ entries: wb.entries.filter((e: any) => e.id !== id) }))}
             />
@@ -365,12 +395,12 @@ export function WorkbenchPage() {
 
       {tab === 'tasks' && (
         <div className="wb-grid"><div className="wb-span-full">
-          <Window title="Add task"><TaskForm team={teamNames} onSubmit={(d) => updateWb({ tasks: [...(wb.tasks || []), { id: Date.now().toString(), title: d.title, who: d.who, col: 'todo' }] })} /></Window>
+          <Window title="Add task"><TaskForm team={teamNames} onSubmit={(d) => updateWb({ tasks: [...wb.tasks, { id: Date.now().toString(), title: d.title, who: d.who, col: 'todo' }] })} /></Window>
           <div style={{ marginTop: 'var(--sp-4)' }}>
-            <TaskBoard tasks={wb.tasks || []} team={teamNames}
+            <TaskBoard tasks={wb.tasks} team={teamNames}
               onMove={(id, dir) => {
                 const cols = ['todo', 'doing', 'done'];
-                updateWb({ tasks: (wb.tasks || []).map((t: any) => {
+                updateWb({ tasks: wb.tasks.map((t: any) => {
                   if (t.id !== id) return t;
                   const idx = cols.indexOf(t.col) + dir;
                   return idx >= 0 && idx <= 2 ? { ...t, col: cols[idx] } : t;
@@ -388,9 +418,9 @@ export function WorkbenchPage() {
              const cleanQty = Number(d.qty.replace(/,/g, ''));
              const cleanCost = Number(d.cost.replace(/,/g, ''));
              const newPart = { id: Date.now().toString(), name: d.name, qty: cleanQty || 0, cost: cleanCost || 0, status: d.status };
-             updateWb({ parts: [...(wb.parts || []), newPart], entries: autoLog(`Added part: ${d.name} (x${cleanQty})`) });
+             updateWb({ parts: [...wb.parts, newPart], entries: autoLog(`Added part: ${d.name} (x${cleanQty})`) });
            }} />
-           <PartsPanel parts={wb.parts || []} budget={30000} onDelete={(id) => confirmDelete(() => updateWb({ parts: wb.parts.filter((p: any) => p.id !== id) }))} />
+           <PartsPanel parts={wb.parts} budget={30000} onDelete={(id) => confirmDelete(() => updateWb({ parts: wb.parts.filter((p: any) => p.id !== id) }))} />
         </Window>
       )}
 
@@ -401,21 +431,21 @@ export function WorkbenchPage() {
                const exp = Number(d.exp.replace(/,/g, '')); const meas = Number(d.meas.replace(/,/g, '')); const tol = Number(d.tol.replace(/,/g, ''));
                const { err, pass } = calculateTestResult(exp, meas, tol);
                const newTest = { id: Date.now().toString(), name: d.name, type: 'numeric', exp, meas, unit: d.unit, tol, err, pass };
-               updateWb({ tests: [...(wb.tests || []), newTest], entries: autoLog(`Logged test: ${d.name} - ${pass ? 'Passed' : 'Failed'}`, 'test') });
+               updateWb({ tests: [...wb.tests, newTest], entries: autoLog(`Logged test: ${d.name} - ${pass ? 'Passed' : 'Failed'}`, 'test') });
              } else {
                const isPass = d.pass === 'Pass';
                const newTest = { id: Date.now().toString(), name: d.name, type: 'qualitative', pass: isPass, expectedText: 'Qualitative check' };
-               updateWb({ tests: [...(wb.tests || []), newTest], entries: autoLog(`Logged test: ${d.name} - ${isPass ? 'Passed' : 'Failed'}`, 'test') });
+               updateWb({ tests: [...wb.tests, newTest], entries: autoLog(`Logged test: ${d.name} - ${isPass ? 'Passed' : 'Failed'}`, 'test') });
              }
            }} />
-           <TestsPanel tests={wb.tests || []} onDelete={(id) => confirmDelete(() => updateWb({ tests: wb.tests.filter((t: any) => t.id !== id) }))} />
+           <TestsPanel tests={wb.tests} onDelete={(id) => confirmDelete(() => updateWb({ tests: wb.tests.filter((t: any) => t.id !== id) }))} />
         </Window>
       )}
 
       {tab === 'demo' && (
         <div className="wb-grid">
-           <div className="wb-span-full"><Window title="Checklist"><DemoChecklist checks={wb.checks || []} onToggle={(id) => updateWb({ checks: wb.checks.map((c: any) => c.id === id ? { ...c, checked: !c.checked } : c) })} onAdd={(label) => updateWb({ checks: [...(wb.checks || []), { id: Date.now().toString(), label, checked: false }] })} onDelete={(id) => confirmDelete(() => updateWb({ checks: wb.checks.filter((c: any) => c.id !== id) }))} /></Window></div>
-           <div className="wb-span-full"><Window title="Pitch Editor"><PitchEditor value={wb.pitch || {}} onChange={(f, v) => updateWb({ pitch: { ...(wb.pitch || {}), [f]: v } })} /></Window></div>
+           <div className="wb-span-full"><Window title="Checklist"><DemoChecklist checks={wb.checks} onToggle={(id) => updateWb({ checks: wb.checks.map((c: any) => c.id === id ? { ...c, checked: !c.checked } : c) })} onAdd={(label) => updateWb({ checks: [...wb.checks, { id: Date.now().toString(), label, checked: false }] })} onDelete={(id) => confirmDelete(() => updateWb({ checks: wb.checks.filter((c: any) => c.id !== id) }))} /></Window></div>
+           <div className="wb-span-full"><Window title="Pitch Editor"><PitchEditor value={wb.pitch} onChange={(f, v) => updateWb({ pitch: { ...wb.pitch, [f]: v } })} /></Window></div>
            
            <div className="wb-span-full">
              <Window title="Submit to Showcase" tone="gray">

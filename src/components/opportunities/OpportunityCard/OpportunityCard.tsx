@@ -29,7 +29,7 @@ export function OpportunityCard({
   const isUpcoming = now < start;
 
   const waLink = shareHref ?? `https://wa.me/?text=${encodeURIComponent(
-    `Check out this opportunity: ${opp.name} (${opp.type}). Closes ${end.toLocaleDateString()}. Seen on the AMEES portal.`
+    `Check out this opportunity: ${opp.name} (${opp.type}). Closes ${end.toLocaleString()}. Seen on the AMEES portal.`
   )}`;
 
   return (
@@ -41,6 +41,15 @@ export function OpportunityCard({
         
         <p className="amees-opp__desc">{opp.description}</p>
         
+        {/* NEW: Render Tags */}
+        {opp.tags && opp.tags.length > 0 && (
+          <div style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap', marginBottom: 'var(--sp-3)' }}>
+            {opp.tags.map((tag: string) => (
+              <Badge key={tag} tone="neutral" kind="tag">{tag}</Badge>
+            ))}
+          </div>
+        )}
+
         <div className="amees-opp__meta" style={{ margin: 'var(--sp-3) 0' }}>
           {isOpen ? (
             <Badge tone="ok" kind="tag">Open Now</Badge>
@@ -50,27 +59,20 @@ export function OpportunityCard({
             <Badge tone="bad" kind="tag">Closed</Badge>
           )}
           <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', marginLeft: 'var(--sp-2)' }}>
-            Deadline: {end.toLocaleDateString()}
+            Deadline: {end.toLocaleDateString()} at {end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
 
         <div className="amees-opp__actions" style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
-          <Button
-            size="sm"
-            pressed={saved}
-            onClick={() => onToggleSave(opp.id)}
-            aria-label={saved ? 'Remove from saved' : 'Save opportunity'}
-          >
+          <Button size="sm" pressed={saved} onClick={() => onToggleSave(opp.id)}>
             <Icon name={saved ? 'star-filled' : 'star'} size={16} />
             {saved ? 'Saved' : 'Save'}
           </Button>
-
           {opp.externalLink && isOpen && (
             <Button as="a" href={opp.externalLink} target="_blank" rel="noopener noreferrer" size="sm" variant="primary">
               Apply →
             </Button>
           )}
-          
           <Button as="a" href={waLink} target="_blank" rel="noopener noreferrer" size="sm">
             Share
           </Button>

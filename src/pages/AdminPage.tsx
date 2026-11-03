@@ -14,17 +14,7 @@ import { getValidToken, getAdminEmail, getAdminRole, clearToken } from '../lib/a
 import { API_BASE } from '../lib/apiBase';
 import './AdminPage.css';
 
-type AdminTab =
-  | 'event'
-  | 'calendar'
-  | 'weekly'
-  | 'executives'
-  | 'projects'
-  | 'partners'
-  | 'opportunities'
-  | 'archive'
-  | 'general';
-
+type AdminTab = 'event' | 'calendar' | 'weekly' | 'executives' | 'projects' | 'partners' | 'opportunities' | 'archive' | 'general';
 const API_URL = `${API_BASE}/api/admin`;
 
 async function adminFetch(path: string, options: RequestInit = {}): Promise<Response> {
@@ -35,11 +25,7 @@ async function adminFetch(path: string, options: RequestInit = {}): Promise<Resp
   }
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers ?? {}),
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { 'Content-Type': 'application/json', ...(options.headers ?? {}), Authorization: `Bearer ${token}` },
   });
   if (res.status === 401) {
     clearToken();
@@ -56,20 +42,8 @@ export function AdminPage() {
   const [tab, setTab] = useState<AdminTab>('event');
   const [status, setStatus] = useState<SaveState>('saved');
 
-  const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean;
-    title: string;
-    body: string;
-    action: () => void;
-    type: 'confirm' | 'success' | 'info' | 'error';
-    confirmLabel: string;
-  }>({
-    open: false,
-    title: '',
-    body: '',
-    action: () => {},
-    type: 'confirm',
-    confirmLabel: 'Confirm',
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; body: string; action: () => void; type: 'confirm' | 'success' | 'info' | 'error'; confirmLabel: string; }>({
+    open: false, title: '', body: '', action: () => {}, type: 'confirm', confirmLabel: 'Confirm',
   });
 
   const [formData, setFormData] = useState<FeaturedEvent>(content.featured);
@@ -78,35 +52,15 @@ export function AdminPage() {
   const [newWeekTitle, setNewWeekTitle] = useState('');
   const [newWeekText, setNewWeekText] = useState('');
   const [newWeekDay, setNewWeekDay] = useState('2');
-  const [newExec, setNewExec] = useState<Omit<ExecutiveMember, 'id'>>({
-    role: '',
-    name: '',
-    linkedin: '',
-    photoUrl: '',
-  });
-  const [newPartner, setNewPartner] = useState({
-    name: '',
-    type: 'Sponsor' as 'Sponsor' | 'Partner',
-    tier: '',
-    logoUrl: '',
-    websiteUrl: '',
-  });
-  const [newArchive, setNewArchive] = useState({
-    title: '',
-    course: '',
-    level: '100',
-    year: String(new Date().getFullYear()),
-    kind: 'PDF',
-    fileUrl: '',
-  });
+  const [newExec, setNewExec] = useState<Omit<ExecutiveMember, 'id'>>({ role: '', name: '', linkedin: '', photoUrl: '' });
+  const [newPartner, setNewPartner] = useState({ name: '', type: 'Sponsor' as 'Sponsor' | 'Partner', tier: '', logoUrl: '', websiteUrl: '' });
+  const [newArchive, setNewArchive] = useState({ title: '', course: '', level: '100', year: String(new Date().getFullYear()), kind: 'PDF', fileUrl: '' });
+  
+  // Opportunity State
   const [newOpp, setNewOpp] = useState({
-    name: '',
-    type: 'IT',
-    description: '',
-    externalLink: '',
-    startDate: '',
-    endDate: '',
+    name: '', type: 'IT', description: '', externalLink: '', startDate: '', endDate: '', tags: ''
   });
+  const [editingOppId, setEditingOppId] = useState<string | null>(null);
 
   const [marqueeMode, setMarqueeMode] = useState(content.activeMarquee || 'caution');
   const [footerTagline, setFooterTagline] = useState(content.footer.tagline);
@@ -126,214 +80,84 @@ export function AdminPage() {
   }, [content]);
 
   useEffect(() => {
-    if (!getValidToken()) {
-      window.location.hash = 'login';
-    }
+    if (!getValidToken()) window.location.hash = 'login';
   }, []);
 
   const nav = [
-    { id: 'event', label: 'Featured Event' },
-    { id: 'calendar', label: 'One-off Dates' },
-    { id: 'weekly', label: 'Weekly Rhythm' },
-    { id: 'executives', label: 'Executives' },
-    { id: 'projects', label: 'Projects' },
-    { id: 'partners', label: 'Sponsors' },
-    { id: 'opportunities', label: 'Opportunities' },
-    { id: 'archive', label: 'Archive links' },
+    { id: 'event', label: 'Featured Event' }, { id: 'calendar', label: 'One-off Dates' },
+    { id: 'weekly', label: 'Weekly Rhythm' }, { id: 'executives', label: 'Executives' },
+    { id: 'projects', label: 'Projects' }, { id: 'partners', label: 'Sponsors' },
+    { id: 'opportunities', label: 'Opportunities' }, { id: 'archive', label: 'Archive links' },
     { id: 'general', label: 'Site Settings' },
   ];
 
-  const saveEvent = async () => {
-    setStatus('saving');
-    try {
-      const res = await adminFetch('/event', { method: 'PUT', body: JSON.stringify(formData) });
-      if (res.ok) { setStatus('saved'); refresh(); }
-      else { setStatus('error'); alert('Failed'); }
-    } catch { setStatus('error'); }
-  };
+  const saveEvent = async () => { setStatus('saving'); try { const res = await adminFetch('/event', { method: 'PUT', body: JSON.stringify(formData) }); if (res.ok) { setStatus('saved'); refresh(); } else setStatus('error'); } catch { setStatus('error'); } };
+  const saveSettings = async () => { setStatus('saving'); try { const res = await adminFetch('/settings', { method: 'PUT', body: JSON.stringify({ activeMarquee: marqueeMode, footer: { ...content.footer, tagline: footerTagline }, membershipFormUrl, projectSubmissionUrl, eventRegistrationFormUrl, eventRegistrationEventFieldId }) }); if (res.ok) { setStatus('saved'); refresh(); } else setStatus('error'); } catch { setStatus('error'); } };
+  
+  const addCalendarEntry = async (data: any) => { try { const res = await adminFetch('/calendar', { method: 'POST', body: JSON.stringify(data) }); if (res.ok) refresh(); } catch {} };
+  const deleteCalendarEntry = async (id: string) => { try { const res = await adminFetch(`/calendar/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
+  const addWeeklyItem = async (data: any) => { try { const res = await adminFetch('/weekly', { method: 'POST', body: JSON.stringify(data) }); if (res.ok) refresh(); } catch {} };
+  const deleteWeeklyItem = async (id: string) => { try { const res = await adminFetch(`/weekly/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
+  const addExecutive = async (data: Omit<ExecutiveMember, 'id'>) => { try { const res = await adminFetch('/executives', { method: 'POST', body: JSON.stringify({ ...data, order: content.about.executive.length }) }); if (res.ok) refresh(); } catch {} };
+  const deleteExecutive = async (id: string) => { try { const res = await adminFetch(`/executives/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
+  const toggleProject = async (id: string) => { try { const res = await adminFetch(`/projects/${id}/toggle`, { method: 'PUT' }); if (res.ok) refresh(); } catch {} };
+  const addPartner = async () => { try { const res = await adminFetch('/partners', { method: 'POST', body: JSON.stringify({ ...newPartner, order: content.partners.length }) }); if (res.ok) { refresh(); setNewPartner({ name: '', type: 'Sponsor', tier: '', logoUrl: '', websiteUrl: '' }); } } catch {} };
+  const deletePartner = async (id: string) => { try { const res = await adminFetch(`/partners/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
+  const addArchiveFile = async () => { try { const res = await adminFetch('/archive-files', { method: 'POST', body: JSON.stringify(newArchive) }); if (res.ok) { refresh(); setNewArchive({ title: '', course: '', level: '100', year: String(new Date().getFullYear()), kind: 'PDF', fileUrl: '' }); } } catch {} };
+  const deleteArchiveFile = async (id: string) => { try { const res = await adminFetch(`/archive-files/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
 
-  const saveSettings = async () => {
-    setStatus('saving');
-    try {
-      const res = await adminFetch('/settings', {
-        method: 'PUT',
-        body: JSON.stringify({
-          activeMarquee: marqueeMode,
-          footer: { ...content.footer, tagline: footerTagline },
-          membershipFormUrl,
-          projectSubmissionUrl,
-          eventRegistrationFormUrl,
-          eventRegistrationEventFieldId,
-        }),
-      });
-      if (res.ok) { setStatus('saved'); refresh(); }
-      else { setStatus('error'); alert('Failed'); }
-    } catch { setStatus('error'); }
-  };
-
-  const addCalendarEntry = async (data: any) => {
-    try {
-      const res = await adminFetch('/calendar', { method: 'POST', body: JSON.stringify(data) });
-      if (res.ok) refresh(); else alert('Failed');
-    } catch {}
-  };
-
-  const deleteCalendarEntry = async (id: string) => {
-    try {
-      const res = await adminFetch(`/calendar/${id}`, { method: 'DELETE' });
-      if (res.ok) refresh(); else alert('Failed');
-    } catch {}
-  };
-
-  const addWeeklyItem = async (data: any) => {
-    try {
-      const res = await adminFetch('/weekly', { method: 'POST', body: JSON.stringify(data) });
-      if (res.ok) refresh(); else alert('Failed');
-    } catch {}
-  };
-
-  const deleteWeeklyItem = async (id: string) => {
-    try {
-      const res = await adminFetch(`/weekly/${id}`, { method: 'DELETE' });
-      if (res.ok) refresh(); else alert('Failed');
-    } catch {}
-  };
-
-  const addExecutive = async (data: Omit<ExecutiveMember, 'id'>) => {
-    try {
-      const res = await adminFetch('/executives', {
-        method: 'POST',
-        body: JSON.stringify({ ...data, order: content.about.executive.length }),
-      });
-      if (res.ok) refresh(); else alert('Failed');
-    } catch {}
-  };
-
-  const deleteExecutive = async (id: string) => {
-    try {
-      const res = await adminFetch(`/executives/${id}`, { method: 'DELETE' });
-      if (res.ok) refresh(); else alert('Failed');
-    } catch {}
-  };
-
-  const toggleProject = async (id: string) => {
-    try {
-      const res = await adminFetch(`/projects/${id}/toggle`, { method: 'PUT' });
-      if (res.ok) refresh(); else alert('Failed');
-    } catch {}
-  };
-
-  const addPartner = async () => {
-    try {
-      const res = await adminFetch('/partners', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: newPartner.name,
-          type: newPartner.type,
-          tier: newPartner.tier || null,
-          logoUrl: newPartner.logoUrl,
-          websiteUrl: newPartner.websiteUrl,
-          order: content.partners.length,
-        }),
-      });
-      if (res.ok) {
-        refresh();
-        setNewPartner({ name: '', type: 'Sponsor', tier: '', logoUrl: '', websiteUrl: '' });
-      } else alert('Failed');
-    } catch {}
-  };
-
-  const deletePartner = async (id: string) => {
-    try {
-      const res = await adminFetch(`/partners/${id}`, { method: 'DELETE' });
-      if (res.ok) refresh(); else alert('Failed');
-    } catch {}
-  };
-
-  const addOpportunity = async () => {
+  const saveOpportunity = async () => {
     if (!newOpp.name || !newOpp.startDate || !newOpp.endDate) return;
+    const payload = {
+      ...newOpp,
+      startDate: new Date(newOpp.startDate).toISOString(),
+      endDate: new Date(newOpp.endDate).toISOString(),
+      tags: newOpp.tags.split(',').map(t => t.trim()).filter(Boolean)
+    };
     try {
-      const res = await adminFetch('/opportunities', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...newOpp,
-          startDate: new Date(newOpp.startDate).toISOString(),
-          endDate: new Date(newOpp.endDate).toISOString(),
-        }),
-      });
+      const url = editingOppId ? `/opportunities/${editingOppId}` : '/opportunities';
+      const method = editingOppId ? 'PUT' : 'POST';
+      const res = await adminFetch(url, { method, body: JSON.stringify(payload) });
       if (res.ok) {
         refresh();
-        setNewOpp({ name: '', type: 'IT', description: '', externalLink: '', startDate: '', endDate: '' });
-      } else alert('Failed');
-    } catch {}
-  };
-
-  const deleteOpportunity = async (id: string) => {
-    try {
-      const res = await adminFetch(`/opportunities/${id}`, { method: 'DELETE' });
-      if (res.ok) refresh(); else alert('Failed');
-    } catch {}
-  };
-
-  const addArchiveFile = async () => {
-    try {
-      const res = await adminFetch('/archive-files', {
-        method: 'POST',
-        body: JSON.stringify(newArchive),
-      });
-      if (res.ok) {
-        refresh();
-        setNewArchive({ title: '', course: '', level: '100', year: String(new Date().getFullYear()), kind: 'PDF', fileUrl: '' });
-      } else {
-        const data = await res.json().catch(() => ({}));
-        alert((data as any).error ?? 'Failed');
+        setNewOpp({ name: '', type: 'IT', description: '', externalLink: '', startDate: '', endDate: '', tags: '' });
+        setEditingOppId(null);
       }
     } catch {}
   };
 
-  const deleteArchiveFile = async (id: string) => {
-    try {
-      const res = await adminFetch(`/archive-files/${id}`, { method: 'DELETE' });
-      if (res.ok) refresh(); else alert('Failed');
-    } catch {}
+  const deleteOpportunity = async (id: string) => { try { const res = await adminFetch(`/opportunities/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
+
+  const startEditOpp = (opp: Opportunity) => {
+    setEditingOppId(opp.id);
+    setNewOpp({
+      name: opp.name, type: opp.type, description: opp.description, externalLink: opp.externalLink || '',
+      startDate: new Date(opp.startDate).toISOString().slice(0, 16),
+      endDate: new Date(opp.endDate).toISOString().slice(0, 16),
+      tags: opp.tags?.join(', ') || ''
+    });
+    window.scrollTo(0, 0);
   };
 
-  const confirmAction = (title: string, body: string, action: () => void, type: 'success'|'confirm' = 'success', confirmLabel = 'Confirm') =>
-    setConfirmDialog({ open: true, title, body, action, type, confirmLabel });
+  const confirmAction = (title: string, body: string, action: () => void, type: 'success'|'confirm' = 'success', confirmLabel = 'Confirm') => setConfirmDialog({ open: true, title, body, action, type, confirmLabel });
 
-  const DAYS = [
-    { label: 'Every Monday', value: 1 }, { label: 'Every Tuesday', value: 2 },
-    { label: 'Every Wednesday', value: 3 }, { label: 'Every Thursday', value: 4 },
-    { label: 'Every Friday', value: 5 }, { label: 'Every Saturday', value: 6 },
-    { label: 'Every Sunday', value: 0 }, { label: 'Not a specific day', value: -1 },
-  ];
+  const DAYS = [{ label: 'Every Monday', value: 1 }, { label: 'Every Tuesday', value: 2 }, { label: 'Every Wednesday', value: 3 }, { label: 'Every Thursday', value: 4 }, { label: 'Every Friday', value: 5 }, { label: 'Every Saturday', value: 6 }, { label: 'Every Sunday', value: 0 }, { label: 'Not a specific day', value: -1 }];
 
   return (
     <div style={{ padding: 'var(--sp-4) 0' }}>
-      <AdminShell
-        role={getAdminRole() ?? 'Editor'}
-        user={getAdminEmail() ?? 'Admin'}
-        nav={nav}
-        current={tab}
-        onNav={(id) => setTab(id as AdminTab)}
-        saveStatus={<SaveStatus status={status} at={new Date().toLocaleTimeString()} />}
-      >
+      <AdminShell role={getAdminRole() ?? 'Editor'} user={getAdminEmail() ?? 'Admin'} nav={nav} current={tab} onNav={(id) => setTab(id as AdminTab)} saveStatus={<SaveStatus status={status} at={new Date().toLocaleTimeString()} />}>
         <Window title={nav.find((n) => n.id === tab)?.label || 'Settings'} meta="Database-connected">
           
-          {/* EVENT TAB */}
           {tab === 'event' && (
             <div className="admin-form-grid">
               <Field label="Event Title"><TextInput value={formData.title} onChange={(v) => setFormData({ ...formData, title: v })} /></Field>
               <Field label="Theme"><TextInput value={formData.theme} onChange={(v) => setFormData({ ...formData, theme: v })} /></Field>
               <Field label="Subtitle"><TextInput value={formData.subtitle} onChange={(v) => setFormData({ ...formData, subtitle: v })} /></Field>
               <Field label="Venue"><TextInput value={formData.venue} onChange={(v) => setFormData({ ...formData, venue: v })} /></Field>
-              <div>
-                <Button variant="primary" onClick={() => confirmAction('Save Event', 'Update the featured event?', saveEvent)}>Save Event</Button>
-              </div>
+              <div><Button variant="primary" onClick={() => confirmAction('Save Event', 'Update the featured event?', saveEvent)}>Save Event</Button></div>
             </div>
           )}
 
-          {/* CALENDAR TAB */}
           {tab === 'calendar' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
@@ -361,7 +185,6 @@ export function AdminPage() {
             </div>
           )}
 
-          {/* WEEKLY TAB */}
           {tab === 'weekly' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
@@ -396,7 +219,6 @@ export function AdminPage() {
             </div>
           )}
 
-          {/* EXECUTIVES TAB */}
           {tab === 'executives' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
@@ -426,7 +248,6 @@ export function AdminPage() {
             </div>
           )}
 
-          {/* PROJECTS TAB */}
           {tab === 'projects' && (
             <div>
               <p style={{ marginTop: 0, color: 'var(--muted)', marginBottom: 'var(--sp-4)' }}>Select which projects appear in the Showcase Marquee on the home page.</p>
@@ -446,7 +267,6 @@ export function AdminPage() {
             </div>
           )}
 
-          {/* PARTNERS TAB */}
           {tab === 'partners' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
@@ -496,11 +316,12 @@ export function AdminPage() {
             </div>
           )}
 
-          {/* OPPORTUNITIES TAB */}
           {tab === 'opportunities' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add Opportunity</h3>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
+                  {editingOppId ? 'Edit Opportunity' : 'Add Opportunity'}
+                </h3>
                 <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--sp-3)' }}>
                     <Field label="Name"><TextInput value={newOpp.name} onChange={(v) => setNewOpp({ ...newOpp, name: v })} placeholder="Google Summer of Code" /></Field>
@@ -511,30 +332,31 @@ export function AdminPage() {
                     </Field>
                   </div>
                   <Field label="Description"><Textarea value={newOpp.description} onChange={(v) => setNewOpp({ ...newOpp, description: v })} /></Field>
+                  <Field label="Tags (Comma separated, e.g. EEE, Level 300, Group)"><TextInput value={newOpp.tags} onChange={(v) => setNewOpp({ ...newOpp, tags: v })} /></Field>
                   <Field label="External Link (Optional)"><TextInput value={newOpp.externalLink} onChange={(v) => setNewOpp({ ...newOpp, externalLink: v })} placeholder="https://..." /></Field>
+                  
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
-                    <Field label="Opens On">
-                      <input 
-                        type="date"
-                        className="amees-input"
-                        value={newOpp.startDate}
-                        onChange={(e) => setNewOpp({ ...newOpp, startDate: e.target.value })}
-                        style={{ padding: 'var(--sp-2)', fontFamily: 'var(--font)', border: 'var(--bw-sm) solid var(--line)', background: 'var(--bg)', color: 'var(--fg)' }}
-                      />
+                    <Field label="Opens On (Date & Time)">
+                      <input type="datetime-local" className="amees-input" value={newOpp.startDate} onChange={(e) => setNewOpp({ ...newOpp, startDate: e.target.value })} style={{ padding: 'var(--sp-2)', fontFamily: 'var(--font)', border: 'var(--bw-sm) solid var(--line)', background: 'var(--bg)', color: 'var(--fg)' }} />
                     </Field>
-                    <Field label="Closes On">
-                      <input 
-                        type="date"
-                        className="amees-input"
-                        value={newOpp.endDate}
-                        onChange={(e) => setNewOpp({ ...newOpp, endDate: e.target.value })}
-                        style={{ padding: 'var(--sp-2)', fontFamily: 'var(--font)', border: 'var(--bw-sm) solid var(--line)', background: 'var(--bg)', color: 'var(--fg)' }}
-                      />
+                    <Field label="Closes On (Date & Time)">
+                      <input type="datetime-local" className="amees-input" value={newOpp.endDate} onChange={(e) => setNewOpp({ ...newOpp, endDate: e.target.value })} style={{ padding: 'var(--sp-2)', fontFamily: 'var(--font)', border: 'var(--bw-sm) solid var(--line)', background: 'var(--bg)', color: 'var(--fg)' }} />
                     </Field>
                   </div>
-                  <div><Button variant="primary" onClick={() => confirmAction('Add Opportunity', `Add "${newOpp.name}"?`, addOpportunity)}>Add Opportunity</Button></div>
+
+                  <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                    <Button variant="primary" onClick={() => confirmAction(editingOppId ? 'Save Changes' : 'Add Opportunity', `Are you sure?`, saveOpportunity)}>
+                      {editingOppId ? 'Save Changes' : 'Add Opportunity'}
+                    </Button>
+                    {editingOppId && (
+                      <Button variant="default" onClick={() => { setEditingOppId(null); setNewOpp({ name: '', type: 'IT', description: '', externalLink: '', startDate: '', endDate: '', tags: '' }); }}>
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
+
               <div>
                 <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Current Opportunities</h3>
                 {(!content.opportunities || content.opportunities.length === 0) ? <p style={{ color: 'var(--muted)' }}>No opportunities yet.</p> : 
@@ -543,10 +365,13 @@ export function AdminPage() {
                       <div>
                         <div style={{ fontWeight: 'bold' }}>{opp.name}</div>
                         <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
-                          {opp.type} · Ends {new Date(opp.endDate).toLocaleDateString()}
+                          {opp.type} · Ends {new Date(opp.endDate).toLocaleString()}
                         </div>
                       </div>
-                      <Button size="sm" variant="default" onClick={() => confirmAction('Remove Opportunity', `Remove "${opp.name}"?`, () => deleteOpportunity(opp.id), 'confirm', 'Remove')}>Remove</Button>
+                      <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                        <Button size="sm" variant="default" onClick={() => startEditOpp(opp)}>Edit</Button>
+                        <Button size="sm" variant="default" onClick={() => confirmAction('Remove Opportunity', `Remove "${opp.name}"?`, () => deleteOpportunity(opp.id), 'confirm', 'Remove')}>Remove</Button>
+                      </div>
                     </div>
                   ))
                 }
@@ -554,7 +379,6 @@ export function AdminPage() {
             </div>
           )}
 
-          {/* ARCHIVE TAB */}
           {tab === 'archive' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
@@ -601,7 +425,6 @@ export function AdminPage() {
             </div>
           )}
 
-          {/* GENERAL TAB */}
           {tab === 'general' && (
             <div className="admin-form-grid">
               <Field label="Home Page Marquee Mode">
@@ -622,15 +445,7 @@ export function AdminPage() {
         </Window>
       </AdminShell>
 
-      <ConfirmDialog
-        open={confirmDialog.open}
-        title={confirmDialog.title}
-        body={confirmDialog.body}
-        confirmLabel={confirmDialog.confirmLabel}
-        type={confirmDialog.type}
-        onCancel={() => setConfirmDialog((prev) => ({ ...prev, open: false }))}
-        onConfirm={() => { confirmDialog.action(); setConfirmDialog((prev) => ({ ...prev, open: false })); }}
-      />
+      <ConfirmDialog open={confirmDialog.open} title={confirmDialog.title} body={confirmDialog.body} confirmLabel={confirmDialog.confirmLabel} type={confirmDialog.type} onCancel={() => setConfirmDialog((prev) => ({ ...prev, open: false }))} onConfirm={() => { confirmDialog.action(); setConfirmDialog((prev) => ({ ...prev, open: false })); }} />
     </div>
   );
 }

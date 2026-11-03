@@ -3,6 +3,7 @@ import { Window } from '../../containers/Window';
 import { Field } from '../../primitives/Field';
 import { TextInput } from '../../primitives/TextInput';
 import { Button } from '../../primitives/Button';
+import { API_BASE } from '../../../lib/apiBase';
 import './SignInForm.css';
 
 export type SignInStep = 'identify' | 'code';
@@ -10,93 +11,91 @@ export type SignInStep = 'identify' | 'code';
 export interface SignInValues {
   name: string;
   matric: string;
-  number: string;
+  email: string;
   code: string;
 }
 
 export interface SignInFormProps {
-  step?: SignInStep;
-  values?: Partial<SignInValues>;
-  errors?: Partial<Record<keyof SignInValues, string>>;
-  /** E.g. "WhatsApp" or "SMS". Decides the text in the code step. */
-  channelLabel?: string;
-  onSubmit: (values: SignInValues) => void;
+  onSuccess: (token: string, student: any) => void;
   className?: string;
 }
 
-export function SignInForm({
-  step = 'identify',
-  values: initialValues = {},
-  errors = {},
-  channelLabel = 'WhatsApp',
-  onSubmit,
-  className,
-}: SignInFormProps) {
-  const [values, setValues] = useState<SignInValues>({
-    name: initialValues.name || '',
-    matric: initialValues.matric || '',
-    number: initialValues.number || '',
-    code: initialValues.code || '',
-  });
+export function SignInForm({ onSuccess, className }: SignInFormProps) {
+  const [step, setStep] = useState<SignInStep>('identify');
+  const [values, setValues] = useState<SignInValues>({ name: '', matric: '', email: '', code: '' });
+  const [challengeId, setChallengeId] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   const handleChange = (key: keyof SignInValues, val: string) => {
     setValues(prev => ({ ...prev, [key]: val }));
+    setError('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(values);
+    setBusy(true);
+    setError('');
+
+    try {
+      if (step === 'identify') {
+        const res = await fetch(`${API_BASE}/api/student/auth/identify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: values.name, matric: values.matric, email: values.email })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        
+        setChallengeId(data.challengeId);
+        setStep('code');
+      } else {
+        const res = await fetch(`${API_BASE}/api/student/auth/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ challengeId, code: values.code })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        
+        onSuccess(data.token, data.student);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
-    <Window title="Sign in" meta="no password" className={className}>
+    <Window title="Sign in" meta="Student Portal" className={className}>
       <form className="amees-wb-signin" onSubmit={handleSubmit}>
+        {error && <div style={{ color: 'var(--c-bad)', marginBottom: '1rem', fontSize: '0.9rem' }}>{error}</div>}
         
         {step === 'identify' ? (
           <>
-            <Field label="Full name" error={errors.name}>
-              <TextInput 
-                value={values.name} 
-                onChange={v => handleChange('name', v)} 
-                required 
-                autoComplete="name" 
-              />
+            <Field label="Full name">
+              <TextInput value={values.name} onChange={v => handleChange('name', v)} required />
             </Field>
-            <Field label="Matric number" error={errors.matric}>
-              <TextInput 
-                value={values.matric} 
-                onChange={v => handleChange('matric', v)} 
-                required 
-              />
+            <Field label="Matric number">
+              <TextInput value={values.matric} onChange={v => handleChange('matric', v)} required />
             </Field>
-            <Field label={`${channelLabel} number`} error={errors.number}>
-              <TextInput 
-                type="tel"
-                value={values.number} 
-                onChange={v => handleChange('number', v)} 
-                required 
-                autoComplete="tel" 
-              />
+            <Field label="Email address">
+              <TextInput type="email" value={values.email} onChange={v => handleChange('email', v)} required placeholder="student@lcu.edu.ng" />
             </Field>
             <div className="amees-wb-signin__actions">
-              <Button type="submit" variant="primary">Send code</Button>
-              <Button type="button">Try the demo</Button>
+              <Button type="submit" variant="primary" loading={busy}>Send code</Button>
             </div>
           </>
         ) : (
           <>
-            <Field label={`6-digit code from ${channelLabel}`} error={errors.code}>
-              <TextInput 
-                type="otp"
-                value={values.code} 
-                onChange={v => handleChange('code', v)} 
-                required 
-                autoComplete="one-time-code" 
-              />
+            <Field label="6-digit code from email">
+              <TextInput type="text" value={values.code} onChange={v => handleChange('code', v)} required autoComplete="one-time-code" />
             </Field>
-            <p className="amees-wb-signin__hint">Mockup: any six digits work.</p>
+            <p className="amees-wb-signin__hint">Check your email inbox.</p>
             <div className="amees-wb-signin__actions">
-              <Button type="submit" variant="primary">Sign in</Button>
+              <Button type="submit" variant="primary" loading={busy}>Sign in</Button>
+              <Button type="button" onClick={() => setStep('identify')}>Back</Button>
             </div>
           </>
         )}

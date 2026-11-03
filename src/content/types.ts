@@ -105,6 +105,7 @@ export interface Opportunity {
   externalLink?: string | null;
   startDate: IsoDateTime;
   endDate: IsoDateTime;
+  tags?: string[]; // ADDED: e.g. ["EEE", "Level 300", "Group"]
 }
 
 export interface ExecutiveMember {
@@ -198,8 +199,7 @@ export interface SiteContent {
   eventRegistrationEventFieldId: string;
 
   /** 
-   * ADDED: Auto-calculated stats for the Sponsors page.
-   * The backend rounds these up to the nearest 10 (e.g., 17 -> "20+").
+   * Auto-calculated stats for the Sponsors page.
    */
   impact?: {
     members: string;

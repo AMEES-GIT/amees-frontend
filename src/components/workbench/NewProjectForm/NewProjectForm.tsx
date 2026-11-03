@@ -72,8 +72,12 @@ export function NewProjectForm({
           <Textarea value={data.goal} onChange={v => handleChange('goal', v)} rows={2} maxLength={200} />
         </Field>
 
-        <Field label="Team first names (comma separated)">
-          <TextInput value={data.team} onChange={v => handleChange('team', v)} placeholder="Ada, Tunde" />
+        <Field label="Team Matric Numbers (comma separated)">
+          <TextInput 
+            value={data.team} 
+            onChange={v => handleChange('team', v)} 
+            placeholder="e.g. LCU/UG/24/00001, LCU/UG/24/12345" 
+          />
         </Field>
 
         <div className="amees-wb-newproj__actions">

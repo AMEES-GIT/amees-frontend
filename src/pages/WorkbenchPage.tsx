@@ -1,15 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Wrap, Block, Row } from '../components/containers/Layout';
 import { PageHeader } from '../components/containers/PageHeader';
 import { Window } from '../components/containers/Window';
 import { Button } from '../components/primitives/Button';
-import { ConfirmDialog } from '../components/containers/ConfirmDialog';
 import { TextInput } from '../components/primitives/TextInput';
+import { ConfirmDialog } from '../components/containers/ConfirmDialog';
 import { useNow } from '../lib/useNow';
 import { useContent } from '../content/contentProvider';
 import { API_BASE } from '../lib/apiBase';
 
-// Workbench Components
 import { SignInForm } from '../components/workbench/SignInForm';
 import { NewProjectForm, type NewProjectData } from '../components/workbench/NewProjectForm';
 import { StageTracker } from '../components/workbench/StageTracker';
@@ -17,6 +16,7 @@ import { HealthCard } from '../components/workbench/HealthCard';
 import { PaceCard } from '../components/workbench/PaceCard';
 import { ActivityHeatmap } from '../components/workbench/ActivityHeatmap';
 import { Timeline, type TimelineEntry } from '../components/workbench/Timeline';
+import { EntryForm } from '../components/workbench/EntryForm'; // <-- Imported your EntryForm
 import { TaskBoard, type Task } from '../components/workbench/TaskBoard';
 import { TaskForm } from '../components/workbench/TaskForm';
 import { PartsPanel } from '../components/workbench/PartsPanel';
@@ -27,7 +27,6 @@ import { DemoChecklist } from '../components/workbench/DemoChecklist';
 import { PitchEditor } from '../components/workbench/PitchEditor';
 import { ExportPanel } from '../components/workbench/ExportPanel';
 
-// Workbench Math
 import { calculateHealth } from '../lib/workbench/health';
 import { calculateTestResult } from '../lib/workbench/tests';
 import { buildReport } from '../lib/workbench/export';
@@ -51,24 +50,7 @@ export function WorkbenchPage() {
   const [modal, setModal] = useState<{ open: boolean; action?: () => void }>({ open: false });
   const [timelineFilter, setTimelineFilter] = useState('all');
 
-  // 1. Handle URL Join Parameter
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const joinId = params.get('join');
-    if (joinId && token) {
-      fetch(`${API_BASE}/api/student/workbench/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ projectId: joinId })
-      }).then(() => {
-        // Remove the param from URL and reload data
-        window.history.replaceState({}, '', '/workbench');
-        window.location.reload();
-      });
-    }
-  }, [token]);
-
-  // 2. Fetch Workbench Data
+  // 1. Fetch Workbench Data
   useEffect(() => {
     if (!token) { setLoading(false); return; }
     
@@ -80,7 +62,6 @@ export function WorkbenchPage() {
         if (data.student) {
           setStudent(data.student);
           if (data.project) {
-            // Merge workbenchData with the DB members array
             setProject({
               ...data.project.workbenchData,
               members: data.project.members,
@@ -95,7 +76,7 @@ export function WorkbenchPage() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  // 3. Auto-Save Data (Debounced 1s)
+  // 2. Auto-Save Data (Debounced 1s)
   useEffect(() => {
     if (!project || !token) return;
     
@@ -132,6 +113,22 @@ export function WorkbenchPage() {
 
   const confirmDelete = (action: () => void) => setModal({ open: true, action });
 
+  // 3. Dynamic Heatmap Calculation
+  const heatmapCounts = useMemo(() => {
+    const counts = Array(56).fill(0);
+    if (!project?.entries) return counts;
+    
+    const today = new Date().setHours(0,0,0,0);
+    project.entries.forEach((e: any) => {
+      const entryDate = new Date(e.ts).setHours(0,0,0,0);
+      const daysAgo = Math.floor((today - entryDate) / DAY);
+      if (daysAgo >= 0 && daysAgo < 56) {
+        counts[55 - daysAgo] += 1;
+      }
+    });
+    return counts;
+  }, [project?.entries]);
+
   if (loading) return <div style={{ padding: 'var(--sp-6)', textAlign: 'center', fontFamily: 'var(--font)' }}>Loading your workbench...</div>;
 
   if (!token) {
@@ -154,8 +151,6 @@ export function WorkbenchPage() {
 
   const myRole = project.members?.find((m: any) => m.studentId === student.id)?.role;
   const isLead = myRole === 'Lead';
-  
-  // Extract just names for the TaskBoard/TaskForm components
   const teamNames = project.members?.map((m: any) => m.student.name) || [];
 
   const health = calculateHealth(project, now.getTime());
@@ -169,6 +164,28 @@ export function WorkbenchPage() {
     milestones: project.entries?.filter((e:any) => e.type === 'milestone').map((e:any) => ({ title: e.title, date: new Date(e.ts).toLocaleDateString() })) || [],
     tests: project.tests?.map((t:any) => ({ name: t.name, type: t.type, result: t.pass ? 'Pass' : 'Fail' })) || [],
     parts: project.parts?.map((p:any) => ({ name: p.name, qty: p.qty, status: p.status })) || []
+  };
+
+  const handleSubmitProject = () => {
+    if (!project.name || project.stage < 5) {
+      alert("You must reach the 'Demo' stage before submitting your project.");
+      return;
+    }
+    const newEntry = { 
+      id: Date.now().toString(), 
+      ts: Date.now(), 
+      type: 'milestone', 
+      title: 'Project Submitted for Showcase',
+      text: 'The project has been submitted to the AMEES executive for review.'
+    };
+    setProject({ ...project, entries: [newEntry, ...(project.entries || [])] });
+    alert('Project submitted successfully! The admin will review it for the public showcase.');
+  };
+
+  // Helper to add a timeline entry automatically
+  const autoLog = (title: string, type: any = 'log') => {
+    const entry = { id: Date.now().toString() + Math.random(), ts: Date.now(), type, title };
+    return [entry, ...(project.entries || [])];
   };
 
   const TABS: { id: Tab, label: string }[] = [
@@ -206,7 +223,11 @@ export function WorkbenchPage() {
         <div className="wb-grid">
           <HealthCard health={health} />
           <PaceCard daysLeft={daysLeft} tasksLeft={tasksLeft} pace={tasksLeft / Math.max(1, daysLeft)} streakWeeks={2} openBlockers={blockers} />
-          <div className="wb-span-full"><Window title="Activity"><ActivityHeatmap counts={Array(56).fill(0).map(() => Math.floor(Math.random() * 4))} /></Window></div>
+          <div className="wb-span-full">
+            <Window title="Activity">
+              <ActivityHeatmap counts={heatmapCounts} />
+            </Window>
+          </div>
         </div>
       )}
 
@@ -241,12 +262,12 @@ export function WorkbenchPage() {
                         <>
                           <TextInput 
                             value={m.role} 
-                            onChange={(val) => {
+                            onChange={(val: string) => {
                               const newMembers = project.members.map((x: any) => x.id === m.id ? { ...x, role: val } : x);
                               setProject({ ...project, members: newMembers });
                             }} 
                           />
-                          <Button variant="default" onClick={() => confirmDelete(() => setProject({ ...project, members: project.members.filter((x: any) => x.id !== m.id) }))}>Remove</Button>
+                          <Button variant="default" className="btn-danger" onClick={() => confirmDelete(() => setProject({ ...project, members: project.members.filter((x: any) => x.id !== m.id) }))}>Remove</Button>
                         </>
                       ) : (
                         <span style={{ fontWeight: 'bold', padding: '0 var(--sp-2)' }}>{m.role}</span>
@@ -263,11 +284,27 @@ export function WorkbenchPage() {
       {tab === 'timeline' && (
         <div className="wb-grid">
           <div className="wb-span-full">
-             <Timeline
-               entries={project.entries || []} filter={timelineFilter} onFilterChange={setTimelineFilter} projectStart={project.start} now={now.getTime()}
-               onResolveBlocker={(id) => setProject({ ...project, entries: project.entries.map((e: any) => e.id === id ? { ...e, resolved: !e.resolved } : e) })}
-               onDeleteEntry={(id) => confirmDelete(() => setProject({ ...project, entries: project.entries.filter((e: any) => e.id !== id) }))}
+             {/* Replaced with your custom EntryForm component */}
+             <EntryForm 
+               onSubmit={(data) => {
+                 const entry = { 
+                   id: Date.now().toString(), 
+                   ts: Date.now(), 
+                   type: data.type, 
+                   title: data.title, 
+                   text: data.text, 
+                   link: data.link || undefined 
+                 };
+                 setProject({ ...project, entries: [entry, ...(project.entries || [])] });
+               }} 
              />
+             <div style={{ marginTop: 'var(--sp-4)' }}>
+               <Timeline
+                 entries={project.entries || []} filter={timelineFilter} onFilterChange={setTimelineFilter} projectStart={project.start} now={now.getTime()}
+                 onResolveBlocker={(id) => setProject({ ...project, entries: project.entries.map((e: any) => e.id === id ? { ...e, resolved: !e.resolved } : e) })}
+                 onDeleteEntry={(id) => confirmDelete(() => setProject({ ...project, entries: project.entries.filter((e: any) => e.id !== id) }))}
+               />
+             </div>
           </div>
         </div>
       )}
@@ -296,7 +333,18 @@ export function WorkbenchPage() {
 
       {tab === 'parts' && (
         <Window title="Parts & Budget">
-           <PartForm onSubmit={(d) => setProject({ ...project, parts: [...(project.parts || []), { id: Date.now().toString(), name: d.name, qty: Number(d.qty), cost: Number(d.cost), status: d.status }] })} />
+           <PartForm onSubmit={(d) => {
+             // Strip commas from number strings before converting to fix the NaN issue
+             const cleanQty = Number(d.qty.replace(/,/g, ''));
+             const cleanCost = Number(d.cost.replace(/,/g, ''));
+             const newPart = { id: Date.now().toString(), name: d.name, qty: cleanQty || 0, cost: cleanCost || 0, status: d.status };
+             
+             setProject({ 
+               ...project, 
+               parts: [...(project.parts || []), newPart],
+               entries: autoLog(`Added part: ${d.name} (x${cleanQty})`)
+             });
+           }} />
            <PartsPanel parts={project.parts || []} budget={30000} onDelete={(id) => confirmDelete(() => setProject({ ...project, parts: project.parts.filter((p: any) => p.id !== id) }))} />
         </Window>
       )}
@@ -304,9 +352,17 @@ export function WorkbenchPage() {
       {tab === 'tests' && (
         <Window title="Test Log">
            <TestForm onSubmit={(d) => {
-             const exp = Number(d.exp); const meas = Number(d.meas); const tol = Number(d.tol);
+             const exp = Number(d.exp.replace(/,/g, '')); 
+             const meas = Number(d.meas.replace(/,/g, '')); 
+             const tol = Number(d.tol.replace(/,/g, ''));
              const { err, pass } = calculateTestResult(exp, meas, tol);
-             setProject({ ...project, tests: [...(project.tests || []), { id: Date.now().toString(), name: d.name, type: 'numeric', exp, meas, unit: d.unit, tol, err, pass }] });
+             const newTest = { id: Date.now().toString(), name: d.name, type: 'numeric', exp, meas, unit: d.unit, tol, err, pass };
+             
+             setProject({ 
+               ...project, 
+               tests: [...(project.tests || []), newTest],
+               entries: autoLog(`Logged test: ${d.name} - ${pass ? 'Passed' : 'Failed'}`, 'test')
+             });
            }} />
            <TestsPanel tests={project.tests || []} onDelete={(id) => confirmDelete(() => setProject({ ...project, tests: project.tests.filter((t: any) => t.id !== id) }))} />
         </Window>
@@ -325,7 +381,26 @@ export function WorkbenchPage() {
              </Window>
            </div>
            <div className="wb-span-full"><Window title="Pitch Editor"><PitchEditor value={project.pitch || {}} onChange={(f, v) => setProject({ ...project, pitch: { ...(project.pitch || {}), [f]: v } })} /></Window></div>
-           <div className="wb-span-full"><Window title="Export"><ExportPanel exportData={buildReport(exportData)} onCopy={() => navigator.clipboard.writeText(buildReport(exportData))} /></Window></div>
+           
+           <div className="wb-span-full">
+             <Window title="Submit to Showcase" tone="gray">
+               <p style={{ fontFamily: 'var(--font)', marginBottom: 'var(--sp-4)' }}>
+                 Ready to go public? Once you submit, the AMEES executive will review your project and add it to the public Projects page.
+               </p>
+               <Button variant="primary" onClick={handleSubmitProject}>
+                 Submit Project for Review →
+               </Button>
+             </Window>
+           </div>
+
+           <div className="wb-span-full">
+             <Window title="Export Backup">
+               <p style={{ fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)', color: 'var(--muted)', marginBottom: 'var(--sp-3)' }}>
+                 Download a markdown copy of your pitch and timeline in case you need it offline.
+               </p>
+               <ExportPanel exportData={buildReport(exportData)} onCopy={() => navigator.clipboard.writeText(buildReport(exportData))} />
+             </Window>
+           </div>
         </div>
       )}
 

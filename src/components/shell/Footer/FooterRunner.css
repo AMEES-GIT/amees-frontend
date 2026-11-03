@@ -1,6 +1,11 @@
 .amees-footer-runner {
-  /* Tweak these to restyle the game without touching the rules below. */
-  --runner-ground: 14px;
+  /* 
+    Center the play area vertically.
+    --runner-ground defines where the bot's feet touch.
+    Since the bot is 30px tall, calc(50% - 15px) perfectly centers it.
+  */
+  --runner-ground: calc(50% - 15px);
+  
   --runner-obstacle: var(--c-bad);
   --runner-veil: rgba(251, 242, 225, 0.9);
   --runner-veil-soft: rgba(251, 242, 225, 0.55);
@@ -57,36 +62,13 @@
 }
 
 @keyframes runner-flash {
-  0%,
-  40%,
-  80% {
-    opacity: 0;
-  }
-  20%,
-  60%,
-  100% {
-    opacity: 1;
-  }
+  0%, 40%, 80% { opacity: 0; }
+  20%, 60%, 100% { opacity: 1; }
 }
 
 /* --------------------------------------------------
-   Scenery (scroll offsets are set from the game loop
-   so the ground always matches the bot's speed)
+   Scenery & Ground
    -------------------------------------------------- */
-.amees-footer-runner__clouds {
-  position: absolute;
-  top: 18px;
-  left: 0;
-  width: 100%;
-  height: 44px;
-  background-image:
-    radial-gradient(circle, var(--line) 2px, transparent 3px),
-    radial-gradient(circle, var(--line) 2px, transparent 3px);
-  background-size: 80px 40px;
-  background-position: 0 0, 40px 20px;
-  opacity: 0.4;
-}
-
 .amees-footer-runner__ground-line {
   position: absolute;
   left: 0;
@@ -112,6 +94,62 @@
   );
   opacity: 0.35;
 }
+
+/* Cityscape Milestone Letters */
+.amees-footer-runner__skyline {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.amees-footer-runner__letter {
+  position: absolute;
+  bottom: var(--runner-ground);
+  width: 35px; /* Reduced from previous default to fit the cityscape scale */
+  height: 49px;
+  color: var(--line);
+  opacity: 0.3;
+  will-change: transform;
+}
+
+.amees-footer-runner__letter svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.amees-footer-runner__letter-body {
+  fill: currentColor;
+}
+
+.amees-footer-runner__letter-windows {
+  fill: var(--panel-2);
+}
+
+/* Ground Details (Rocks, Tufts, Dashes) */
+.amees-footer-runner__details {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.amees-footer-runner__detail {
+  position: absolute;
+  left: 0;
+  color: var(--line);
+  will-change: transform;
+}
+
+.amees-footer-runner__detail svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.amees-footer-runner__detail--pebble { width: 12px; height: 6px; }
+.amees-footer-runner__detail--dash { width: 16px; height: 2px; }
+.amees-footer-runner__detail--tuft { width: 14px; height: 10px; }
+.amees-footer-runner__detail--rock { width: 20px; height: 10px; }
 
 /* --------------------------------------------------
    Bot
@@ -150,12 +188,8 @@
 }
 
 @keyframes runner-step {
-  0% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-1px);
-  }
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-1px); }
 }
 
 .amees-footer-runner.is-gameover .amees-footer-runner__bot svg {
@@ -188,8 +222,40 @@
   height: 100%;
 }
 
+/* Static obstacle layouts */
+.amees-footer-runner__obstacle--cactus {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.amees-footer-runner__obstacle--drone {
+  width: 34px;
+  height: 20px;
+}
+
+/* Mute Button */
+.amees-footer-runner__mute {
+  position: absolute;
+  bottom: var(--sp-2);
+  left: var(--sp-2);
+  z-index: 10;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  padding: 4px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.amees-footer-runner__mute:hover,
+.amees-footer-runner__mute:focus-visible {
+  opacity: 1;
+}
+
 /* --------------------------------------------------
-   Overlay (start prompt / game over)
+   Overlay
    -------------------------------------------------- */
 .amees-footer-runner__overlay {
   position: absolute;
@@ -245,21 +311,15 @@
 }
 
 @keyframes runner-blink {
-  50% {
-    opacity: 0;
-  }
+  50% { opacity: 0; }
 }
 
-/* --------------------------------------------------
-   Small screens & reduced motion
-   -------------------------------------------------- */
 @media (max-width: 480px) {
   .amees-footer-runner__ui {
     right: var(--sp-3, 12px);
     gap: 10px;
     letter-spacing: 1px;
   }
-
   .amees-footer-runner__prompt,
   .amees-footer-runner__restart-text {
     font-size: 11px;

@@ -11,25 +11,22 @@ type GameStatus = 'idle' | 'playing' | 'gameover';
 
 interface Obstacle {
   x: number;
-  /** Height of the obstacle's bottom edge above the ground (px, up is positive). */
   y: number;
   width: number;
   height: number;
   el: HTMLDivElement;
 }
 
-/** Anything decorative that scrolls past: clouds, skyline letters, ground details. */
 interface Mover {
   x: number;
   width: number;
-  /** Parallax: fraction of the game speed this layer scrolls at. */
   factor: number;
   el: HTMLElement;
 }
 
 interface RunnerState {
   status: GameStatus;
-  botY: number; // height above ground, up is positive
+  botY: number; 
   jumpVelocity: number;
   isJumping: boolean;
   speed: number;
@@ -37,10 +34,8 @@ interface RunnerState {
   shownScore: number;
   distance: number;
   untilNextObstacle: number;
-  untilNextCloud: number;
   untilNextDetail: number;
   obstacles: Obstacle[];
-  clouds: Mover[];
   letters: Mover[];
   details: Mover[];
   rafId: number;
@@ -59,7 +54,6 @@ const BOT_X = 50;
 const BOT_WIDTH = 24;
 const BOT_HEIGHT = 30;
 
-// Tuned so the full jump arc (84px) fits inside the strip with the bot's height.
 const GRAVITY = 0.42;
 const JUMP_FORCE = -8.4;
 const JUMP_FRAMES = (2 * Math.abs(JUMP_FORCE)) / GRAVITY; // ~40 frames in the air
@@ -67,10 +61,10 @@ const JUMP_FRAMES = (2 * Math.abs(JUMP_FORCE)) / GRAVITY; // ~40 frames in the a
 const BASE_SPEED = 6;
 const MAX_SPEED = 13;
 const SPEED_RAMP = 0.001;
-const HIT_PADDING = 4; // hitbox forgiveness
+const HIT_PADDING = 4; 
 const FRAME_MS = 1000 / 60;
-const MAX_DT = 3; // clamp so a background tab doesn't teleport the bot
-const RESTART_LOCK_MS = 600; // stops a panicked double-tap from skipping the game over screen
+const MAX_DT = 3; 
+const RESTART_LOCK_MS = 600; 
 const GROUND_PATTERN_PERIOD = 38;
 
 // ── Obstacles ───────────────────────────────────────────────────────────────
@@ -82,30 +76,21 @@ const CACTUS_SIZES = [
 
 const DRONE_WIDTH = 34;
 const DRONE_HEIGHT = 20;
-// Bottom edge above ground. low/mid must be jumped; high is run under (jumping into it hits).
 const DRONE_LEVELS = { low: 4, mid: 22, high: 40 } as const;
 
-// Drones only show up once the player has found their feet.
 const DRONE_UNLOCK_SCORE = 25;
 const COMBO_UNLOCK_SCORE = 40;
 const COMBO_CHANCE = 0.2;
 const SOLO_DRONE_CHANCE = 0.3;
-// Combo gap (in frames of travel) between the cactus clearing the bot and the drone reaching it.
-// Jumping *early* leaves you airborne when the drone arrives; jumping *late* clips the cactus.
 const COMBO_GAP_FRAMES_MIN = 10;
 const COMBO_GAP_FRAMES_RANGE = 4;
 
 // ── Scenery ─────────────────────────────────────────────────────────────────
 const LETTER_MILESTONES: Record<number, string> = {
-  200: 'A',
-  400: 'M',
-  600: 'E',
-  800: 'E',
-  1000: 'S',
+  200: 'A', 400: 'M', 600: 'E', 800: 'E', 1000: 'S',
 };
 const LETTER_PARALLAX = 0.3;
 
-// Rectangular 5x7 pixel letters.
 const LETTER_BITMAPS: Record<string, string[]> = {
   A: ['11111', '10001', '10001', '11111', '10001', '10001', '10001'],
   M: ['10001', '11011', '10101', '10101', '10001', '10001', '10001'],
@@ -116,7 +101,6 @@ const LETTER_BITMAPS: Record<string, string[]> = {
 const CACTUS_SVG =
   '<svg viewBox="0 0 12 20" shape-rendering="crispEdges" aria-hidden="true"><g fill="currentColor"><rect x="5" y="0" width="3" height="20"/><rect x="1" y="7" width="2" height="7"/><rect x="1" y="12" width="5" height="2"/><rect x="9" y="3" width="2" height="7"/><rect x="7" y="9" width="4" height="2"/></g></svg>';
 
-// Side-on octo-drone: only two of the eight rotors are visible, each seen edge-on as a flickering blade.
 const DRONE_SVG =
   '<svg viewBox="0 0 24 14" shape-rendering="crispEdges" aria-hidden="true"><g fill="currentColor">' +
   '<rect class="amees-footer-runner__blade amees-footer-runner__blade--l" x="1" y="1" width="9" height="1"/>' +
@@ -128,12 +112,8 @@ const DRONE_SVG =
   '<rect x="4" y="12" width="16" height="1"/>' +
   '</g></svg>';
 
-const CLOUD_SVG =
-  '<svg viewBox="0 0 22 8" shape-rendering="crispEdges" aria-hidden="true"><g fill="currentColor"><rect x="9" y="0" width="3" height="2"/><rect x="7" y="2" width="7" height="2"/><rect x="4" y="4" width="14" height="3"/><rect x="2" y="5" width="2" height="2"/><rect x="18" y="5" width="2" height="2"/></g></svg>';
-
 const DETAIL_SVG = {
-  pebble:
-    '<svg viewBox="0 0 6 3" shape-rendering="crispEdges" aria-hidden="true"><g fill="currentColor"><rect x="1" y="0" width="4" height="1"/><rect x="0" y="1" width="6" height="2"/></g></svg>',
+  pebble: '<svg viewBox="0 0 6 3" shape-rendering="crispEdges" aria-hidden="true"><g fill="currentColor"><rect x="1" y="0" width="4" height="1"/><rect x="0" y="1" width="6" height="2"/></g></svg>',
   dash: '<svg viewBox="0 0 8 1" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="0" width="8" height="1" fill="currentColor"/></svg>',
   tuft: '<svg viewBox="0 0 7 5" shape-rendering="crispEdges" aria-hidden="true"><g fill="currentColor"><rect x="1" y="2" width="1" height="3"/><rect x="3" y="0" width="1" height="5"/><rect x="5" y="2" width="1" height="3"/></g></svg>',
   rock: '<svg viewBox="0 0 10 5" shape-rendering="crispEdges" aria-hidden="true"><g fill="currentColor"><rect x="2" y="0" width="5" height="1"/><rect x="1" y="1" width="8" height="1"/><rect x="0" y="2" width="10" height="3"/></g></svg>',
@@ -149,103 +129,38 @@ const DETAIL_SIZE: Record<DetailKind, { w: number; h: number; underground: boole
 };
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
-function pad(n: number) {
-  return String(n).padStart(5, '0');
-}
+function pad(n: number) { return String(n).padStart(5, '0'); }
 
 function readLocalHighScore(): number {
-  try {
-    const n = parseInt(localStorage.getItem(HS_KEY) ?? '', 10);
-    return Number.isFinite(n) && n > 0 ? n : 0;
-  } catch {
-    return 0;
-  }
+  try { const n = parseInt(localStorage.getItem(HS_KEY) ?? '', 10); return Number.isFinite(n) && n > 0 ? n : 0; } catch { return 0; }
 }
-
-function writeLocalHighScore(score: number) {
-  try {
-    localStorage.setItem(HS_KEY, String(score));
-  } catch {
-    /* storage unavailable (private mode, etc.) */
-  }
-}
-
-function readMuted(): boolean {
-  try {
-    return localStorage.getItem(MUTE_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function writeMuted(muted: boolean) {
-  try {
-    localStorage.setItem(MUTE_KEY, muted ? '1' : '0');
-  } catch {
-    /* storage unavailable */
-  }
-}
-
-function readToken(): string | null {
-  try {
-    return localStorage.getItem(TOKEN_KEY);
-  } catch {
-    return null;
-  }
-}
+function writeLocalHighScore(score: number) { try { localStorage.setItem(HS_KEY, String(score)); } catch {} }
+function readMuted(): boolean { try { return localStorage.getItem(MUTE_KEY) === '1'; } catch { return false; } }
+function writeMuted(muted: boolean) { try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch {} }
+function readToken(): string | null { try { return localStorage.getItem(TOKEN_KEY); } catch { return null; } }
 
 function createState(): RunnerState {
   return {
-    status: 'idle',
-    botY: 0,
-    jumpVelocity: 0,
-    isJumping: false,
-    speed: BASE_SPEED,
-    score: 0,
-    shownScore: 0,
-    distance: 0,
-    untilNextObstacle: 400,
-    untilNextCloud: 200,
-    untilNextDetail: 40,
-    obstacles: [],
-    clouds: [],
-    letters: [],
-    details: [],
-    rafId: 0,
-    lastTime: 0,
-    lockUntil: 0,
+    status: 'idle', botY: 0, jumpVelocity: 0, isJumping: false, speed: BASE_SPEED,
+    score: 0, shownScore: 0, distance: 0, untilNextObstacle: 400, untilNextDetail: 40,
+    obstacles: [], letters: [], details: [], rafId: 0, lastTime: 0, lockUntil: 0,
   };
 }
 
-// ── Sound (synthesized, no assets) ──────────────────────────────────────────
+// ── Sound ───────────────────────────────────────────────────────────────────
 let audioCtx: AudioContext | null = null;
-
 function ensureAudio(): AudioContext | null {
   if (typeof window === 'undefined') return null;
   if (!audioCtx) {
-    const Ctor =
-      window.AudioContext ??
-      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return null;
-    try {
-      audioCtx = new Ctor();
-    } catch {
-      return null;
-    }
+    try { audioCtx = new Ctor(); } catch { return null; }
   }
   if (audioCtx.state === 'suspended') void audioCtx.resume().catch(() => {});
   return audioCtx;
 }
 
-function blip(
-  ctx: AudioContext,
-  from: number,
-  to: number,
-  dur: number,
-  type: OscillatorType,
-  vol: number,
-  delay = 0
-) {
+function blip(ctx: AudioContext, from: number, to: number, dur: number, type: OscillatorType, vol: number, delay = 0) {
   const t0 = ctx.currentTime + delay;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -262,29 +177,19 @@ function blip(
 
 const SFX: Record<Sfx, (ctx: AudioContext) => void> = {
   jump: (c) => blip(c, 420, 840, 0.11, 'square', 0.05),
-  die: (c) => {
-    blip(c, 440, 110, 0.28, 'sawtooth', 0.06);
-    blip(c, 220, 55, 0.35, 'square', 0.04, 0.06);
-  },
-  milestone: (c) => {
-    blip(c, 880, 880, 0.07, 'square', 0.05);
-    blip(c, 1320, 1320, 0.09, 'square', 0.05, 0.1);
-  },
+  die: (c) => { blip(c, 440, 110, 0.28, 'sawtooth', 0.06); blip(c, 220, 55, 0.35, 'square', 0.04, 0.06); },
+  milestone: (c) => { blip(c, 880, 880, 0.07, 'square', 0.05); blip(c, 1320, 1320, 0.09, 'square', 0.05, 0.1); },
   milestoneBig: (c) => {
-    blip(c, 660, 660, 0.07, 'square', 0.05);
-    blip(c, 990, 990, 0.07, 'square', 0.05, 0.09);
-    blip(c, 1320, 1320, 0.07, 'square', 0.05, 0.18);
-    blip(c, 1760, 1760, 0.14, 'square', 0.05, 0.27);
+    blip(c, 660, 660, 0.07, 'square', 0.05); blip(c, 990, 990, 0.07, 'square', 0.05, 0.09);
+    blip(c, 1320, 1320, 0.07, 'square', 0.05, 0.18); blip(c, 1760, 1760, 0.14, 'square', 0.05, 0.27);
   },
 };
 
 // ── DOM factories ───────────────────────────────────────────────────────────
-function rand(min: number, range: number) {
-  return min + Math.random() * range;
-}
+function rand(min: number, range: number) { return min + Math.random() * range; }
 
 function pickCactusCount(max: number): number {
-  const weights = [4, 3, 2, 1].slice(0, max); // singles most common, quads rarest
+  const weights = [4, 3, 2, 1].slice(0, max);
   const total = weights.reduce((a, b) => a + b, 0);
   let r = Math.random() * total;
   for (let i = 0; i < weights.length; i++) {
@@ -301,12 +206,10 @@ function spawnCactusGroup(layer: HTMLElement | null, x: number, maxCount: number
 
   const el = document.createElement('div');
   el.className = 'amees-footer-runner__obstacle amees-footer-runner__obstacle--cactus';
+  
+  // Dynamic sizing MUST remain here
   el.style.width = `${width}px`;
   el.style.height = `${h}px`;
-  el.style.bottom = '0px';
-  el.style.display = 'flex';
-  el.style.alignItems = 'flex-end';
-  el.style.gap = `${CACTUS_GAP}px`;
   el.style.transform = `translate3d(${x}px, 0, 0)`;
 
   let html = '';
@@ -322,26 +225,14 @@ function spawnCactusGroup(layer: HTMLElement | null, x: number, maxCount: number
 function spawnDrone(layer: HTMLElement | null, x: number, y: number): Obstacle {
   const el = document.createElement('div');
   el.className = 'amees-footer-runner__obstacle amees-footer-runner__obstacle--drone';
-  el.style.width = `${DRONE_WIDTH}px`;
-  el.style.height = `${DRONE_HEIGHT}px`;
+  
+  // Only bottom (y) and x are dynamic
   el.style.bottom = `${y}px`;
   el.style.transform = `translate3d(${x}px, 0, 0)`;
-  el.innerHTML = DRONE_SVG.replace('<svg ', '<svg style="width:100%;height:100%" ');
+  
+  el.innerHTML = DRONE_SVG;
   layer?.appendChild(el);
   return { x, y, width: DRONE_WIDTH, height: DRONE_HEIGHT, el };
-}
-
-function addCloud(layer: HTMLElement | null, list: Mover[], x: number) {
-  if (!layer) return;
-  const width = rand(34, 30);
-  const el = document.createElement('div');
-  el.className = 'amees-footer-runner__cloud';
-  el.style.width = `${width}px`;
-  el.style.top = `${rand(6, 34)}px`;
-  el.style.transform = `translate3d(${x}px, 0, 0)`;
-  el.innerHTML = CLOUD_SVG;
-  layer.appendChild(el);
-  list.push({ x, width, factor: rand(0.1, 0.15), el });
 }
 
 function addDetail(layer: HTMLElement | null, list: Mover[], x: number, horizon: number) {
@@ -349,15 +240,16 @@ function addDetail(layer: HTMLElement | null, list: Mover[], x: number, horizon:
   const kind = DETAIL_KINDS[Math.floor(Math.random() * DETAIL_KINDS.length)];
   const { w, h, underground } = DETAIL_SIZE[kind];
   const room = Math.max(0, horizon - h - 2);
+  
+  // Dynamic bottom positioning
   const bottom = underground ? -(1 + Math.random() * room) : 0;
 
   const el = document.createElement('div');
   el.className = `amees-footer-runner__detail amees-footer-runner__detail--${kind}`;
-  el.style.width = `${w}px`;
-  el.style.height = `${h}px`;
   el.style.bottom = `${bottom}px`;
   el.style.transform = `translate3d(${x}px, 0, 0)`;
   el.innerHTML = DETAIL_SVG[kind];
+  
   layer.appendChild(el);
   list.push({ x, width: w, factor: 1, el });
 }
@@ -370,7 +262,6 @@ function letterSvg(ch: string): string {
   rows.forEach((row, r) => {
     [...row].forEach((c, i) => {
       if (c !== '1') return;
-      // 1.02 overlap hides hairline seams between cells; group opacity keeps overlaps invisible.
       cells += `<rect x="${i}" y="${r}" width="1.02" height="1.02"/>`;
       windows += `<rect x="${i + 0.3}" y="${r + 0.3}" width="0.4" height="0.4"/>`;
     });
@@ -389,10 +280,11 @@ function spawnLetter(layer: HTMLElement | null, list: Mover[], ch: string, start
   el.style.transform = `translate3d(${startX}px, 0, 0)`;
   el.innerHTML = letterSvg(ch);
   layer.appendChild(el);
-  list.push({ x: startX, width: el.offsetWidth || 80, factor: LETTER_PARALLAX, el });
+  
+  // We removed width tracking since CSS handles size now
+  list.push({ x: startX, width: 40, factor: LETTER_PARALLAX, el });
 }
 
-/** Scroll a scenery list by `dist` (scaled by each item's parallax factor) and drop what's left the screen. */
 function advance(list: Mover[], dist: number): Mover[] {
   let anyGone = false;
   for (const m of list) {
@@ -416,7 +308,6 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
   const obstaclesRef = useRef<HTMLDivElement>(null);
   const groundRef = useRef<HTMLDivElement>(null);
   const groundLineRef = useRef<HTMLDivElement>(null);
-  const skyRef = useRef<HTMLDivElement>(null);
   const skylineRef = useRef<HTMLDivElement>(null);
   const detailsRef = useRef<HTMLDivElement>(null);
 
@@ -430,7 +321,6 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
   const [isRecord, setIsRecord] = useState(false);
   const [muted, setMuted] = useState(readMuted);
 
-  // The game loop outlives renders, so it reads these from refs.
   const highScoreRef = useRef(highScore);
   const mutedRef = useRef(muted);
 
@@ -445,10 +335,9 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
     mutedRef.current = next;
     setMuted(next);
     writeMuted(next);
-    if (!next) play('jump'); // audible confirmation
+    if (!next) play('jump'); 
   }, [play]);
 
-  // Pull the saved high score from the server (if signed in) once on mount.
   useEffect(() => {
     const token = readToken();
     if (!token) return;
@@ -466,17 +355,15 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
       })
       .catch(() => {});
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
-  // Measure where the ground line sits so scenery layers anchor to it regardless of the CSS.
   useEffect(() => {
     const el = containerRef.current;
     const line = groundLineRef.current;
     if (!el || !line) return;
     const measure = () => {
+      // Because we centered the ground in CSS, offsetTop calculates where the horizon is.
       const h = el.clientHeight - line.offsetTop;
       if (h > 0 && h < el.clientHeight) {
         horizonRef.current = h;
@@ -493,13 +380,12 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
   const seedScenery = useCallback(() => {
     const s = state.current;
     const w = containerRef.current?.clientWidth ?? 600;
-    skyRef.current?.replaceChildren();
     skylineRef.current?.replaceChildren();
     detailsRef.current?.replaceChildren();
-    s.clouds = [];
+    
     s.letters = [];
     s.details = [];
-    for (let x = rand(10, 100); x < w; x += rand(140, 160)) addCloud(skyRef.current, s.clouds, x);
+    
     for (let x = rand(10, 30); x < w; x += rand(30, 90)) {
       addDetail(detailsRef.current, s.details, x, horizonRef.current);
     }
@@ -518,10 +404,7 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
     if (!token) return;
     fetch(HS_ENDPOINT, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ score }),
     }).catch(() => {});
   }, []);
@@ -578,7 +461,7 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
         if (shown > 0 && shown % 100 === 0) {
           if (scoreEl) {
             scoreEl.classList.remove('is-flash');
-            void scoreEl.offsetWidth; // restart the flash animation
+            void scoreEl.offsetWidth;
             scoreEl.classList.add('is-flash');
           }
           const letter = LETTER_MILESTONES[shown];
@@ -597,12 +480,8 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
         let extent: number;
 
         if (s.shownScore >= COMBO_UNLOCK_SCORE && roll < COMBO_CHANCE) {
-          // Timing combo: a cactus group followed by a high drone. Jump the cactus, but land
-          // before the drone arrives, then run under it.
           const cactus = spawnCactusGroup(layer, x, maxCactus);
-          const gapPx =
-            (COMBO_GAP_FRAMES_MIN + Math.random() * COMBO_GAP_FRAMES_RANGE) * s.speed +
-            (BOT_WIDTH - 2 * HIT_PADDING);
+          const gapPx = (COMBO_GAP_FRAMES_MIN + Math.random() * COMBO_GAP_FRAMES_RANGE) * s.speed + (BOT_WIDTH - 2 * HIT_PADDING);
           const droneX = x + cactus.width + gapPx;
           const drone = spawnDrone(layer, droneX, DRONE_LEVELS.high);
           s.obstacles.push(cactus, drone);
@@ -619,33 +498,24 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
           extent = cactus.width;
         }
 
-        // Time in the air is ~JUMP_FRAMES, so a jump covers speed * JUMP_FRAMES px.
-        // Add a reaction buffer plus a little randomness so gaps always feel fair.
         s.untilNextObstacle = extent + s.speed * JUMP_FRAMES + 120 + Math.random() * 150;
       }
 
       // 3b. Scenery spawning
-      s.untilNextCloud -= s.speed * dt;
-      if (s.untilNextCloud <= 0) {
-        addCloud(skyRef.current, s.clouds, viewW + 20);
-        s.untilNextCloud = rand(260, 360);
-      }
       s.untilNextDetail -= s.speed * dt;
       if (s.untilNextDetail <= 0) {
         addDetail(detailsRef.current, s.details, viewW + 30, horizonRef.current);
         s.untilNextDetail = rand(30, 110);
       }
 
-      // 4. Move obstacles & check collisions (y is measured upward from the ground)
+      // 4. Move obstacles & check collisions
       let hit = false;
       for (const obs of s.obstacles) {
         obs.x -= s.speed * dt;
         obs.el.style.transform = `translate3d(${obs.x}px, 0, 0)`;
 
-        const overlapX =
-          BOT_X + BOT_WIDTH - HIT_PADDING > obs.x && BOT_X + HIT_PADDING < obs.x + obs.width;
-        const overlapY =
-          s.botY + BOT_HEIGHT - HIT_PADDING > obs.y && s.botY + HIT_PADDING < obs.y + obs.height;
+        const overlapX = BOT_X + BOT_WIDTH - HIT_PADDING > obs.x && BOT_X + HIT_PADDING < obs.x + obs.width;
+        const overlapY = s.botY + BOT_HEIGHT - HIT_PADDING > obs.y && s.botY + HIT_PADDING < obs.y + obs.height;
         if (overlapX && overlapY) hit = true;
       }
 
@@ -662,8 +532,8 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
       if (groundRef.current) {
         groundRef.current.style.backgroundPositionX = `${-(s.distance % GROUND_PATTERN_PERIOD)}px`;
       }
+      
       const travel = s.speed * dt;
-      s.clouds = advance(s.clouds, travel);
       s.letters = advance(s.letters, travel);
       s.details = advance(s.details, travel);
 
@@ -681,7 +551,6 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
     cancelAnimationFrame(state.current.rafId);
     obstaclesRef.current?.replaceChildren();
 
-    // Starting with a jump makes the first tap feel immediate.
     state.current = {
       ...createState(),
       status: 'playing',
@@ -723,14 +592,11 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
     startGame();
   }, [play, startGame]);
 
-  // Track whether the strip is on screen so Space only plays when it should.
   useEffect(() => {
     const el = containerRef.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        inViewRef.current = entry.isIntersecting;
-      },
+      ([entry]) => { inViewRef.current = entry.isIntersecting; },
       { threshold: 0.5 }
     );
     observer.observe(el);
@@ -743,13 +609,11 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
       const target = e.target as HTMLElement | null;
       const inside = !!(container && target && container.contains(target));
 
-      // The mute button handles its own keys.
       if (target?.closest('[data-runner-mute]')) return;
 
       const isJumpKey = e.key === ' ' || e.key === 'ArrowUp' || (inside && e.key === 'Enter');
       if (!isJumpKey) return;
 
-      // Leave the page alone unless the runner is focused or on screen.
       if (!inside && !inViewRef.current) return;
       if (
         !inside &&
@@ -758,7 +622,7 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
         return;
       }
 
-      e.preventDefault(); // stop Space from scrolling the page
+      e.preventDefault(); 
       if (e.repeat) return;
       act();
     };
@@ -775,13 +639,7 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
     act();
   };
 
-  const classes = [
-    'amees-footer-runner',
-    `is-${status}`,
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const classes = ['amees-footer-runner', `is-${status}`, className].filter(Boolean).join(' ');
 
   return (
     <div
@@ -793,7 +651,6 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
       onPointerDown={handlePointerDown}
     >
       <div ref={skylineRef} className="amees-footer-runner__skyline" />
-      <div ref={skyRef} className="amees-footer-runner__sky" />
       <div ref={groundLineRef} className="amees-footer-runner__ground-line" />
       <div ref={groundRef} className="amees-footer-runner__ground" />
       <div ref={detailsRef} className="amees-footer-runner__details" />

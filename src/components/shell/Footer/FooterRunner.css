@@ -1,6 +1,6 @@
 .amees-footer-runner {
-  /* This perfectly centers the 30px tall bot in the 132px container */
-  --runner-ground: calc(50% - 15px); 
+  /* Lowered the ground so the jump arc stays inside the strip */
+  --runner-ground: 20px; 
   
   --runner-obstacle: var(--c-bad);
   --runner-veil: rgba(251, 242, 225, 0.9);
@@ -9,7 +9,7 @@
   position: relative;
   width: 100%;
   height: 132px;
-  min-height: 132px; /* Force height so layout doesn't squish */
+  min-height: 132px;
   overflow: hidden;
   background-color: var(--panel-2);
   border-top: var(--bw) solid var(--line);
@@ -127,7 +127,7 @@
 .amees-footer-runner__details {
   position: absolute;
   left: 0;
-  bottom: var(--runner-ground); /* Align exactly with ground */
+  bottom: var(--runner-ground);
   width: 100%;
   height: 0;
   pointer-events: none;
@@ -203,7 +203,7 @@
 .amees-footer-runner__obstacles {
   position: absolute;
   left: 0;
-  bottom: var(--runner-ground); /* Align exactly with ground */
+  bottom: var(--runner-ground);
   width: 100%;
   height: 0;
   pointer-events: none;
@@ -212,7 +212,7 @@
 .amees-footer-runner__obstacle {
   position: absolute;
   left: 0;
-  bottom: 0; /* Force spawn on the ground line */
+  bottom: 0; /* Anchored exactly to the ground line */
   color: var(--runner-obstacle);
   will-change: transform;
 }

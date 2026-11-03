@@ -82,8 +82,10 @@ const DRONE_UNLOCK_SCORE = 25;
 const COMBO_UNLOCK_SCORE = 40;
 const COMBO_CHANCE = 0.2;
 const SOLO_DRONE_CHANCE = 0.3;
-const COMBO_GAP_FRAMES_MIN = 10;
-const COMBO_GAP_FRAMES_RANGE = 4;
+
+// INCREASED THESE VALUES to give the player time to land before the drone arrives
+const COMBO_GAP_FRAMES_MIN = 32; 
+const COMBO_GAP_FRAMES_RANGE = 15;
 
 // ── Scenery ─────────────────────────────────────────────────────────────────
 const LETTER_MILESTONES: Record<number, string> = {
@@ -223,7 +225,7 @@ function spawnCactusGroup(layer: HTMLElement | null, x: number, maxCount: number
 function spawnDrone(layer: HTMLElement | null, x: number, y: number): Obstacle {
   const el = document.createElement('div');
   el.className = 'amees-footer-runner__obstacle amees-footer-runner__obstacle--drone';
-  el.style.bottom = `${y}px`; // Dynamic height for flying
+  el.style.bottom = `${y}px`; 
   el.style.transform = `translate3d(${x}px, 0, 0)`;
   el.innerHTML = DRONE_SVG;
   layer?.appendChild(el);
@@ -471,6 +473,7 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
 
         if (s.shownScore >= COMBO_UNLOCK_SCORE && roll < COMBO_CHANCE) {
           const cactus = spawnCactusGroup(layer, x, maxCactus);
+          // Gap logic updated here for easier combo
           const gapPx = (COMBO_GAP_FRAMES_MIN + Math.random() * COMBO_GAP_FRAMES_RANGE) * s.speed + (BOT_WIDTH - 2 * HIT_PADDING);
           const droneX = x + cactus.width + gapPx;
           const drone = spawnDrone(layer, droneX, DRONE_LEVELS.high);
@@ -545,7 +548,7 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
       ...createState(),
       status: 'playing',
       lastTime: performance.now(),
-      isJumping: false, // Fixed: No auto-jump on start
+      isJumping: false, 
       jumpVelocity: 0,
     };
     seedScenery();
@@ -557,7 +560,7 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
     }
     if (botRef.current) {
       botRef.current.style.transform = 'translate3d(0, 0, 0)';
-      botRef.current.classList.remove('is-jumping'); // Ensure classes reset
+      botRef.current.classList.remove('is-jumping'); 
     }
 
     setIsRecord(false);
@@ -630,12 +633,10 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
     const onPointerDown = (e: PointerEvent) => {
       if (state.current.status !== 'playing') return;
       const target = e.target as HTMLElement;
-      // Don't trigger jump if tapping links, buttons, or the mute toggle
       if (target.closest('a, button, input, textarea, select, [data-runner-mute]')) return;
       act();
     };
     
-    // Listen to the whole window while playing so tapping anywhere on the footer triggers jump
     window.addEventListener('pointerdown', onPointerDown);
     return () => window.removeEventListener('pointerdown', onPointerDown);
   }, [status, act]);

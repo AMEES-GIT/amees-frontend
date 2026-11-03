@@ -1,2 +1,2 @@
 export { OpportunityCard } from './OpportunityCard';
-export type { OpportunityCardProps, Opportunity } from './OpportunityCard';
+export type { OpportunityCardProps } from './OpportunityCard';

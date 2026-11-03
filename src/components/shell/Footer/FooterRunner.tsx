@@ -206,8 +206,6 @@ function spawnCactusGroup(layer: HTMLElement | null, x: number, maxCount: number
 
   const el = document.createElement('div');
   el.className = 'amees-footer-runner__obstacle amees-footer-runner__obstacle--cactus';
-  
-  // Dynamic sizing MUST remain here
   el.style.width = `${width}px`;
   el.style.height = `${h}px`;
   el.style.transform = `translate3d(${x}px, 0, 0)`;
@@ -225,11 +223,8 @@ function spawnCactusGroup(layer: HTMLElement | null, x: number, maxCount: number
 function spawnDrone(layer: HTMLElement | null, x: number, y: number): Obstacle {
   const el = document.createElement('div');
   el.className = 'amees-footer-runner__obstacle amees-footer-runner__obstacle--drone';
-  
-  // Only bottom (y) and x are dynamic
-  el.style.bottom = `${y}px`;
+  el.style.bottom = `${y}px`; // Dynamic height for flying
   el.style.transform = `translate3d(${x}px, 0, 0)`;
-  
   el.innerHTML = DRONE_SVG;
   layer?.appendChild(el);
   return { x, y, width: DRONE_WIDTH, height: DRONE_HEIGHT, el };
@@ -240,8 +235,6 @@ function addDetail(layer: HTMLElement | null, list: Mover[], x: number, horizon:
   const kind = DETAIL_KINDS[Math.floor(Math.random() * DETAIL_KINDS.length)];
   const { w, h, underground } = DETAIL_SIZE[kind];
   const room = Math.max(0, horizon - h - 2);
-  
-  // Dynamic bottom positioning
   const bottom = underground ? -(1 + Math.random() * room) : 0;
 
   const el = document.createElement('div');
@@ -280,8 +273,6 @@ function spawnLetter(layer: HTMLElement | null, list: Mover[], ch: string, start
   el.style.transform = `translate3d(${startX}px, 0, 0)`;
   el.innerHTML = letterSvg(ch);
   layer.appendChild(el);
-  
-  // We removed width tracking since CSS handles size now
   list.push({ x: startX, width: 40, factor: LETTER_PARALLAX, el });
 }
 
@@ -363,7 +354,6 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
     const line = groundLineRef.current;
     if (!el || !line) return;
     const measure = () => {
-      // Because we centered the ground in CSS, offsetTop calculates where the horizon is.
       const h = el.clientHeight - line.offsetTop;
       if (h > 0 && h < el.clientHeight) {
         horizonRef.current = h;
@@ -555,8 +545,8 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
       ...createState(),
       status: 'playing',
       lastTime: performance.now(),
-      isJumping: true,
-      jumpVelocity: JUMP_FORCE,
+      isJumping: false, // Fixed: No auto-jump on start
+      jumpVelocity: 0,
     };
     seedScenery();
     play('jump');
@@ -567,7 +557,7 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
     }
     if (botRef.current) {
       botRef.current.style.transform = 'translate3d(0, 0, 0)';
-      botRef.current.classList.add('is-jumping');
+      botRef.current.classList.remove('is-jumping'); // Ensure classes reset
     }
 
     setIsRecord(false);
@@ -603,6 +593,7 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
     return () => observer.disconnect();
   }, []);
 
+  // Global Keyboard listener
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const container = containerRef.current;
@@ -633,6 +624,21 @@ export function FooterRunner({ className }: FooterRunnerProps = {}) {
       cancelAnimationFrame(state.current.rafId);
     };
   }, [act]);
+
+  // Global Tap-to-Jump listener (Mobile)
+  useEffect(() => {
+    const onPointerDown = (e: PointerEvent) => {
+      if (state.current.status !== 'playing') return;
+      const target = e.target as HTMLElement;
+      // Don't trigger jump if tapping links, buttons, or the mute toggle
+      if (target.closest('a, button, input, textarea, select, [data-runner-mute]')) return;
+      act();
+    };
+    
+    // Listen to the whole window while playing so tapping anywhere on the footer triggers jump
+    window.addEventListener('pointerdown', onPointerDown);
+    return () => window.removeEventListener('pointerdown', onPointerDown);
+  }, [status, act]);
 
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;

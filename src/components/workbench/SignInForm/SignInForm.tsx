@@ -78,7 +78,13 @@ export function SignInForm({ onSuccess, className }: SignInFormProps) {
               <TextInput value={values.name} onChange={v => handleChange('name', v)} required />
             </Field>
             <Field label="Matric number">
-              <TextInput value={values.matric} onChange={v => handleChange('matric', v)} required />
+              <TextInput 
+                value={values.matric} 
+                // FORCE UPPERCASE AND REMOVE SPACES AS THEY TYPE
+                onChange={v => handleChange('matric', v.toUpperCase().replace(/\s/g, ''))} 
+                placeholder="LCU/UG/24/XXXXX"
+                required 
+              />
             </Field>
             <Field label="Email address">
               <TextInput type="email" value={values.email} onChange={v => handleChange('email', v)} required placeholder="student@lcu.edu.ng" />

@@ -14,7 +14,7 @@ import { getValidToken, getAdminEmail, getAdminRole, clearToken } from '../lib/a
 import { API_BASE } from '../lib/apiBase';
 import './AdminPage.css';
 
-type AdminTab = 'event' | 'calendar' | 'weekly' | 'executives' | 'projects' | 'partners' | 'opportunities' | 'archive' | 'general';
+type AdminTab = 'event' | 'calendar' | 'weekly' | 'executives' | 'projects' | 'partners' | 'opportunities' | 'archive' | 'general' | 'students';
 const API_URL = `${API_BASE}/api/admin`;
 
 async function adminFetch(path: string, options: RequestInit = {}): Promise<Response> {
@@ -62,6 +62,10 @@ export function AdminPage() {
   });
   const [editingOppId, setEditingOppId] = useState<string | null>(null);
 
+  // Student Management State
+  const [newStudent, setNewStudent] = useState({ name: '', matric: '', email: '', level: '100' });
+  const [csvText, setCsvText] = useState('');
+
   const [marqueeMode, setMarqueeMode] = useState(content.activeMarquee || 'caution');
   const [footerTagline, setFooterTagline] = useState(content.footer.tagline);
   const [membershipFormUrl, setMembershipFormUrl] = useState(content.membershipFormUrl || '');
@@ -87,7 +91,7 @@ export function AdminPage() {
     { id: 'event', label: 'Featured Event' }, { id: 'calendar', label: 'One-off Dates' },
     { id: 'weekly', label: 'Weekly Rhythm' }, { id: 'executives', label: 'Executives' },
     { id: 'projects', label: 'Projects' }, { id: 'partners', label: 'Sponsors' },
-    { id: 'opportunities', label: 'Opportunities' }, { id: 'archive', label: 'Archive links' },
+    { id: 'opportunities', label: 'Opportunities' }, { id: 'students', label: 'Students' }, { id: 'archive', label: 'Archive links' },
     { id: 'general', label: 'Site Settings' },
   ];
 
@@ -138,6 +142,39 @@ export function AdminPage() {
     });
     window.scrollTo(0, 0);
   };
+
+  const addStudent = async () => {
+  try {
+    const res = await adminFetch('/students', {
+      method: 'POST',
+      body: JSON.stringify(newStudent)
+    });
+    if (res.ok) {
+      alert('Student added successfully!');
+      setNewStudent({ name: '', matric: '', email: '', level: '100' });
+    } else {
+      const data = await res.json();
+      alert(data.error);
+    }
+  } catch {}
+};
+
+const uploadCSV = async () => {
+  if (!csvText.trim()) return;
+  try {
+    const res = await adminFetch('/students/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ csv: csvText })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      alert(data.message);
+      setCsvText('');
+    } else {
+      alert(data.error);
+    }
+  } catch {}
+};
 
   const confirmAction = (title: string, body: string, action: () => void, type: 'success'|'confirm' = 'success', confirmLabel = 'Confirm') => setConfirmDialog({ open: true, title, body, action, type, confirmLabel });
 
@@ -378,6 +415,43 @@ export function AdminPage() {
               </div>
             </div>
           )}
+
+          {tab === 'students' && (
+          <div style={{ display: 'grid', gap: 'var(--sp-6)', gridTemplateColumns: '1fr 1fr' }}>
+            
+            {/* Manual Add */}
+            <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
+              <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add Single Student</h3>
+              <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
+                <Field label="Full Name"><TextInput value={newStudent.name} onChange={(v) => setNewStudent({ ...newStudent, name: v })} /></Field>
+                <Field label="Matric Number"><TextInput value={newStudent.matric} onChange={(v) => setNewStudent({ ...newStudent, matric: v })} /></Field>
+                <Field label="Email"><TextInput type="email" value={newStudent.email} onChange={(v) => setNewStudent({ ...newStudent, email: v })} /></Field>
+                <Field label="Level">
+                  <select className="amees-input" value={newStudent.level} onChange={(e) => setNewStudent({ ...newStudent, level: e.target.value })}>
+                    {['100', '200', '300', '400', '500'].map((l) => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                </Field>
+                <Button variant="primary" onClick={addStudent}>Add Student</Button>
+              </div>
+            </div>
+
+            {/* Bulk CSV */}
+            <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
+              <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Bulk CSV Upload</h3>
+              <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', marginBottom: 'var(--sp-3)' }}>
+                Format: <code>Name, Matric, Email, Level</code> (one per line, no header row).
+              </p>
+              <textarea
+                value={csvText}
+                onChange={(e) => setCsvText(e.target.value)}
+                placeholder="Ada Lovelace, 12345, ada@lcu.edu.ng, 300&#10;Tunde, 67890, tunde@lcu.edu.ng, 200"
+                style={{ width: '100%', height: '150px', padding: 'var(--sp-2)', fontFamily: 'monospace', marginBottom: 'var(--sp-3)' }}
+              />
+              <Button variant="primary" onClick={uploadCSV}>Upload CSV</Button>
+            </div>
+
+          </div>
+        )}
 
           {tab === 'archive' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>

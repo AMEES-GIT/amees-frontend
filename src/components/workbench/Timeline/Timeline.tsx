@@ -17,12 +17,10 @@ export interface TimelineProps {
   entries: readonly TimelineEntry[];
   filter: string;
   onFilterChange: (type: string) => void;
-  /** ISO string or Date. Used to calculate the "Day X" label and blocker age. */
   projectStart: number;
   now: number;
   onResolveBlocker: (id: string) => void;
   onDeleteEntry: (id: string) => void;
-  /** Optional base URL for sharing a blocker. Defaults to a generic WhatsApp link. */
   shareHref?: string;
   className?: string;
 }
@@ -30,6 +28,17 @@ export interface TimelineProps {
 function formatDate(ts: number) {
   return new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
+
+// Maps entry types to badge colors that match the timeline squares
+const TYPE_TONES: Record<string, 'neutral' | 'ok' | 'warn' | 'info' | 'bad'> = {
+  log: 'neutral',
+  milestone: 'ok',
+  decision: 'info',
+  blocker: 'bad',
+  test: 'warn',
+  calc: 'neutral',
+  link: 'info',
+};
 
 export function Timeline({
   entries,
@@ -51,13 +60,12 @@ export function Timeline({
     { id: 'decision', label: 'Decision' },
     { id: 'blocker', label: 'Blocker' },
     { id: 'test', label: 'Test' },
-    { id: 'calc', label: 'Calc' },
     { id: 'link', label: 'Post' },
   ];
 
   const filtered = entries
     .filter(e => filter === 'all' || e.type === filter)
-    .sort((a, b) => b.ts - a.ts); // Newest first
+    .sort((a, b) => b.ts - a.ts); 
 
   return (
     <div className={['amees-timeline', className].filter(Boolean).join(' ')}>
@@ -99,7 +107,9 @@ export function Timeline({
                 
                 <div className="amees-timeline__content">
                   <div className="amees-timeline__header">
-                    <Badge tone="neutral" kind="type">{entry.type.toUpperCase()}</Badge>
+                    <Badge tone={TYPE_TONES[entry.type] || 'neutral'} kind="type">
+                      {entry.type.toUpperCase()}
+                    </Badge>
                     <h3 className="amees-timeline__title">{entry.title}</h3>
                     {isOpenBlocker && (
                       <span className="amees-timeline__age">Open {age}d</span>
@@ -116,11 +126,7 @@ export function Timeline({
 
                   <div className="amees-timeline__actions">
                     {entry.type === 'blocker' && (
-                      <Button 
-                        size="sm" 
-                        pressed={entry.resolved} 
-                        onClick={() => onResolveBlocker(entry.id)}
-                      >
+                      <Button size="sm" pressed={entry.resolved} onClick={() => onResolveBlocker(entry.id)}>
                         {entry.resolved ? 'Reopen' : 'Mark resolved'}
                       </Button>
                     )}

@@ -16,7 +16,7 @@ import { HealthCard } from '../components/workbench/HealthCard';
 import { PaceCard } from '../components/workbench/PaceCard';
 import { ActivityHeatmap } from '../components/workbench/ActivityHeatmap';
 import { Timeline, type TimelineEntry } from '../components/workbench/Timeline';
-import { EntryForm } from '../components/workbench/EntryForm'; // <-- Imported your EntryForm
+import { EntryForm } from '../components/workbench/EntryForm';
 import { TaskBoard, type Task } from '../components/workbench/TaskBoard';
 import { TaskForm } from '../components/workbench/TaskForm';
 import { PartsPanel } from '../components/workbench/PartsPanel';
@@ -62,10 +62,17 @@ export function WorkbenchPage() {
         if (data.student) {
           setStudent(data.student);
           if (data.project) {
+            const wbData = data.project.workbenchData || {};
+            // DEFENSIVE LOAD: Ensure all arrays exist to prevent crashes
             setProject({
-              ...data.project.workbenchData,
-              members: data.project.members,
-              builderString: data.project.builder
+              ...wbData,
+              members: data.project.members || [],
+              builderString: data.project.builder || '',
+              entries: wbData.entries || [],
+              tasks: wbData.tasks || [],
+              parts: wbData.parts || [],
+              tests: wbData.tests || [],
+              checks: wbData.checks || [],
             });
           }
         } else {
@@ -85,7 +92,15 @@ export function WorkbenchPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ project })
-      }).catch(err => console.error('Auto-save failed', err));
+      })
+      .then(res => res.json())
+      .then(data => {
+        // FIX: Sync the database ID back to local state so the Team tab works
+        if (!project.id && data.id) {
+          setProject((prev: any) => ({ ...prev, id: data.id }));
+        }
+      })
+      .catch(err => console.error('Auto-save failed', err));
     }, 1000);
 
     return () => clearTimeout(timeoutId);
@@ -182,7 +197,6 @@ export function WorkbenchPage() {
     alert('Project submitted successfully! The admin will review it for the public showcase.');
   };
 
-  // Helper to add a timeline entry automatically
   const autoLog = (title: string, type: any = 'log') => {
     const entry = { id: Date.now().toString() + Math.random(), ts: Date.now(), type, title };
     return [entry, ...(project.entries || [])];
@@ -234,7 +248,7 @@ export function WorkbenchPage() {
       {tab === 'team' && (
         <Window title="Project Team" meta={isLead ? "You are the Lead" : "View only"}>
           {!project.id ? (
-             <p style={{ color: 'var(--muted)' }}>Team management unlocks after your first auto-save.</p>
+             <p style={{ color: 'var(--muted)' }}>Syncing project ID... Please wait 2 seconds and refresh.</p>
           ) : (
             <div style={{ display: 'grid', gap: 'var(--sp-4)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-3)', borderRadius: '4px' }}>
@@ -284,7 +298,6 @@ export function WorkbenchPage() {
       {tab === 'timeline' && (
         <div className="wb-grid">
           <div className="wb-span-full">
-             {/* Replaced with your custom EntryForm component */}
              <EntryForm 
                onSubmit={(data) => {
                  const entry = { 
@@ -334,7 +347,6 @@ export function WorkbenchPage() {
       {tab === 'parts' && (
         <Window title="Parts & Budget">
            <PartForm onSubmit={(d) => {
-             // Strip commas from number strings before converting to fix the NaN issue
              const cleanQty = Number(d.qty.replace(/,/g, ''));
              const cleanCost = Number(d.cost.replace(/,/g, ''));
              const newPart = { id: Date.now().toString(), name: d.name, qty: cleanQty || 0, cost: cleanCost || 0, status: d.status };
@@ -352,17 +364,28 @@ export function WorkbenchPage() {
       {tab === 'tests' && (
         <Window title="Test Log">
            <TestForm onSubmit={(d) => {
-             const exp = Number(d.exp.replace(/,/g, '')); 
-             const meas = Number(d.meas.replace(/,/g, '')); 
-             const tol = Number(d.tol.replace(/,/g, ''));
-             const { err, pass } = calculateTestResult(exp, meas, tol);
-             const newTest = { id: Date.now().toString(), name: d.name, type: 'numeric', exp, meas, unit: d.unit, tol, err, pass };
-             
-             setProject({ 
-               ...project, 
-               tests: [...(project.tests || []), newTest],
-               entries: autoLog(`Logged test: ${d.name} - ${pass ? 'Passed' : 'Failed'}`, 'test')
-             });
+             if (d.type === 'numeric') {
+               const exp = Number(d.exp.replace(/,/g, '')); 
+               const meas = Number(d.meas.replace(/,/g, '')); 
+               const tol = Number(d.tol.replace(/,/g, ''));
+               const { err, pass } = calculateTestResult(exp, meas, tol);
+               const newTest = { id: Date.now().toString(), name: d.name, type: 'numeric', exp, meas, unit: d.unit, tol, err, pass };
+               
+               setProject({ 
+                 ...project, 
+                 tests: [...(project.tests || []), newTest],
+                 entries: autoLog(`Logged test: ${d.name} - ${pass ? 'Passed' : 'Failed'}`, 'test')
+               });
+             } else {
+               const isPass = d.pass === 'Pass';
+               const newTest = { id: Date.now().toString(), name: d.name, type: 'qualitative', pass: isPass };
+               
+               setProject({ 
+                 ...project, 
+                 tests: [...(project.tests || []), newTest],
+                 entries: autoLog(`Logged test: ${d.name} - ${isPass ? 'Passed' : 'Failed'}`, 'test')
+               });
+             }
            }} />
            <TestsPanel tests={project.tests || []} onDelete={(id) => confirmDelete(() => setProject({ ...project, tests: project.tests.filter((t: any) => t.id !== id) }))} />
         </Window>

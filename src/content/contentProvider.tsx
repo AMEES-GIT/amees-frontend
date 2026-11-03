@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { io } from 'socket.io-client';
+import { API_BASE } from '../lib/apiBase';
 import type { ContentSource } from './source';
 import type { SiteContent } from './types';
 import { LoadingOverlay } from '../components/shell/LoadingOverlay';
@@ -9,7 +11,6 @@ type State =
   | { status: 'error' }
   | { status: 'ready'; content: SiteContent };
 
-// Update the Context to include a refresh function
 interface ContentContextType {
   content: SiteContent;
   refresh: () => void;
@@ -21,12 +22,11 @@ export function ContentProvider({ source, children }: { source: ContentSource; c
   const [state, setState] = useState<State>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
-  
-  // Only show the gears on the VERY FIRST load, not on background refreshes
   const [showOverlay, setShowOverlay] = useState(true);
 
   const refresh = () => setRefreshKey((k) => k + 1);
 
+  // Initial fetch
   useEffect(() => {
     let cancelled = false;
     source.load().then(
@@ -40,6 +40,20 @@ export function ContentProvider({ source, children }: { source: ContentSource; c
     );
     return () => { cancelled = true; };
   }, [source, attempt, refreshKey]);
+
+  // WebSocket Connection for Real-Time Updates
+  useEffect(() => {
+    const socket = io(API_BASE, { withCredentials: false });
+    
+    socket.on('content-updated', () => {
+      console.log('🔄 Real-time update received, refreshing content...');
+      refresh();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   if (state.status === 'error') {
     return (

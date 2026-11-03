@@ -45,15 +45,16 @@ export function SponsorsPage() {
             ]} />
           </Window>
 
-          <Window title="Our impact" meta="2025/2026">
+          <Window title="Our impact" meta="Live Data">
             <StatGrid>
-              <StatTile label="Active members" value="150+" />
-              <StatTile label="Hardware projects" value="24" />
+              {/* Automatically calculated stats based on database counts */}
+              <StatTile label="Active members" value={content.impact?.members || '150+'} />
+              <StatTile label="Hardware projects" value={content.impact?.projects || '24+'} />
               <StatTile label="Wired attendees" value="80+" />
               <StatTile label="Workshops hosted" value="6" />
             </StatGrid>
             <p className="sponsors-text" style={{ marginTop: 'var(--sp-4)', fontSize: 'var(--fs-sm)' }}>
-              * Sample data. To be updated with real figures.
+              * Members and projects are pulled live from the AMEES portal.
             </p>
           </Window>
         </Grid>

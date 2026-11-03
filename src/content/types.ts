@@ -45,7 +45,7 @@ export interface WeeklyItem {
   weekday?: number;
   /** Label for items without a weekday, for example "Wk". */
   label?: string;
-    /** Calendar chip colour, used only when weekday is set. */
+  /** Calendar chip colour, used only when weekday is set. */
   type?: CalendarType;
 }
 
@@ -93,15 +93,18 @@ export interface ExternalLink {
   href: string;
 }
 
+/** 
+ * UPDATED: New schema for opportunities. 
+ * Matches the Prisma model and the new Admin tab.
+ */
 export interface Opportunity {
   id: string;
-  type: string;
-  title: string;
-  org: string;
-  levels: number[];
-  deadline: IsoDay;
-  location: string;
+  name: string;
+  type: string; // "IT", "Scholarship", "Competition", "Excursion"
   description: string;
+  externalLink?: string | null;
+  startDate: IsoDateTime;
+  endDate: IsoDateTime;
 }
 
 export interface ExecutiveMember {
@@ -151,6 +154,32 @@ export interface ExhibitionProject {
   };
 }
 
+// …existing ArchiveFile (keep for old JSON fallback)…
+export interface ArchiveFile {
+  id: string;
+  title: string;
+  course: string;
+  level: number;
+  kind: string;
+  year: number;
+  ext: string;
+  size?: string;
+  sample?: boolean;
+}
+
+/** Row from the ArchiveFile DB table (admin-managed Drive links). */
+export interface ArchiveFileRow {
+  id: string;
+  title: string;
+  course: string;
+  level: number;
+  kind: string;
+  year: number;
+  fileUrl: string | null;
+  sizeBytes: number;
+  sample: boolean;
+  uploadedAt: string;
+}
 
 export interface SiteContent {
   featured: FeaturedEvent;
@@ -160,7 +189,7 @@ export interface SiteContent {
   quickLinks: QuickLink[];
   opportunities: Opportunity[];
   activeMarquee?: 'caution' | 'showcase';
-  membershipFormUrl: string;    
+  membershipFormUrl: string;
   projectSubmissionUrl: string;
 
   /** Google Form URL for registering to the active event. Empty = not configured. */
@@ -168,9 +197,17 @@ export interface SiteContent {
   /** Optional: the Google Forms entry.* ID for the "Event" field, used for prefill. */
   eventRegistrationEventFieldId: string;
 
+  /** 
+   * ADDED: Auto-calculated stats for the Sponsors page.
+   * The backend rounds these up to the nearest 10 (e.g., 17 -> "20+").
+   */
+  impact?: {
+    members: string;
+    projects: string;
+  };
 
   sponsorPitch: { title: string; text: string; cta: string };
-  
+
   // The about object MUST be here at the root
   about: {
     founded: string;
@@ -212,32 +249,5 @@ export interface SiteContent {
   calendarNote: string;
 
   archive: ArchiveFile[];
-  archiveFiles: ArchiveFileRow[]; 
-}
-
-// …existing ArchiveFile (keep for old JSON fallback)…
-export interface ArchiveFile {
-  id: string;
-  title: string;
-  course: string;
-  level: number;
-  kind: string;
-  year: number;
-  ext: string;
-  size?: string;
-  sample?: boolean;
-}
-
-/** Row from the ArchiveFile DB table (admin-managed Drive links). */
-export interface ArchiveFileRow {
-  id: string;
-  title: string;
-  course: string;
-  level: number;
-  kind: string;
-  year: number;
-  fileUrl: string | null;
-  sizeBytes: number;
-  sample: boolean;
-  uploadedAt: string;
+  archiveFiles: ArchiveFileRow[];
 }

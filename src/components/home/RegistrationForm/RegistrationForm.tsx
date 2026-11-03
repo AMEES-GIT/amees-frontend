@@ -3,27 +3,13 @@ import { Button } from '../../primitives/Button';
 import './RegistrationForm.css';
 
 export interface RegistrationFormProps {
-  /** E.g. "Wired 1.0". Shown in the gate and prefilled into the Google Form. */
   eventTitle: string;
-  /** Google Form URL from SiteSettings.eventRegistrationFormUrl. */
   formUrl: string;
-  /** Optional: the entry.* ID for the "Event" field, for prefill. */
   eventFieldId?: string;
-  /** Whether registration is currently open. Defaults to true. */
   open?: boolean;
   className?: string;
 }
 
-/**
- * Registration runs entirely through Google Forms.
- *
- * Why: the exec team already works in Google Sheets, Google's form gives us
- * free spam protection and file uploads if we add them later, and we never
- * have to build a registration database or email pipeline for it.
- *
- * This component is a gate — it tells the student what's going on and opens
- * the form in a new tab, prefilling the event title if an entry ID is set.
- */
 export function RegistrationForm({
   eventTitle,
   formUrl,
@@ -31,32 +17,18 @@ export function RegistrationForm({
   open = true,
   className,
 }: RegistrationFormProps) {
-  if (!open) {
+  
+  // If registration is turned off OR the URL hasn't been provided
+  if (!open || !formUrl) {
     return (
-      <Window title="Register" meta={eventTitle} className={className}>
-        <div className="amees-reg__gate">
-          <p className="amees-reg__lede">
-            Registration for <b>{eventTitle}</b> is closed.
-          </p>
-          <p className="amees-reg__note">
-            Keep an eye on the events page — the next session opens registration
-            a few weeks before it starts.
-          </p>
-        </div>
-      </Window>
-    );
-  }
-
-  if (!formUrl) {
-    return (
-      <Window title="Register" meta={eventTitle} className={className}>
-        <div className="amees-reg__gate">
-          <p className="amees-reg__lede">
-            Registration isn&rsquo;t set up yet.
-          </p>
-          <p className="amees-reg__note">
-            The exec team is still preparing the form for {eventTitle}. Check
-            back soon, or reach out on Instagram.
+      <Window title="Registration" meta={eventTitle} className={className}>
+        <div className="amees-reg__gate" style={{ padding: 'var(--sp-4)', textAlign: 'center' }}>
+          <h3 style={{ color: 'var(--c-bad)', fontFamily: 'var(--font)', margin: '0 0 var(--sp-2)' }}>
+            Registration Closed
+          </h3>
+          <p className="amees-reg__note" style={{ margin: 0 }}>
+            Registration for <b>{eventTitle}</b> is currently closed.
+            Please check back later or contact the executive.
           </p>
         </div>
       </Window>
@@ -90,12 +62,6 @@ export function RegistrationForm({
   );
 }
 
-/**
- * Build a Google Forms prefill URL. The `usp=pp_url` query flag tells Google
- * "this is a prefilled link", and `entry.<id>=<value>` sets each prefilled
- * field. Using URL() means we don't break if the base URL already has
- * query params (e.g. ?usp=sf_link from the Copy Link button).
- */
 function buildFormUrl(
   base: string,
   fieldId: string | undefined,
@@ -109,8 +75,6 @@ function buildFormUrl(
     }
     return url.toString();
   } catch {
-    // Malformed URL — open as-is. Better to send students to a broken form
-    // than to nothing.
     return base;
   }
 }

@@ -9,7 +9,7 @@ import { Textarea } from '../components/primitives/Textarea';
 import { Button } from '../components/primitives/Button';
 import { Badge } from '../components/primitives/Badge';
 import { useContent, useRefreshContent } from '../content/contentProvider';
-import type { FeaturedEvent, ExecutiveMember } from '../content/types';
+import type { FeaturedEvent, ExecutiveMember, Opportunity } from '../content/types';
 import { getValidToken, getAdminEmail, getAdminRole, clearToken } from '../lib/authToken';
 import { API_BASE } from '../lib/apiBase';
 import './AdminPage.css';
@@ -21,6 +21,7 @@ type AdminTab =
   | 'executives'
   | 'projects'
   | 'partners'
+  | 'opportunities'
   | 'archive'
   | 'general';
 
@@ -98,17 +99,21 @@ export function AdminPage() {
     kind: 'PDF',
     fileUrl: '',
   });
+  const [newOpp, setNewOpp] = useState({
+    name: '',
+    type: 'IT',
+    description: '',
+    externalLink: '',
+    startDate: '',
+    endDate: '',
+  });
 
   const [marqueeMode, setMarqueeMode] = useState(content.activeMarquee || 'caution');
   const [footerTagline, setFooterTagline] = useState(content.footer.tagline);
   const [membershipFormUrl, setMembershipFormUrl] = useState(content.membershipFormUrl || '');
   const [projectSubmissionUrl, setProjectSubmissionUrl] = useState(content.projectSubmissionUrl || '');
-  const [eventRegistrationFormUrl, setEventRegistrationFormUrl] = useState(
-    content.eventRegistrationFormUrl || '',
-  );
-  const [eventRegistrationEventFieldId, setEventRegistrationEventFieldId] = useState(
-    content.eventRegistrationEventFieldId || '',
-  );
+  const [eventRegistrationFormUrl, setEventRegistrationFormUrl] = useState(content.eventRegistrationFormUrl || '');
+  const [eventRegistrationEventFieldId, setEventRegistrationEventFieldId] = useState(content.eventRegistrationEventFieldId || '');
 
   useEffect(() => {
     setFormData(content.featured);
@@ -133,6 +138,7 @@ export function AdminPage() {
     { id: 'executives', label: 'Executives' },
     { id: 'projects', label: 'Projects' },
     { id: 'partners', label: 'Sponsors' },
+    { id: 'opportunities', label: 'Opportunities' },
     { id: 'archive', label: 'Archive links' },
     { id: 'general', label: 'Site Settings' },
   ];
@@ -140,20 +146,10 @@ export function AdminPage() {
   const saveEvent = async () => {
     setStatus('saving');
     try {
-      const res = await adminFetch('/event', {
-        method: 'PUT',
-        body: JSON.stringify(formData),
-      });
-      if (res.ok) {
-        setStatus('saved');
-        refresh();
-      } else {
-        setStatus('error');
-        alert('Failed');
-      }
-    } catch {
-      setStatus('error');
-    }
+      const res = await adminFetch('/event', { method: 'PUT', body: JSON.stringify(formData) });
+      if (res.ok) { setStatus('saved'); refresh(); }
+      else { setStatus('error'); alert('Failed'); }
+    } catch { setStatus('error'); }
   };
 
   const saveSettings = async () => {
@@ -170,47 +166,36 @@ export function AdminPage() {
           eventRegistrationEventFieldId,
         }),
       });
-      if (res.ok) {
-        setStatus('saved');
-        refresh();
-      } else {
-        setStatus('error');
-        alert('Failed');
-      }
-    } catch {
-      setStatus('error');
-    }
+      if (res.ok) { setStatus('saved'); refresh(); }
+      else { setStatus('error'); alert('Failed'); }
+    } catch { setStatus('error'); }
   };
 
   const addCalendarEntry = async (data: any) => {
     try {
       const res = await adminFetch('/calendar', { method: 'POST', body: JSON.stringify(data) });
-      if (res.ok) refresh();
-      else alert('Failed');
+      if (res.ok) refresh(); else alert('Failed');
     } catch {}
   };
 
   const deleteCalendarEntry = async (id: string) => {
     try {
       const res = await adminFetch(`/calendar/${id}`, { method: 'DELETE' });
-      if (res.ok) refresh();
-      else alert('Failed');
+      if (res.ok) refresh(); else alert('Failed');
     } catch {}
   };
 
   const addWeeklyItem = async (data: any) => {
     try {
       const res = await adminFetch('/weekly', { method: 'POST', body: JSON.stringify(data) });
-      if (res.ok) refresh();
-      else alert('Failed');
+      if (res.ok) refresh(); else alert('Failed');
     } catch {}
   };
 
   const deleteWeeklyItem = async (id: string) => {
     try {
       const res = await adminFetch(`/weekly/${id}`, { method: 'DELETE' });
-      if (res.ok) refresh();
-      else alert('Failed');
+      if (res.ok) refresh(); else alert('Failed');
     } catch {}
   };
 
@@ -220,24 +205,21 @@ export function AdminPage() {
         method: 'POST',
         body: JSON.stringify({ ...data, order: content.about.executive.length }),
       });
-      if (res.ok) refresh();
-      else alert('Failed');
+      if (res.ok) refresh(); else alert('Failed');
     } catch {}
   };
 
   const deleteExecutive = async (id: string) => {
     try {
       const res = await adminFetch(`/executives/${id}`, { method: 'DELETE' });
-      if (res.ok) refresh();
-      else alert('Failed');
+      if (res.ok) refresh(); else alert('Failed');
     } catch {}
   };
 
   const toggleProject = async (id: string) => {
     try {
       const res = await adminFetch(`/projects/${id}/toggle`, { method: 'PUT' });
-      if (res.ok) refresh();
-      else alert('Failed');
+      if (res.ok) refresh(); else alert('Failed');
     } catch {}
   };
 
@@ -264,8 +246,32 @@ export function AdminPage() {
   const deletePartner = async (id: string) => {
     try {
       const res = await adminFetch(`/partners/${id}`, { method: 'DELETE' });
-      if (res.ok) refresh();
-      else alert('Failed');
+      if (res.ok) refresh(); else alert('Failed');
+    } catch {}
+  };
+
+  const addOpportunity = async () => {
+    if (!newOpp.name || !newOpp.startDate || !newOpp.endDate) return;
+    try {
+      const res = await adminFetch('/opportunities', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...newOpp,
+          startDate: new Date(newOpp.startDate).toISOString(),
+          endDate: new Date(newOpp.endDate).toISOString(),
+        }),
+      });
+      if (res.ok) {
+        refresh();
+        setNewOpp({ name: '', type: 'IT', description: '', externalLink: '', startDate: '', endDate: '' });
+      } else alert('Failed');
+    } catch {}
+  };
+
+  const deleteOpportunity = async (id: string) => {
+    try {
+      const res = await adminFetch(`/opportunities/${id}`, { method: 'DELETE' });
+      if (res.ok) refresh(); else alert('Failed');
     } catch {}
   };
 
@@ -277,14 +283,7 @@ export function AdminPage() {
       });
       if (res.ok) {
         refresh();
-        setNewArchive({
-          title: '',
-          course: '',
-          level: '100',
-          year: String(new Date().getFullYear()),
-          kind: 'PDF',
-          fileUrl: '',
-        });
+        setNewArchive({ title: '', course: '', level: '100', year: String(new Date().getFullYear()), kind: 'PDF', fileUrl: '' });
       } else {
         const data = await res.json().catch(() => ({}));
         alert((data as any).error ?? 'Failed');
@@ -295,155 +294,18 @@ export function AdminPage() {
   const deleteArchiveFile = async (id: string) => {
     try {
       const res = await adminFetch(`/archive-files/${id}`, { method: 'DELETE' });
-      if (res.ok) refresh();
-      else alert('Failed');
+      if (res.ok) refresh(); else alert('Failed');
     } catch {}
   };
 
-  const confirmSaveEvent = () =>
-    setConfirmDialog({
-      open: true,
-      title: 'Save Event',
-      body: 'Update the featured event?',
-      type: 'success',
-      confirmLabel: 'Save',
-      action: saveEvent,
-    });
-
-  const confirmSaveSettings = () =>
-    setConfirmDialog({
-      open: true,
-      title: 'Save Settings',
-      body: 'Update global site settings?',
-      type: 'success',
-      confirmLabel: 'Save',
-      action: saveSettings,
-    });
-
-  const confirmAddCalendar = () => {
-    if (!newCalDate || !newCalTitle) return;
-    setConfirmDialog({
-      open: true,
-      title: 'Add Date',
-      body: `Add "${newCalTitle}"?`,
-      type: 'success',
-      confirmLabel: 'Add',
-      action: () => addCalendarEntry({ day: newCalDate, title: newCalTitle, type: 'special' }),
-    });
-  };
-  const confirmDeleteCalendar = (id: string, title: string) =>
-    setConfirmDialog({
-      open: true,
-      title: 'Delete Date',
-      body: `Remove "${title}"?`,
-      type: 'confirm',
-      confirmLabel: 'Delete',
-      action: () => deleteCalendarEntry(id),
-    });
-  const confirmAddWeekly = () => {
-    if (!newWeekTitle || !newWeekText) return;
-    setConfirmDialog({
-      open: true,
-      title: 'Add Item',
-      body: `Add "${newWeekTitle}"?`,
-      type: 'success',
-      confirmLabel: 'Add',
-      action: () =>
-        addWeeklyItem({
-          title: newWeekTitle,
-          text: newWeekText,
-          weekday: Number(newWeekDay) === -1 ? null : Number(newWeekDay),
-        }),
-    });
-  };
-  const confirmDeleteWeekly = (id: string, title: string) =>
-    setConfirmDialog({
-      open: true,
-      title: 'Delete Item',
-      body: `Remove "${title}"?`,
-      type: 'confirm',
-      confirmLabel: 'Delete',
-      action: () => deleteWeeklyItem(id),
-    });
-  const confirmAddExec = () => {
-    if (!newExec.role || !newExec.name) return;
-    setConfirmDialog({
-      open: true,
-      title: 'Add Executive',
-      body: `Add ${newExec.name}?`,
-      type: 'success',
-      confirmLabel: 'Add',
-      action: () => addExecutive(newExec),
-    });
-  };
-  const confirmDeleteExec = (id: string, name: string) =>
-    setConfirmDialog({
-      open: true,
-      title: 'Remove Executive',
-      body: `Remove ${name}?`,
-      type: 'confirm',
-      confirmLabel: 'Remove',
-      action: () => deleteExecutive(id),
-    });
-  const confirmToggleProject = (id: string, title: string, current: boolean) =>
-    setConfirmDialog({
-      open: true,
-      title: current ? 'Hide Project' : 'Showcase Project',
-      body: `Are you sure you want to ${current ? 'hide' : 'showcase'} "${title}"?`,
-      type: current ? 'confirm' : 'success',
-      confirmLabel: current ? 'Hide' : 'Showcase',
-      action: () => toggleProject(id),
-    });
-  const confirmAddPartner = () => {
-    if (!newPartner.name.trim()) return;
-    setConfirmDialog({
-      open: true,
-      title: 'Add Sponsor',
-      body: `Add "${newPartner.name}"?`,
-      type: 'success',
-      confirmLabel: 'Add',
-      action: addPartner,
-    });
-  };
-  const confirmDeletePartner = (id: string, name: string) =>
-    setConfirmDialog({
-      open: true,
-      title: 'Remove Sponsor',
-      body: `Remove "${name}"?`,
-      type: 'confirm',
-      confirmLabel: 'Remove',
-      action: () => deletePartner(id),
-    });
-  const confirmAddArchiveFile = () => {
-    if (!newArchive.title.trim() || !newArchive.course.trim() || !newArchive.fileUrl.trim()) return;
-    setConfirmDialog({
-      open: true,
-      title: 'Add archive link',
-      body: `Add "${newArchive.title}"?`,
-      type: 'success',
-      confirmLabel: 'Add',
-      action: addArchiveFile,
-    });
-  };
-  const confirmDeleteArchive = (id: string, title: string) =>
-    setConfirmDialog({
-      open: true,
-      title: 'Remove link',
-      body: `Remove "${title}"? The Drive file itself is untouched.`,
-      type: 'confirm',
-      confirmLabel: 'Remove',
-      action: () => deleteArchiveFile(id),
-    });
+  const confirmAction = (title: string, body: string, action: () => void, type: 'success'|'confirm' = 'success', confirmLabel = 'Confirm') =>
+    setConfirmDialog({ open: true, title, body, action, type, confirmLabel });
 
   const DAYS = [
-    { label: 'Every Monday', value: 1 },
-    { label: 'Every Tuesday', value: 2 },
-    { label: 'Every Wednesday', value: 3 },
-    { label: 'Every Thursday', value: 4 },
-    { label: 'Every Friday', value: 5 },
-    { label: 'Every Saturday', value: 6 },
-    { label: 'Every Sunday', value: 0 },
-    { label: 'Not a specific day', value: -1 },
+    { label: 'Every Monday', value: 1 }, { label: 'Every Tuesday', value: 2 },
+    { label: 'Every Wednesday', value: 3 }, { label: 'Every Thursday', value: 4 },
+    { label: 'Every Friday', value: 5 }, { label: 'Every Saturday', value: 6 },
+    { label: 'Every Sunday', value: 0 }, { label: 'Not a specific day', value: -1 },
   ];
 
   return (
@@ -457,106 +319,68 @@ export function AdminPage() {
         saveStatus={<SaveStatus status={status} at={new Date().toLocaleTimeString()} />}
       >
         <Window title={nav.find((n) => n.id === tab)?.label || 'Settings'} meta="Database-connected">
+          
+          {/* EVENT TAB */}
           {tab === 'event' && (
             <div className="admin-form-grid">
-              <Field label="Event Title">
-                <TextInput value={formData.title} onChange={(v) => setFormData({ ...formData, title: v })} />
-              </Field>
-              <Field label="Theme">
-                <TextInput value={formData.theme} onChange={(v) => setFormData({ ...formData, theme: v })} />
-              </Field>
-              <Field label="Subtitle">
-                <TextInput value={formData.subtitle} onChange={(v) => setFormData({ ...formData, subtitle: v })} />
-              </Field>
-              <Field label="Venue">
-                <TextInput value={formData.venue} onChange={(v) => setFormData({ ...formData, venue: v })} />
-              </Field>
+              <Field label="Event Title"><TextInput value={formData.title} onChange={(v) => setFormData({ ...formData, title: v })} /></Field>
+              <Field label="Theme"><TextInput value={formData.theme} onChange={(v) => setFormData({ ...formData, theme: v })} /></Field>
+              <Field label="Subtitle"><TextInput value={formData.subtitle} onChange={(v) => setFormData({ ...formData, subtitle: v })} /></Field>
+              <Field label="Venue"><TextInput value={formData.venue} onChange={(v) => setFormData({ ...formData, venue: v })} /></Field>
               <div>
-                <Button variant="primary" onClick={confirmSaveEvent}>
-                  Save Event
-                </Button>
+                <Button variant="primary" onClick={() => confirmAction('Save Event', 'Update the featured event?', saveEvent)}>Save Event</Button>
               </div>
             </div>
           )}
 
+          {/* CALENDAR TAB */}
           {tab === 'calendar' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
-                  Add One-off Event
-                </h3>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add One-off Event</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(140px, 1fr) minmax(250px, 2fr) auto', gap: 'var(--sp-3)', alignItems: 'end' }}>
-                  <Field label="Date">
-                    <TextInput type="text" value={newCalDate} onChange={setNewCalDate} placeholder="YYYY-MM-DD" />
-                  </Field>
-                  <Field label="Event Title">
-                    <TextInput type="text" value={newCalTitle} onChange={setNewCalTitle} placeholder="Hackathon Finals" />
-                  </Field>
-                  <Button variant="primary" onClick={confirmAddCalendar}>
-                    Add
-                  </Button>
+                  <Field label="Date"><TextInput type="text" value={newCalDate} onChange={setNewCalDate} placeholder="YYYY-MM-DD" /></Field>
+                  <Field label="Event Title"><TextInput type="text" value={newCalTitle} onChange={setNewCalTitle} placeholder="Hackathon Finals" /></Field>
+                  <Button variant="primary" onClick={() => confirmAction('Add Date', `Add "${newCalTitle}"?`, () => addCalendarEntry({ day: newCalDate, title: newCalTitle, type: 'special' }))}>Add</Button>
                 </div>
               </div>
               <div>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
-                  Existing Dates
-                </h3>
-                {content.calendarEntries.length === 0 ? (
-                  <p style={{ color: 'var(--muted)' }}>No one-off events.</p>
-                ) : (
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Existing Dates</h3>
+                {content.calendarEntries.length === 0 ? <p style={{ color: 'var(--muted)' }}>No one-off events.</p> : 
                   content.calendarEntries.map((entry) => (
                     <div key={entry.id} className="admin-list-item">
                       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
-                        <Badge tone="info" kind="tag">
-                          {entry.day}
-                        </Badge>
+                        <Badge tone="info" kind="tag">{entry.day}</Badge>
                         <span style={{ fontWeight: 'bold' }}>{entry.title}</span>
                       </div>
-                      <Button size="sm" variant="default" onClick={() => confirmDeleteCalendar(entry.id, entry.title)}>
-                        Delete
-                      </Button>
+                      <Button size="sm" variant="default" onClick={() => confirmAction('Delete Date', `Remove "${entry.title}"?`, () => deleteCalendarEntry(entry.id), 'confirm', 'Delete')}>Delete</Button>
                     </div>
                   ))
-                )}
+                }
               </div>
             </div>
           )}
 
+          {/* WEEKLY TAB */}
           {tab === 'weekly' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
-                  Add Recurring Item
-                </h3>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add Recurring Item</h3>
                 <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
-                    <Field label="Title">
-                      <TextInput type="text" value={newWeekTitle} onChange={setNewWeekTitle} placeholder="Trivia Tuesday" />
-                    </Field>
+                    <Field label="Title"><TextInput type="text" value={newWeekTitle} onChange={setNewWeekTitle} placeholder="Trivia Tuesday" /></Field>
                     <Field label="Schedule">
                       <select className="amees-input" value={newWeekDay} onChange={(e) => setNewWeekDay(e.target.value)}>
-                        {DAYS.map((d) => (
-                          <option key={d.value} value={d.value}>
-                            {d.label}
-                          </option>
-                        ))}
+                        {DAYS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
                       </select>
                     </Field>
                   </div>
-                  <Field label="Short Description">
-                    <TextInput type="text" value={newWeekText} onChange={setNewWeekText} placeholder="Quick-fire engineering questions" />
-                  </Field>
-                  <div>
-                    <Button variant="primary" onClick={confirmAddWeekly}>
-                      Add Recurring Item
-                    </Button>
-                  </div>
+                  <Field label="Short Description"><TextInput type="text" value={newWeekText} onChange={setNewWeekText} placeholder="Quick-fire engineering questions" /></Field>
+                  <div><Button variant="primary" onClick={() => confirmAction('Add Item', `Add "${newWeekTitle}"?`, () => addWeeklyItem({ title: newWeekTitle, text: newWeekText, weekday: Number(newWeekDay) === -1 ? null : Number(newWeekDay) }))}>Add Recurring Item</Button></div>
                 </div>
               </div>
               <div>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
-                  Current Rhythm
-                </h3>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Current Rhythm</h3>
                 {content.weekly.map((item) => (
                   <div key={item.id} className="admin-list-item">
                     <div>
@@ -565,83 +389,55 @@ export function AdminPage() {
                         {item.weekday !== undefined ? DAYS.find((d) => d.value === item.weekday)?.label : item.label} · {item.text}
                       </div>
                     </div>
-                    <Button size="sm" variant="default" onClick={() => confirmDeleteWeekly(item.id, item.title)}>
-                      Delete
-                    </Button>
+                    <Button size="sm" variant="default" onClick={() => confirmAction('Delete Item', `Remove "${item.title}"?`, () => deleteWeeklyItem(item.id), 'confirm', 'Delete')}>Delete</Button>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
+          {/* EXECUTIVES TAB */}
           {tab === 'executives' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
-                  Add Executive
-                </h3>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add Executive</h3>
                 <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
-                    <Field label="Role">
-                      <TextInput type="text" value={newExec.role} onChange={(v) => setNewExec({ ...newExec, role: v })} placeholder="President" />
-                    </Field>
-                    <Field label="Full Name">
-                      <TextInput type="text" value={newExec.name} onChange={(v) => setNewExec({ ...newExec, name: v })} placeholder="John Doe" />
-                    </Field>
+                    <Field label="Role"><TextInput type="text" value={newExec.role} onChange={(v) => setNewExec({ ...newExec, role: v })} placeholder="President" /></Field>
+                    <Field label="Full Name"><TextInput type="text" value={newExec.name} onChange={(v) => setNewExec({ ...newExec, name: v })} placeholder="John Doe" /></Field>
                   </div>
-                  <Field label="Photo URL (Optional)">
-                    <TextInput type="text" value={newExec.photoUrl || ''} onChange={(v) => setNewExec({ ...newExec, photoUrl: v })} placeholder="https://..." />
-                  </Field>
-                  <Field label="LinkedIn URL (Optional)">
-                    <TextInput type="text" value={newExec.linkedin || ''} onChange={(v) => setNewExec({ ...newExec, linkedin: v })} placeholder="https://linkedin.com/in/..." />
-                  </Field>
-                  <div>
-                    <Button variant="primary" onClick={confirmAddExec}>
-                      Add Executive
-                    </Button>
-                  </div>
+                  <Field label="Photo URL (Optional)"><TextInput type="text" value={newExec.photoUrl || ''} onChange={(v) => setNewExec({ ...newExec, photoUrl: v })} placeholder="https://..." /></Field>
+                  <Field label="LinkedIn URL (Optional)"><TextInput type="text" value={newExec.linkedin || ''} onChange={(v) => setNewExec({ ...newExec, linkedin: v })} placeholder="https://linkedin.com/in/..." /></Field>
+                  <div><Button variant="primary" onClick={() => confirmAction('Add Executive', `Add ${newExec.name}?`, () => addExecutive(newExec))}>Add Executive</Button></div>
                 </div>
               </div>
               <div>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
-                  Current Team
-                </h3>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Current Team</h3>
                 {content.about.executive.map((exec) => (
                   <div key={exec.id} className="admin-list-item">
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
-                      <Badge tone="neutral" kind="tag">
-                        {exec.role}
-                      </Badge>
+                      <Badge tone="neutral" kind="tag">{exec.role}</Badge>
                       <span style={{ fontWeight: 'bold' }}>{exec.name}</span>
                     </div>
-                    <Button size="sm" variant="default" onClick={() => confirmDeleteExec(exec.id, exec.name)}>
-                      Remove
-                    </Button>
+                    <Button size="sm" variant="default" onClick={() => confirmAction('Remove Executive', `Remove ${exec.name}?`, () => deleteExecutive(exec.id), 'confirm', 'Remove')}>Remove</Button>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
+          {/* PROJECTS TAB */}
           {tab === 'projects' && (
             <div>
-              <p style={{ marginTop: 0, color: 'var(--muted)', marginBottom: 'var(--sp-4)' }}>
-                Select which projects appear in the Showcase Marquee on the home page.
-              </p>
+              <p style={{ marginTop: 0, color: 'var(--muted)', marginBottom: 'var(--sp-4)' }}>Select which projects appear in the Showcase Marquee on the home page.</p>
               <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
                 {content.projects.projects.map((project) => (
                   <div key={project.id} className="admin-list-item">
                     <div>
                       <div style={{ fontWeight: 'bold', fontSize: 'var(--fs-lg)' }}>{project.title}</div>
-                      <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
-                        By {project.builder} · {project.stage}
-                      </div>
+                      <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>By {project.builder} · {project.stage}</div>
                     </div>
-                    <Button
-                      pressed={project.showcased}
-                      onClick={() => confirmToggleProject(project.id, project.title, project.showcased)}
-                      className={project.showcased ? 'btn-success' : ''}
-                    >
+                    <Button pressed={project.showcased} onClick={() => confirmAction(project.showcased ? 'Hide Project' : 'Showcase Project', `Are you sure you want to ${project.showcased ? 'hide' : 'showcase'} "${project.title}"?`, () => toggleProject(project.id), project.showcased ? 'confirm' : 'success', project.showcased ? 'Hide' : 'Showcase')} className={project.showcased ? 'btn-success' : ''}>
                       {project.showcased ? 'Showcased' : 'Hidden'}
                     </Button>
                   </div>
@@ -650,252 +446,162 @@ export function AdminPage() {
             </div>
           )}
 
+          {/* PARTNERS TAB */}
           {tab === 'partners' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
-                  Add Sponsor / Partner
-                </h3>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add Sponsor / Partner</h3>
                 <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 'var(--sp-3)' }}>
-                    <Field label="Name">
-                      <TextInput type="text" value={newPartner.name} onChange={(v) => setNewPartner({ ...newPartner, name: v })} placeholder="Acme Ltd" />
-                    </Field>
+                    <Field label="Name"><TextInput type="text" value={newPartner.name} onChange={(v) => setNewPartner({ ...newPartner, name: v })} placeholder="Acme Ltd" /></Field>
                     <Field label="Type">
-                      <select
-                        className="amees-input"
-                        value={newPartner.type}
-                        onChange={(e) => setNewPartner({ ...newPartner, type: e.target.value as 'Sponsor' | 'Partner' })}
-                      >
+                      <select className="amees-input" value={newPartner.type} onChange={(e) => setNewPartner({ ...newPartner, type: e.target.value as 'Sponsor' | 'Partner' })}>
                         <option value="Sponsor">Sponsor</option>
                         <option value="Partner">Partner</option>
                       </select>
                     </Field>
                     <Field label="Tier">
-                      <select
-                        className="amees-input"
-                        value={newPartner.tier}
-                        onChange={(e) => setNewPartner({ ...newPartner, tier: e.target.value })}
-                        disabled={newPartner.type !== 'Sponsor'}
-                      >
+                      <select className="amees-input" value={newPartner.tier} onChange={(e) => setNewPartner({ ...newPartner, tier: e.target.value })} disabled={newPartner.type !== 'Sponsor'}>
                         <option value="">(no tier)</option>
-                        {content.sponsorTiers.map((t) => (
-                          <option key={t.id} value={t.name}>
-                            {t.name}
-                          </option>
-                        ))}
+                        {content.sponsorTiers.map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}
                       </select>
                     </Field>
                   </div>
-                  <Field label="Logo URL (Optional)">
-                    <TextInput
-                      type="text"
-                      value={newPartner.logoUrl}
-                      onChange={(v) => setNewPartner({ ...newPartner, logoUrl: v })}
-                      placeholder="https://.../logo.png"
-                    />
-                  </Field>
+                  <Field label="Logo URL (Optional)"><TextInput type="text" value={newPartner.logoUrl} onChange={(v) => setNewPartner({ ...newPartner, logoUrl: v })} placeholder="https://.../logo.png" /></Field>
                   {newPartner.logoUrl && (
-                    <div
-                      style={{
-                        background: 'var(--bg)',
-                        padding: 'var(--sp-3)',
-                        border: 'var(--bw-sm) solid var(--line)',
-                        display: 'flex',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <img
-                        src={newPartner.logoUrl}
-                        alt="Preview"
-                        style={{ maxHeight: 60, maxWidth: 220, objectFit: 'contain' }}
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
+                    <div style={{ background: 'var(--bg)', padding: 'var(--sp-3)', border: 'var(--bw-sm) solid var(--line)', display: 'flex', justifyContent: 'center' }}>
+                      <img src={newPartner.logoUrl} alt="Preview" style={{ maxHeight: 60, maxWidth: 220, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                     </div>
                   )}
-                  <Field label="Website URL (Optional)">
-                    <TextInput
-                      type="text"
-                      value={newPartner.websiteUrl}
-                      onChange={(v) => setNewPartner({ ...newPartner, websiteUrl: v })}
-                      placeholder="https://..."
-                    />
-                  </Field>
-                  <div>
-                    <Button variant="primary" onClick={confirmAddPartner}>
-                      Add Sponsor
-                    </Button>
-                  </div>
+                  <Field label="Website URL (Optional)"><TextInput type="text" value={newPartner.websiteUrl} onChange={(v) => setNewPartner({ ...newPartner, websiteUrl: v })} placeholder="https://..." /></Field>
+                  <div><Button variant="primary" onClick={() => confirmAction('Add Sponsor', `Add "${newPartner.name}"?`, addPartner)}>Add Sponsor</Button></div>
                 </div>
               </div>
-
               <div>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
-                  Current Sponsors
-                </h3>
-                {content.partners.length === 0 ? (
-                  <p style={{ color: 'var(--muted)' }}>No sponsors yet.</p>
-                ) : (
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Current Sponsors</h3>
+                {content.partners.length === 0 ? <p style={{ color: 'var(--muted)' }}>No sponsors yet.</p> : 
                   content.partners.map((partner) => (
                     <div key={partner.id} className="admin-list-item">
                       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flexWrap: 'wrap' }}>
-                        {partner.logoUrl ? (
-                          <img
-                            src={partner.logoUrl}
-                            alt=""
-                            style={{ maxHeight: 28, maxWidth: 64, objectFit: 'contain' }}
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        ) : null}
+                        {partner.logoUrl ? <img src={partner.logoUrl} alt="" style={{ maxHeight: 28, maxWidth: 64, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : null}
                         <span style={{ fontWeight: 'bold' }}>{partner.name}</span>
-                        <Badge tone="info" kind="tag">
-                          {partner.type}
-                        </Badge>
+                        <Badge tone="info" kind="tag">{partner.type}</Badge>
                         {partner.tier && <Badge tone="neutral" kind="tag">{partner.tier}</Badge>}
-                        {partner.active === false && <Badge tone="warn" kind="tag">Hidden</Badge>}
                       </div>
-                      <Button size="sm" variant="default" onClick={() => confirmDeletePartner(partner.id, partner.name)}>
-                        Remove
-                      </Button>
+                      <Button size="sm" variant="default" onClick={() => confirmAction('Remove Sponsor', `Remove "${partner.name}"?`, () => deletePartner(partner.id), 'confirm', 'Remove')}>Remove</Button>
                     </div>
                   ))
-                )}
+                }
               </div>
             </div>
           )}
 
+          {/* OPPORTUNITIES TAB */}
+          {tab === 'opportunities' && (
+            <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
+              <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add Opportunity</h3>
+                <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--sp-3)' }}>
+                    <Field label="Name"><TextInput value={newOpp.name} onChange={(v) => setNewOpp({ ...newOpp, name: v })} placeholder="Google Summer of Code" /></Field>
+                    <Field label="Type">
+                      <select className="amees-input" value={newOpp.type} onChange={(e) => setNewOpp({ ...newOpp, type: e.target.value })}>
+                        {['IT', 'Scholarship', 'Competition', 'Excursion'].map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </Field>
+                  </div>
+                  <Field label="Description"><Textarea value={newOpp.description} onChange={(v) => setNewOpp({ ...newOpp, description: v })} /></Field>
+                  <Field label="External Link (Optional)"><TextInput value={newOpp.externalLink} onChange={(v) => setNewOpp({ ...newOpp, externalLink: v })} placeholder="https://..." /></Field>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
+                    <Field label="Opens On">
+                      <input 
+                        type="date"
+                        className="amees-input"
+                        value={newOpp.startDate}
+                        onChange={(e) => setNewOpp({ ...newOpp, startDate: e.target.value })}
+                        style={{ padding: 'var(--sp-2)', fontFamily: 'var(--font)', border: 'var(--bw-sm) solid var(--line)', background: 'var(--bg)', color: 'var(--fg)' }}
+                      />
+                    </Field>
+                    <Field label="Closes On">
+                      <input 
+                        type="date"
+                        className="amees-input"
+                        value={newOpp.endDate}
+                        onChange={(e) => setNewOpp({ ...newOpp, endDate: e.target.value })}
+                        style={{ padding: 'var(--sp-2)', fontFamily: 'var(--font)', border: 'var(--bw-sm) solid var(--line)', background: 'var(--bg)', color: 'var(--fg)' }}
+                      />
+                    </Field>
+                  </div>
+                  <div><Button variant="primary" onClick={() => confirmAction('Add Opportunity', `Add "${newOpp.name}"?`, addOpportunity)}>Add Opportunity</Button></div>
+                </div>
+              </div>
+              <div>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Current Opportunities</h3>
+                {(!content.opportunities || content.opportunities.length === 0) ? <p style={{ color: 'var(--muted)' }}>No opportunities yet.</p> : 
+                  content.opportunities.map((opp: Opportunity) => (
+                    <div key={opp.id} className="admin-list-item">
+                      <div>
+                        <div style={{ fontWeight: 'bold' }}>{opp.name}</div>
+                        <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
+                          {opp.type} · Ends {new Date(opp.endDate).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <Button size="sm" variant="default" onClick={() => confirmAction('Remove Opportunity', `Remove "${opp.name}"?`, () => deleteOpportunity(opp.id), 'confirm', 'Remove')}>Remove</Button>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          )}
+
+          {/* ARCHIVE TAB */}
           {tab === 'archive' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
-                  Add a study file link
-                </h3>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add a study file link</h3>
                 <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--sp-3)' }}>
-                    <Field label="Title">
-                      <TextInput
-                        type="text"
-                        value={newArchive.title}
-                        onChange={(v) => setNewArchive({ ...newArchive, title: v })}
-                        placeholder="Control Systems I — lecture slides"
-                      />
-                    </Field>
-                    <Field label="Course code">
-                      <TextInput
-                        type="text"
-                        value={newArchive.course}
-                        onChange={(v) => setNewArchive({ ...newArchive, course: v })}
-                        placeholder="MCE 301"
-                      />
-                    </Field>
+                    <Field label="Title"><TextInput type="text" value={newArchive.title} onChange={(v) => setNewArchive({ ...newArchive, title: v })} placeholder="Control Systems I — lecture slides" /></Field>
+                    <Field label="Course code"><TextInput type="text" value={newArchive.course} onChange={(v) => setNewArchive({ ...newArchive, course: v })} placeholder="MCE 301" /></Field>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--sp-3)' }}>
                     <Field label="Level">
-                      <select
-                        className="amees-input"
-                        value={newArchive.level}
-                        onChange={(e) => setNewArchive({ ...newArchive, level: e.target.value })}
-                      >
-                        {['100', '200', '300', '400', '500'].map((l) => (
-                          <option key={l} value={l}>{l}</option>
-                        ))}
+                      <select className="amees-input" value={newArchive.level} onChange={(e) => setNewArchive({ ...newArchive, level: e.target.value })}>
+                        {['100', '200', '300', '400', '500'].map((l) => <option key={l} value={l}>{l}</option>)}
                       </select>
                     </Field>
-                    <Field label="Year">
-                      <TextInput
-                        type="text"
-                        value={newArchive.year}
-                        onChange={(v) => setNewArchive({ ...newArchive, year: v })}
-                      />
-                    </Field>
+                    <Field label="Year"><TextInput type="text" value={newArchive.year} onChange={(v) => setNewArchive({ ...newArchive, year: v })} /></Field>
                     <Field label="Kind">
-                      <select
-                        className="amees-input"
-                        value={newArchive.kind}
-                        onChange={(e) => setNewArchive({ ...newArchive, kind: e.target.value })}
-                      >
-                        {['PDF', 'DOCX', 'PPTX', 'XLSX'].map((k) => (
-                          <option key={k} value={k}>{k}</option>
-                        ))}
+                      <select className="amees-input" value={newArchive.kind} onChange={(e) => setNewArchive({ ...newArchive, kind: e.target.value })}>
+                        {['PDF', 'DOCX', 'PPTX', 'XLSX'].map((k) => <option key={k} value={k}>{k}</option>)}
                       </select>
                     </Field>
                   </div>
-                  <Field label="Google Drive share link">
-                    <TextInput
-                      type="url"
-                      value={newArchive.fileUrl}
-                      onChange={(v) => setNewArchive({ ...newArchive, fileUrl: v })}
-                      placeholder="https://drive.google.com/file/d/…/view"
-                    />
-                  </Field>
-                  <p style={{ margin: 0, fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
-                    In Drive: right-click the file → <b>Share</b> → <b>Anyone with the link</b> →
-                    Copy. Test the URL in a private window before saving — broken links are
-                    discovered by students, not by you.
-                  </p>
-                  <div>
-                    <Button
-                      variant="primary"
-                      onClick={confirmAddArchiveFile}
-                      disabled={
-                        !newArchive.title.trim() ||
-                        !newArchive.course.trim() ||
-                        !newArchive.fileUrl.trim()
-                      }
-                    >
-                      Add link
-                    </Button>
-                  </div>
+                  <Field label="Google Drive share link"><TextInput type="url" value={newArchive.fileUrl} onChange={(v) => setNewArchive({ ...newArchive, fileUrl: v })} placeholder="https://drive.google.com/file/d/…/view" /></Field>
+                  <div><Button variant="primary" onClick={() => confirmAction('Add archive link', `Add "${newArchive.title}"?`, addArchiveFile)}>Add link</Button></div>
                 </div>
               </div>
-
               <div>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
-                  Current links ({content.archiveFiles?.length ?? 0})
-                </h3>
-                {(!content.archiveFiles || content.archiveFiles.length === 0) ? (
-                  <p style={{ color: 'var(--muted)' }}>No archive links yet.</p>
-                ) : (
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Current links ({content.archiveFiles?.length ?? 0})</h3>
+                {(!content.archiveFiles || content.archiveFiles.length === 0) ? <p style={{ color: 'var(--muted)' }}>No archive links yet.</p> : 
                   content.archiveFiles.map((f) => (
                     <div key={f.id} className="admin-list-item">
                       <div>
                         <div style={{ fontWeight: 'bold' }}>{f.title}</div>
-                        <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
-                          {f.course} · {f.level}L · {f.year} · {f.kind}
-                        </div>
+                        <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>{f.course} · {f.level}L · {f.year} · {f.kind}</div>
                       </div>
                       <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
-                        {f.fileUrl && (
-                          <Button
-                            as="a"
-                            href={f.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            size="sm"
-                            variant="default"
-                          >
-                            Open
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="default"
-                          onClick={() => confirmDeleteArchive(f.id, f.title)}
-                        >
-                          Remove
-                        </Button>
+                        {f.fileUrl && <Button as="a" href={f.fileUrl} target="_blank" rel="noopener noreferrer" size="sm" variant="default">Open</Button>}
+                        <Button size="sm" variant="default" onClick={() => confirmAction('Remove link', `Remove "${f.title}"?`, () => deleteArchiveFile(f.id), 'confirm', 'Remove')}>Remove</Button>
                       </div>
                     </div>
                   ))
-                )}
+                }
               </div>
             </div>
           )}
 
+          {/* GENERAL TAB */}
           {tab === 'general' && (
             <div className="admin-form-grid">
               <Field label="Home Page Marquee Mode">
@@ -904,63 +610,13 @@ export function AdminPage() {
                   <option value="showcase">Showcase Marquee (Student Projects)</option>
                 </select>
               </Field>
-              <Field label="Footer Tagline">
-                <Textarea value={footerTagline} onChange={setFooterTagline} />
-              </Field>
-
-              <h3
-                style={{
-                  margin: 'var(--sp-4) 0 0',
-                  fontFamily: 'var(--font)',
-                  fontSize: 'var(--fs-md)',
-                  textTransform: 'uppercase',
-                  color: 'var(--muted)',
-                }}
-              >
-                External form links
-              </h3>
-
-              <Field label="Event Registration Form URL">
-                <TextInput
-                  type="url"
-                  value={eventRegistrationFormUrl}
-                  onChange={setEventRegistrationFormUrl}
-                  placeholder="https://docs.google.com/forms/d/e/…/viewform"
-                />
-              </Field>
-              <div style={{ display: 'grid', gap: 'var(--sp-1)', marginTop: 'calc(var(--sp-2) * -1)' }}>
-                <p style={{ margin: 0, fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
-                  The Google Form students use to register for the featured event.
-                </p>
-              </div>
-
-              <Field label="Event Field Entry ID (Optional)">
-                <TextInput
-                  type="text"
-                  value={eventRegistrationEventFieldId}
-                  onChange={setEventRegistrationEventFieldId}
-                  placeholder="123456789"
-                />
-              </Field>
-              <div style={{ display: 'grid', gap: 'var(--sp-1)', marginTop: 'calc(var(--sp-2) * -1)' }}>
-                <p style={{ margin: 0, fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
-                  To find this: open the form → ⋮ menu → <b>Get pre-filled link</b> → type the event
-                  name into the Event field → click <b>Get link</b> → copy the number after{' '}
-                  <code>entry.</code> in the URL. Leave blank to skip prefill.
-                </p>
-              </div>
-
-              <Field label="Membership Form URL">
-                <TextInput type="url" value={membershipFormUrl} onChange={setMembershipFormUrl} placeholder="https://forms.gle/..." />
-              </Field>
-              <Field label="Project Submission URL">
-                <TextInput type="url" value={projectSubmissionUrl} onChange={setProjectSubmissionUrl} placeholder="mailto:..." />
-              </Field>
-              <div>
-                <Button variant="primary" onClick={confirmSaveSettings}>
-                  Save Settings
-                </Button>
-              </div>
+              <Field label="Footer Tagline"><Textarea value={footerTagline} onChange={setFooterTagline} /></Field>
+              <h3 style={{ margin: 'var(--sp-4) 0 0', fontFamily: 'var(--font)', fontSize: 'var(--fs-md)', textTransform: 'uppercase', color: 'var(--muted)' }}>External form links</h3>
+              <Field label="Event Registration Form URL"><TextInput type="url" value={eventRegistrationFormUrl} onChange={setEventRegistrationFormUrl} placeholder="https://docs.google.com/forms/d/e/…/viewform" /></Field>
+              <Field label="Event Field Entry ID (Optional)"><TextInput type="text" value={eventRegistrationEventFieldId} onChange={setEventRegistrationEventFieldId} placeholder="123456789" /></Field>
+              <Field label="Membership Form URL"><TextInput type="url" value={membershipFormUrl} onChange={setMembershipFormUrl} placeholder="https://forms.gle/..." /></Field>
+              <Field label="Project Submission URL"><TextInput type="url" value={projectSubmissionUrl} onChange={setProjectSubmissionUrl} placeholder="mailto:..." /></Field>
+              <div><Button variant="primary" onClick={() => confirmAction('Save Settings', 'Update global site settings?', saveSettings)}>Save Settings</Button></div>
             </div>
           )}
         </Window>
@@ -973,10 +629,7 @@ export function AdminPage() {
         confirmLabel={confirmDialog.confirmLabel}
         type={confirmDialog.type}
         onCancel={() => setConfirmDialog((prev) => ({ ...prev, open: false }))}
-        onConfirm={() => {
-          confirmDialog.action();
-          setConfirmDialog((prev) => ({ ...prev, open: false }));
-        }}
+        onConfirm={() => { confirmDialog.action(); setConfirmDialog((prev) => ({ ...prev, open: false })); }}
       />
     </div>
   );

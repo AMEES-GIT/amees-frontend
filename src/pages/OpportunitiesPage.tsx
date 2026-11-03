@@ -9,7 +9,6 @@ import { OpportunityCard } from '../components/opportunities/OpportunityCard';
 import { useNow } from '../lib/useNow';
 import { useContent } from '../content/contentProvider';
 import type { Opportunity } from '../content/types';
-
 import './OpportunitiesPage.css';
 
 export function OpportunitiesPage() {
@@ -17,14 +16,12 @@ export function OpportunitiesPage() {
   const now = useNow(60000);
 
   const [type, setType] = useState('All');
-  const [level, setLevel] = useState('All');
   const [query, setQuery] = useState('');
   const [savedOnly, setSavedOnly] = useState(false);
   const [savedIds, setSavedIds] = useState<string[]>([]);
 
   const opps = content.opportunities || [];
 
-  // Explicitly typed to satisfy ChipGroup
   const types: { value: string; label: string }[] = useMemo(() => {
     const unique = Array.from(new Set(opps.map((o: Opportunity) => o.type)));
     return [
@@ -33,36 +30,27 @@ export function OpportunitiesPage() {
     ];
   }, [opps]);
 
-  const levels = [
-    { value: 'All', label: 'All levels' },
-    { value: '100', label: '100' },
-    { value: '200', label: '200' },
-    { value: '300', label: '300' },
-    { value: '400', label: '400' },
-    { value: '500', label: '500' },
-  ];
-
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
     return opps.filter((o: Opportunity) => {
       if (type !== 'All' && o.type !== type) return false;
-      if (level !== 'All' && !o.levels.includes(Number(level))) return false;
       if (savedOnly && !savedIds.includes(o.id)) return false;
-      if (q && !(`${o.title} ${o.org}`.toLowerCase().includes(q))) return false;
+      if (q && !(`${o.name} ${o.description}`.toLowerCase().includes(q))) return false;
       return true;
     }).sort((a: Opportunity, b: Opportunity) => {
-      const aClosed = new Date(`${a.deadline}T23:59:59+01:00`).getTime() < now.getTime();
-      const bClosed = new Date(`${b.deadline}T23:59:59+01:00`).getTime() < now.getTime();
+      // Sort by Open first, then by closest deadline
+      const aClosed = new Date(a.endDate).getTime() < now.getTime();
+      const bClosed = new Date(b.endDate).getTime() < now.getTime();
       if (aClosed !== bClosed) return aClosed ? 1 : -1;
-      return a.deadline.localeCompare(b.deadline);
+      return new Date(a.endDate).getTime() - new Date(b.endDate).getTime();
     });
-  }, [opps, type, level, query, savedOnly, savedIds, now]);
+  }, [opps, type, query, savedOnly, savedIds, now]);
 
   const toggleSave = (id: string) => {
     setSavedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-      return (
+  return (
     <Wrap>
       <Block>
         <PageHeader 
@@ -74,24 +62,12 @@ export function OpportunitiesPage() {
       </Block>
 
       <Block>
-        <Window title="Filter" meta={`${filtered.length} of ${opps.length}`}>
+        <Window title="Filter" meta={`${filtered.length} opportunities`}>
           <div className="opp-filters">
-            <ChipGroup
-              label="Type"
-              items={types}
-              value={type}
-              onChange={setType}
-            />
-            <ChipGroup
-              label="Level"
-              items={levels}
-              value={level}
-              onChange={setLevel}
-            />
-            
+            <ChipGroup label="Type" items={types} value={type} onChange={setType} />
             <div className="opp-search-row">
               <div className="opp-search-input">
-                <TextInput value={query} onChange={setQuery} placeholder="Search title or organisation" />
+                <TextInput value={query} onChange={setQuery} placeholder="Search by name or description" />
               </div>
               <Button pressed={savedOnly} onClick={() => setSavedOnly(!savedOnly)}>
                 Saved only
@@ -103,20 +79,11 @@ export function OpportunitiesPage() {
 
       <Block>
         {filtered.length > 0 ? (
-          <div className="opp-grid">
+          <div className="opp-grid" style={{ display: 'grid', gap: 'var(--sp-4)', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
             {filtered.map((opp: Opportunity) => (
               <OpportunityCard
                 key={opp.id}
-                opp={{
-                  id: opp.id,
-                  ty: opp.type,
-                  t: opp.title,
-                  org: opp.org,
-                  lv: opp.levels,
-                  dl: opp.deadline,
-                  loc: opp.location,
-                  d: opp.description
-                }}
+                opp={opp}
                 now={now}
                 saved={savedIds.includes(opp.id)}
                 onToggleSave={toggleSave}
@@ -124,7 +91,7 @@ export function OpportunitiesPage() {
             ))}
           </div>
         ) : (
-          <div className="opp-empty">
+          <div className="opp-empty" style={{ textAlign: 'center', padding: 'var(--sp-6)', color: 'var(--muted)' }}>
             No opportunities match these filters.
           </div>
         )}

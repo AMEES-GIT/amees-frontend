@@ -2,26 +2,14 @@ import { Window } from '../../containers/Window';
 import { Badge } from '../../primitives/Badge';
 import { Button } from '../../primitives/Button';
 import { Icon } from '../../foundations/Icon';
-import { getDeadlineState } from '../../../lib/opportunities';
+import type { Opportunity } from '../../../content/types';
 import './OpportunityCard.css';
-
-export interface Opportunity {
-  id: string;
-  ty: string;
-  t: string;
-  org: string;
-  lv: number[];
-  dl: string;
-  loc: string;
-  d: string;
-}
 
 export interface OpportunityCardProps {
   opp: Opportunity;
-  now: string | Date;
+  now: Date;
   saved: boolean;
   onToggleSave: (id: string) => void;
-  /** Optional pre-built WhatsApp share link. If omitted, one is generated. */
   shareHref?: string;
   className?: string;
 }
@@ -34,32 +22,39 @@ export function OpportunityCard({
   shareHref,
   className,
 }: OpportunityCardProps) {
-  const deadline = getDeadlineState(opp.dl, now);
+  const start = new Date(opp.startDate);
+  const end = new Date(opp.endDate);
   
+  const isOpen = now >= start && now <= end;
+  const isUpcoming = now < start;
+
   const waLink = shareHref ?? `https://wa.me/?text=${encodeURIComponent(
-    `${opp.t} (${opp.org}), closes ${opp.dl}. Seen on the AMEES opportunities board.`
+    `Check out this opportunity: ${opp.name} (${opp.type}). Closes ${end.toLocaleDateString()}. Seen on the AMEES portal.`
   )}`;
 
   return (
-    <Window title={opp.ty} meta={opp.loc} className={className}>
+    <Window title={opp.type} meta={isOpen ? 'Open Now' : isUpcoming ? 'Upcoming' : 'Closed'} className={className}>
       <div className="amees-opp">
         <div className="amees-opp__header">
-          <h3 className="amees-opp__title">{opp.t}</h3>
-          <p className="amees-opp__org">{opp.org}</p>
+          <h3 className="amees-opp__title">{opp.name}</h3>
         </div>
         
-        <p className="amees-opp__desc">{opp.d}</p>
+        <p className="amees-opp__desc">{opp.description}</p>
         
-        <div className="amees-opp__meta">
-          <span className={`amees-opp__deadline amees-opp__deadline--${deadline.state}`}>
-            {deadline.label}
+        <div className="amees-opp__meta" style={{ margin: 'var(--sp-3) 0' }}>
+          {isOpen ? (
+            <Badge tone="ok" kind="tag">Open Now</Badge>
+          ) : isUpcoming ? (
+            <Badge tone="warn" kind="tag">Opens {start.toLocaleDateString()}</Badge>
+          ) : (
+            <Badge tone="bad" kind="tag">Closed</Badge>
+          )}
+          <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', marginLeft: 'var(--sp-2)' }}>
+            Deadline: {end.toLocaleDateString()}
           </span>
-          <Badge tone="neutral" kind="tag">
-            Levels {opp.lv.join(', ')}
-          </Badge>
         </div>
 
-        <div className="amees-opp__actions">
+        <div className="amees-opp__actions" style={{ display: 'flex', gap: 'var(--sp-2)', flexWrap: 'wrap' }}>
           <Button
             size="sm"
             pressed={saved}
@@ -69,9 +64,15 @@ export function OpportunityCard({
             <Icon name={saved ? 'star-filled' : 'star'} size={16} />
             {saved ? 'Saved' : 'Save'}
           </Button>
+
+          {opp.externalLink && isOpen && (
+            <Button as="a" href={opp.externalLink} target="_blank" rel="noopener noreferrer" size="sm" variant="primary">
+              Apply →
+            </Button>
+          )}
           
           <Button as="a" href={waLink} target="_blank" rel="noopener noreferrer" size="sm">
-            Share on WhatsApp
+            Share
           </Button>
         </div>
       </div>

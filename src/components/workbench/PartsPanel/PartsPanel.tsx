@@ -19,17 +19,20 @@ export function PartsPanel({
   budget: number;
   onDelete: (id: string) => void;
 }) {
-  const spend = parts.reduce((s, x) => s + (x.status !== 'Owned' ? x.qty * x.cost : 0), 0);
-  const need = parts.reduce((s, x) => s + (x.status === 'Needed' ? x.qty * x.cost : 0), 0);
-  const value = parts.reduce((s, x) => s + x.qty * x.cost, 0);
+  // Bulletproofing: Ensure parts is always an array
+  const safeParts = Array.isArray(parts) ? parts : [];
+
+  const spend = safeParts.reduce((s, x) => s + (x.status !== 'Owned' ? Number(x.qty || 0) * Number(x.cost || 0) : 0), 0);
+  const need = safeParts.reduce((s, x) => s + (x.status === 'Needed' ? Number(x.qty || 0) * Number(x.cost || 0) : 0), 0);
+  const value = safeParts.reduce((s, x) => s + Number(x.qty || 0) * Number(x.cost || 0), 0);
   const remain = budget - spend;
 
   const columns: DataTableColumn<Part>[] = [
     { key: 'name', label: 'Part', render: r => <b>{r.name}</b> },
-    { key: 'qty', label: 'Qty', align: 'right' },
-    { key: 'cost', label: 'Unit Cost', align: 'right', render: r => `₦${r.cost.toLocaleString()}` },
+    { key: 'qty', label: 'Qty', align: 'right', render: r => String(r.qty || 0) },
+    { key: 'cost', label: 'Unit Cost', align: 'right', render: r => `₦${Number(r.cost || 0).toLocaleString()}` },
     { key: 'status', label: 'Status' },
-    { key: 'sub', label: 'Subtotal', align: 'right', render: r => `₦${(r.qty * r.cost).toLocaleString()}` },
+    { key: 'sub', label: 'Subtotal', align: 'right', render: r => `₦${(Number(r.qty || 0) * Number(r.cost || 0)).toLocaleString()}` },
     { key: 'del', label: '', align: 'right', render: r => <Button size="sm" onClick={() => onDelete(r.id)}>✕</Button> }
   ];
 
@@ -41,7 +44,7 @@ export function PartsPanel({
         <StatTile label="Still to buy" value={`₦${need.toLocaleString()}`} />
         <StatTile label="Budget left" value={`₦${remain.toLocaleString()}`} />
       </StatGrid>
-      <DataTable columns={columns} rows={parts} rowKey={r => r.id} empty="No parts yet." />
+      <DataTable columns={columns} rows={safeParts} rowKey={r => r.id} empty="No parts yet." />
     </div>
   );
 }

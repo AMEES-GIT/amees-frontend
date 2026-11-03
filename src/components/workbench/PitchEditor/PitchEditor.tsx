@@ -18,11 +18,16 @@ export interface PitchEditorProps {
 }
 
 export function PitchEditor({ value, onChange, className }: PitchEditorProps) {
+  // Bulletproofing: Ensure value is an object
+  const safeValue = value || {
+    pitch: '', problem: '', solution: '', status: '', demo: '', ask: ''
+  };
+
   return (
     <div className={['amees-pitch-editor', className].filter(Boolean).join(' ')}>
       <Field label="Elevator Pitch (The Hook)">
         <Textarea
-          value={value.pitch}
+          value={safeValue.pitch || ''}
           onChange={v => onChange('pitch', v)}
           maxLength={140}
           rows={2}
@@ -33,7 +38,7 @@ export function PitchEditor({ value, onChange, className }: PitchEditorProps) {
       
       <Field label="The Problem">
         <Textarea
-          value={value.problem}
+          value={safeValue.problem || ''}
           onChange={v => onChange('problem', v)}
           maxLength={200}
           rows={3}
@@ -44,7 +49,7 @@ export function PitchEditor({ value, onChange, className }: PitchEditorProps) {
       
       <Field label="The Solution">
         <Textarea
-          value={value.solution}
+          value={safeValue.solution || ''}
           onChange={v => onChange('solution', v)}
           maxLength={200}
           rows={3}
@@ -55,7 +60,7 @@ export function PitchEditor({ value, onChange, className }: PitchEditorProps) {
       
       <Field label="Current Status (Works / Broken)">
         <Textarea
-          value={value.status}
+          value={safeValue.status || ''}
           onChange={v => onChange('status', v)}
           maxLength={200}
           rows={2}
@@ -66,7 +71,7 @@ export function PitchEditor({ value, onChange, className }: PitchEditorProps) {
 
       <Field label="Demo Steps (Script)">
         <Textarea
-          value={value.demo}
+          value={safeValue.demo || ''}
           onChange={v => onChange('demo', v)}
           maxLength={400}
           rows={4}
@@ -77,7 +82,7 @@ export function PitchEditor({ value, onChange, className }: PitchEditorProps) {
       
       <Field label="The Ask">
         <Textarea
-          value={value.ask}
+          value={safeValue.ask || ''}
           onChange={v => onChange('ask', v)}
           maxLength={200}
           rows={2}

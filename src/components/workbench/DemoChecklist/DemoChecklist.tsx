@@ -20,7 +20,10 @@ export interface DemoChecklistProps {
 
 export function DemoChecklist({ checks, onToggle, onAdd, onDelete, className }: DemoChecklistProps) {
   const [newLabel, setNewLabel] = useState('');
-  const completed = checks.filter(c => c.checked).length;
+  
+  // Bulletproofing: Ensure checks is always an array
+  const safeChecks = Array.isArray(checks) ? checks : [];
+  const completed = safeChecks.filter(c => c.checked).length;
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,13 +37,13 @@ export function DemoChecklist({ checks, onToggle, onAdd, onDelete, className }: 
       <Meter 
         label="Demo checklist readiness" 
         value={completed} 
-        max={checks.length || 1} 
-        valueText={`${completed} of ${checks.length} complete`} 
-        tone={completed === checks.length && checks.length > 0 ? 'default' : 'warn'}
+        max={safeChecks.length || 1} 
+        valueText={`${completed} of ${safeChecks.length} complete`} 
+        tone={completed === safeChecks.length && safeChecks.length > 0 ? 'default' : 'warn'}
       />
       
       <ul className="amees-demo-checklist__list">
-        {checks.map(c => (
+        {safeChecks.map(c => (
           <li key={c.id} className={c.checked ? 'is-checked' : ''}>
             <div className="amees-demo-checklist__item">
               <button

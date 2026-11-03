@@ -26,6 +26,7 @@ export function SignInForm({ onSuccess, className }: SignInFormProps) {
   const [challengeId, setChallengeId] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   const handleChange = (key: keyof SignInValues, val: string) => {
     setValues(prev => ({ ...prev, [key]: val }));
@@ -53,7 +54,7 @@ export function SignInForm({ onSuccess, className }: SignInFormProps) {
         const res = await fetch(`${API_BASE}/api/student/auth/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ challengeId, code: values.code })
+          body: JSON.stringify({ challengeId, code: values.code, rememberMe })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
@@ -80,7 +81,6 @@ export function SignInForm({ onSuccess, className }: SignInFormProps) {
             <Field label="Matric number">
               <TextInput 
                 value={values.matric} 
-                // FORCE UPPERCASE AND REMOVE SPACES AS THEY TYPE
                 onChange={v => handleChange('matric', v.toUpperCase().replace(/\s/g, ''))} 
                 placeholder="LCU/UG/24/XXXXX"
                 required 
@@ -99,6 +99,20 @@ export function SignInForm({ onSuccess, className }: SignInFormProps) {
               <TextInput type="text" value={values.code} onChange={v => handleChange('code', v)} required autoComplete="one-time-code" />
             </Field>
             <p className="amees-wb-signin__hint">Check your email inbox.</p>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)', margin: 'var(--sp-2) 0' }}>
+              <input 
+                type="checkbox" 
+                id="remember" 
+                checked={rememberMe} 
+                onChange={(e) => setRememberMe(e.target.checked)} 
+                style={{ width: '16px', height: '16px', accentColor: 'var(--fill)', cursor: 'pointer' }}
+              />
+              <label htmlFor="remember" style={{ fontSize: 'var(--fs-sm)', fontFamily: 'var(--font)', cursor: 'pointer', color: 'var(--fg)' }}>
+                Keep me logged in for 30 days
+              </label>
+            </div>
+
             <div className="amees-wb-signin__actions">
               <Button type="submit" variant="primary" loading={busy}>Sign in</Button>
               <Button type="button" onClick={() => setStep('identify')}>Back</Button>

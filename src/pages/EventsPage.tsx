@@ -183,6 +183,10 @@ export function EventsPage({ onNavigate }: EventsPageProps) {
             onPrev={handlePrev}
             onNext={handleNext}
             onToday={handleToday}
+            onEventClick={(id) => {
+              window.history.pushState({}, '', `/event/${id}`);
+              window.dispatchEvent(new PopStateEvent('popstate'));
+            }}
           />
         </Window>
       </Block>

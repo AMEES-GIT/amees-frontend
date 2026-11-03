@@ -14,7 +14,7 @@ import { getValidToken, getAdminEmail, getAdminRole, clearToken } from '../lib/a
 import { API_BASE } from '../lib/apiBase';
 import './AdminPage.css';
 
-type AdminTab = 'event' | 'calendar' | 'weekly' | 'executives' | 'projects' | 'partners' | 'opportunities' | 'archive' | 'general' | 'students';
+type AdminTab = 'event' | 'events' | 'executives' | 'projects' | 'partners' | 'opportunities' | 'archive' | 'general' | 'students';
 const API_URL = `${API_BASE}/api/admin`;
 
 async function adminFetch(path: string, options: RequestInit = {}): Promise<Response> {
@@ -47,22 +47,36 @@ export function AdminPage() {
   });
 
   const [formData, setFormData] = useState<FeaturedEvent>(content.featured);
+  
+  // States for Events/Calendar
   const [newCalDate, setNewCalDate] = useState('');
   const [newCalTitle, setNewCalTitle] = useState('');
+  const [newCalDesc, setNewCalDesc] = useState('');
+  const [editingCalId, setEditingCalId] = useState<string | null>(null);
+
+  // States for Weekly Rhythm
   const [newWeekTitle, setNewWeekTitle] = useState('');
   const [newWeekText, setNewWeekText] = useState('');
   const [newWeekDay, setNewWeekDay] = useState('2');
+  const [editingWeekId, setEditingWeekId] = useState<string | null>(null);
+
+  // States for Executives
   const [newExec, setNewExec] = useState<Omit<ExecutiveMember, 'id'>>({ role: '', name: '', linkedin: '', photoUrl: '' });
+  const [editingExecId, setEditingExecId] = useState<string | null>(null);
+
+  // States for Partners
   const [newPartner, setNewPartner] = useState({ name: '', type: 'Sponsor' as 'Sponsor' | 'Partner', tier: '', logoUrl: '', websiteUrl: '' });
+  const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null);
+
+  // States for Archive
   const [newArchive, setNewArchive] = useState({ title: '', course: '', level: '100', year: String(new Date().getFullYear()), kind: 'PDF', fileUrl: '' });
+  const [editingArchiveId, setEditingArchiveId] = useState<string | null>(null);
   
-  // Opportunity State
-  const [newOpp, setNewOpp] = useState({
-    name: '', type: 'IT', description: '', externalLink: '', startDate: '', endDate: '', tags: ''
-  });
+  // States for Opportunities
+  const [newOpp, setNewOpp] = useState({ name: '', type: 'IT', description: '', externalLink: '', startDate: '', endDate: '', tags: '' });
   const [editingOppId, setEditingOppId] = useState<string | null>(null);
 
-  // Student Management State
+  // States for Students
   const [newStudent, setNewStudent] = useState({ name: '', matric: '', email: '', level: '100' });
   const [csvText, setCsvText] = useState('');
 
@@ -88,93 +102,136 @@ export function AdminPage() {
   }, []);
 
   const nav = [
-    { id: 'event', label: 'Featured Event' }, { id: 'calendar', label: 'One-off Dates' },
-    { id: 'weekly', label: 'Weekly Rhythm' }, { id: 'executives', label: 'Executives' },
-    { id: 'projects', label: 'Projects' }, { id: 'partners', label: 'Sponsors' },
-    { id: 'opportunities', label: 'Opportunities' }, { id: 'students', label: 'Students' }, { id: 'archive', label: 'Archive links' },
+    { id: 'event', label: 'Featured Event' }, 
+    { id: 'events', label: 'Events & Calendar' }, 
+    { id: 'executives', label: 'Executives' },
+    { id: 'projects', label: 'Projects' }, 
+    { id: 'partners', label: 'Sponsors' },
+    { id: 'opportunities', label: 'Opportunities' }, 
+    { id: 'students', label: 'Students' }, 
+    { id: 'archive', label: 'Archive links' },
     { id: 'general', label: 'Site Settings' },
   ];
 
   const saveEvent = async () => { setStatus('saving'); try { const res = await adminFetch('/event', { method: 'PUT', body: JSON.stringify(formData) }); if (res.ok) { setStatus('saved'); refresh(); } else setStatus('error'); } catch { setStatus('error'); } };
   const saveSettings = async () => { setStatus('saving'); try { const res = await adminFetch('/settings', { method: 'PUT', body: JSON.stringify({ activeMarquee: marqueeMode, footer: { ...content.footer, tagline: footerTagline }, membershipFormUrl, projectSubmissionUrl, eventRegistrationFormUrl, eventRegistrationEventFieldId }) }); if (res.ok) { setStatus('saved'); refresh(); } else setStatus('error'); } catch { setStatus('error'); } };
   
-  const addCalendarEntry = async (data: any) => { try { const res = await adminFetch('/calendar', { method: 'POST', body: JSON.stringify(data) }); if (res.ok) refresh(); } catch {} };
+  // --- EVENTS & CALENDAR ---
+  const saveCalendarEntry = async () => {
+    const payload = { title: newCalTitle, description: newCalDesc, type: 'special' };
+    try {
+      const url = editingCalId ? `/calendar/${editingCalId}` : '/calendar';
+      const method = editingCalId ? 'PUT' : 'POST';
+      const body = editingCalId ? payload : { ...payload, day: newCalDate };
+      
+      const res = await adminFetch(url, { method, body: JSON.stringify(body) });
+      if (res.ok) {
+        refresh();
+        setNewCalDate(''); setNewCalTitle(''); setNewCalDesc(''); setEditingCalId(null);
+      }
+    } catch {}
+  };
+  const startEditCal = (e: any) => { setEditingCalId(e.id); setNewCalTitle(e.title); setNewCalDesc(e.description || ''); setNewCalDate(e.day); window.scrollTo(0,0); };
   const deleteCalendarEntry = async (id: string) => { try { const res = await adminFetch(`/calendar/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
-  const addWeeklyItem = async (data: any) => { try { const res = await adminFetch('/weekly', { method: 'POST', body: JSON.stringify(data) }); if (res.ok) refresh(); } catch {} };
+
+  const saveWeeklyItem = async () => {
+    const payload = { title: newWeekTitle, text: newWeekText, weekday: Number(newWeekDay) === -1 ? null : Number(newWeekDay) };
+    try {
+      const url = editingWeekId ? `/weekly/${editingWeekId}` : '/weekly';
+      const method = editingWeekId ? 'PUT' : 'POST';
+      const res = await adminFetch(url, { method, body: JSON.stringify(payload) });
+      if (res.ok) {
+        refresh();
+        setNewWeekTitle(''); setNewWeekText(''); setNewWeekDay('2'); setEditingWeekId(null);
+      }
+    } catch {}
+  };
+  const startEditWeek = (w: any) => { setEditingWeekId(w.id); setNewWeekTitle(w.title); setNewWeekText(w.text); setNewWeekDay(String(w.weekday ?? -1)); window.scrollTo(0,0); };
   const deleteWeeklyItem = async (id: string) => { try { const res = await adminFetch(`/weekly/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
-  const addExecutive = async (data: Omit<ExecutiveMember, 'id'>) => { try { const res = await adminFetch('/executives', { method: 'POST', body: JSON.stringify({ ...data, order: content.about.executive.length }) }); if (res.ok) refresh(); } catch {} };
+
+  // --- EXECUTIVES ---
+  const saveExecutive = async () => {
+    try {
+      const url = editingExecId ? `/executives/${editingExecId}` : '/executives';
+      const method = editingExecId ? 'PUT' : 'POST';
+      const body = editingExecId ? newExec : { ...newExec, order: content.about.executive.length };
+      const res = await adminFetch(url, { method, body: JSON.stringify(body) });
+      if (res.ok) {
+        refresh();
+        setNewExec({ role: '', name: '', linkedin: '', photoUrl: '' }); setEditingExecId(null);
+      }
+    } catch {}
+  };
+  const startEditExec = (e: any) => { setEditingExecId(e.id); setNewExec({ role: e.role, name: e.name, linkedin: e.linkedin || '', photoUrl: e.photoUrl || '' }); window.scrollTo(0,0); };
   const deleteExecutive = async (id: string) => { try { const res = await adminFetch(`/executives/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
-  const toggleProject = async (id: string) => { try { const res = await adminFetch(`/projects/${id}/toggle`, { method: 'PUT' }); if (res.ok) refresh(); } catch {} };
-  const addPartner = async () => { try { const res = await adminFetch('/partners', { method: 'POST', body: JSON.stringify({ ...newPartner, order: content.partners.length }) }); if (res.ok) { refresh(); setNewPartner({ name: '', type: 'Sponsor', tier: '', logoUrl: '', websiteUrl: '' }); } } catch {} };
+
+  // --- PARTNERS ---
+  const savePartner = async () => {
+    try {
+      const url = editingPartnerId ? `/partners/${editingPartnerId}` : '/partners';
+      const method = editingPartnerId ? 'PUT' : 'POST';
+      const body = editingPartnerId ? newPartner : { ...newPartner, order: content.partners.length };
+      const res = await adminFetch(url, { method, body: JSON.stringify(body) });
+      if (res.ok) {
+        refresh();
+        setNewPartner({ name: '', type: 'Sponsor', tier: '', logoUrl: '', websiteUrl: '' }); setEditingPartnerId(null);
+      }
+    } catch {}
+  };
+  const startEditPartner = (p: any) => { setEditingPartnerId(p.id); setNewPartner({ name: p.name, type: p.type, tier: p.tier || '', logoUrl: p.logoUrl || '', websiteUrl: p.websiteUrl || '' }); window.scrollTo(0,0); };
   const deletePartner = async (id: string) => { try { const res = await adminFetch(`/partners/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
-  const addArchiveFile = async () => { try { const res = await adminFetch('/archive-files', { method: 'POST', body: JSON.stringify(newArchive) }); if (res.ok) { refresh(); setNewArchive({ title: '', course: '', level: '100', year: String(new Date().getFullYear()), kind: 'PDF', fileUrl: '' }); } } catch {} };
+
+  // --- ARCHIVE ---
+  const saveArchiveFile = async () => {
+    try {
+      const url = editingArchiveId ? `/archive-files/${editingArchiveId}` : '/archive-files';
+      const method = editingArchiveId ? 'PUT' : 'POST';
+      const res = await adminFetch(url, { method, body: JSON.stringify(newArchive) });
+      if (res.ok) {
+        refresh();
+        setNewArchive({ title: '', course: '', level: '100', year: String(new Date().getFullYear()), kind: 'PDF', fileUrl: '' }); setEditingArchiveId(null);
+      }
+    } catch {}
+  };
+  const startEditArchive = (f: any) => { setEditingArchiveId(f.id); setNewArchive({ title: f.title, course: f.course, level: String(f.level), year: String(f.year), kind: f.kind, fileUrl: f.fileUrl || '' }); window.scrollTo(0,0); };
   const deleteArchiveFile = async (id: string) => { try { const res = await adminFetch(`/archive-files/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
 
+  // --- PROJECTS ---
+  const toggleProject = async (id: string) => { try { const res = await adminFetch(`/projects/${id}/toggle`, { method: 'PUT' }); if (res.ok) refresh(); } catch {} };
+
+  // --- OPPORTUNITIES ---
   const saveOpportunity = async () => {
     if (!newOpp.name || !newOpp.startDate || !newOpp.endDate) return;
-    const payload = {
-      ...newOpp,
-      startDate: new Date(newOpp.startDate).toISOString(),
-      endDate: new Date(newOpp.endDate).toISOString(),
-      tags: newOpp.tags.split(',').map(t => t.trim()).filter(Boolean)
-    };
+    const payload = { ...newOpp, startDate: new Date(newOpp.startDate).toISOString(), endDate: new Date(newOpp.endDate).toISOString(), tags: newOpp.tags.split(',').map(t => t.trim()).filter(Boolean) };
     try {
       const url = editingOppId ? `/opportunities/${editingOppId}` : '/opportunities';
       const method = editingOppId ? 'PUT' : 'POST';
       const res = await adminFetch(url, { method, body: JSON.stringify(payload) });
       if (res.ok) {
         refresh();
-        setNewOpp({ name: '', type: 'IT', description: '', externalLink: '', startDate: '', endDate: '', tags: '' });
-        setEditingOppId(null);
+        setNewOpp({ name: '', type: 'IT', description: '', externalLink: '', startDate: '', endDate: '', tags: '' }); setEditingOppId(null);
       }
     } catch {}
   };
-
+  const startEditOpp = (opp: Opportunity) => { setEditingOppId(opp.id); setNewOpp({ name: opp.name, type: opp.type, description: opp.description, externalLink: opp.externalLink || '', startDate: new Date(opp.startDate).toISOString().slice(0, 16), endDate: new Date(opp.endDate).toISOString().slice(0, 16), tags: opp.tags?.join(', ') || '' }); window.scrollTo(0,0); };
   const deleteOpportunity = async (id: string) => { try { const res = await adminFetch(`/opportunities/${id}`, { method: 'DELETE' }); if (res.ok) refresh(); } catch {} };
 
-  const startEditOpp = (opp: Opportunity) => {
-    setEditingOppId(opp.id);
-    setNewOpp({
-      name: opp.name, type: opp.type, description: opp.description, externalLink: opp.externalLink || '',
-      startDate: new Date(opp.startDate).toISOString().slice(0, 16),
-      endDate: new Date(opp.endDate).toISOString().slice(0, 16),
-      tags: opp.tags?.join(', ') || ''
-    });
-    window.scrollTo(0, 0);
-  };
-
+  // --- STUDENTS ---
   const addStudent = async () => {
-  try {
-    const res = await adminFetch('/students', {
-      method: 'POST',
-      body: JSON.stringify(newStudent)
-    });
-    if (res.ok) {
-      alert('Student added successfully!');
-      setNewStudent({ name: '', matric: '', email: '', level: '100' });
-    } else {
+    try {
+      const res = await adminFetch('/students', { method: 'POST', body: JSON.stringify(newStudent) });
+      if (res.ok) { alert('Student added successfully!'); setNewStudent({ name: '', matric: '', email: '', level: '100' }); } 
+      else { const data = await res.json(); alert(data.error); }
+    } catch {}
+  };
+  const uploadCSV = async () => {
+    if (!csvText.trim()) return;
+    try {
+      const res = await adminFetch('/students/bulk', { method: 'POST', body: JSON.stringify({ csv: csvText }) });
       const data = await res.json();
-      alert(data.error);
-    }
-  } catch {}
-};
-
-const uploadCSV = async () => {
-  if (!csvText.trim()) return;
-  try {
-    const res = await adminFetch('/students/bulk', {
-      method: 'POST',
-      body: JSON.stringify({ csv: csvText })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      alert(data.message);
-      setCsvText('');
-    } else {
-      alert(data.error);
-    }
-  } catch {}
-};
+      if (res.ok) { alert(data.message); setCsvText(''); } else { alert(data.error); }
+    } catch {}
+  };
 
   const confirmAction = (title: string, body: string, action: () => void, type: 'success'|'confirm' = 'success', confirmLabel = 'Confirm') => setConfirmDialog({ open: true, title, body, action, type, confirmLabel });
 
@@ -185,6 +242,7 @@ const uploadCSV = async () => {
       <AdminShell role={getAdminRole() ?? 'Editor'} user={getAdminEmail() ?? 'Admin'} nav={nav} current={tab} onNav={(id) => setTab(id as AdminTab)} saveStatus={<SaveStatus status={status} at={new Date().toLocaleTimeString()} />}>
         <Window title={nav.find((n) => n.id === tab)?.label || 'Settings'} meta="Database-connected">
           
+          {/* FEATURED EVENT TAB */}
           {tab === 'event' && (
             <div className="admin-form-grid">
               <Field label="Event Title"><TextInput value={formData.title} onChange={(v) => setFormData({ ...formData, title: v })} /></Field>
@@ -195,39 +253,39 @@ const uploadCSV = async () => {
             </div>
           )}
 
-          {tab === 'calendar' && (
+          {/* EVENTS & CALENDAR TAB */}
+          {tab === 'events' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
+              
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add One-off Event</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(140px, 1fr) minmax(250px, 2fr) auto', gap: 'var(--sp-3)', alignItems: 'end' }}>
-                  <Field label="Date"><TextInput type="text" value={newCalDate} onChange={setNewCalDate} placeholder="YYYY-MM-DD" /></Field>
-                  <Field label="Event Title"><TextInput type="text" value={newCalTitle} onChange={setNewCalTitle} placeholder="Hackathon Finals" /></Field>
-                  <Button variant="primary" onClick={() => confirmAction('Add Date', `Add "${newCalTitle}"?`, () => addCalendarEntry({ day: newCalDate, title: newCalTitle, type: 'special' }))}>Add</Button>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
+                  {editingCalId ? 'Edit One-off Event' : 'Add One-off Event'}
+                </h3>
+                <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
+                  <div className="admin-grid-3">
+                    <Field label="Date">
+                      <TextInput type="text" value={newCalDate} onChange={setNewCalDate} placeholder="YYYY-MM-DD" disabled={!!editingCalId} />
+                    </Field>
+                    <Field label="Event Title"><TextInput type="text" value={newCalTitle} onChange={setNewCalTitle} placeholder="Hackathon Finals" /></Field>
+                    <Field label="Description (Optional)"><TextInput type="text" value={newCalDesc} onChange={setNewCalDesc} placeholder="Brief details..." /></Field>
+                  </div>
+                  <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                    <Button variant="primary" onClick={() => confirmAction(editingCalId ? 'Save Changes' : 'Add Date', `Are you sure?`, saveCalendarEntry)}>
+                      {editingCalId ? 'Save Changes' : 'Add One-off Event'}
+                    </Button>
+                    {editingCalId && (
+                      <Button variant="default" onClick={() => { setEditingCalId(null); setNewCalDate(''); setNewCalTitle(''); setNewCalDesc(''); }}>Cancel</Button>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Existing Dates</h3>
-                {content.calendarEntries.length === 0 ? <p style={{ color: 'var(--muted)' }}>No one-off events.</p> : 
-                  content.calendarEntries.map((entry) => (
-                    <div key={entry.id} className="admin-list-item">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
-                        <Badge tone="info" kind="tag">{entry.day}</Badge>
-                        <span style={{ fontWeight: 'bold' }}>{entry.title}</span>
-                      </div>
-                      <Button size="sm" variant="default" onClick={() => confirmAction('Delete Date', `Remove "${entry.title}"?`, () => deleteCalendarEntry(entry.id), 'confirm', 'Delete')}>Delete</Button>
-                    </div>
-                  ))
-                }
-              </div>
-            </div>
-          )}
 
-          {tab === 'weekly' && (
-            <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add Recurring Item</h3>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
+                  {editingWeekId ? 'Edit Recurring Item' : 'Add Recurring Item'}
+                </h3>
                 <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
+                  <div className="admin-grid-2">
                     <Field label="Title"><TextInput type="text" value={newWeekTitle} onChange={setNewWeekTitle} placeholder="Trivia Tuesday" /></Field>
                     <Field label="Schedule">
                       <select className="amees-input" value={newWeekDay} onChange={(e) => setNewWeekDay(e.target.value)}>
@@ -236,38 +294,77 @@ const uploadCSV = async () => {
                     </Field>
                   </div>
                   <Field label="Short Description"><TextInput type="text" value={newWeekText} onChange={setNewWeekText} placeholder="Quick-fire engineering questions" /></Field>
-                  <div><Button variant="primary" onClick={() => confirmAction('Add Item', `Add "${newWeekTitle}"?`, () => addWeeklyItem({ title: newWeekTitle, text: newWeekText, weekday: Number(newWeekDay) === -1 ? null : Number(newWeekDay) }))}>Add Recurring Item</Button></div>
+                  <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                    <Button variant="primary" onClick={() => confirmAction(editingWeekId ? 'Save Changes' : 'Add Item', `Are you sure?`, saveWeeklyItem)}>
+                      {editingWeekId ? 'Save Changes' : 'Add Recurring Item'}
+                    </Button>
+                    {editingWeekId && (
+                      <Button variant="default" onClick={() => { setEditingWeekId(null); setNewWeekTitle(''); setNewWeekText(''); setNewWeekDay('2'); }}>Cancel</Button>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Current Rhythm</h3>
-                {content.weekly.map((item) => (
-                  <div key={item.id} className="admin-list-item">
-                    <div>
-                      <div style={{ fontWeight: 'bold' }}>{item.title}</div>
-                      <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
-                        {item.weekday !== undefined ? DAYS.find((d) => d.value === item.weekday)?.label : item.label} · {item.text}
+
+              <div className="admin-grid-2">
+                <div>
+                  <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>One-off Events</h3>
+                  {content.calendarEntries.map((entry) => (
+                    <div key={entry.id} className="admin-list-item">
+                      <div>
+                        <div style={{ fontWeight: 'bold' }}>{entry.title}</div>
+                        <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>{entry.day} {entry.description && `· ${entry.description}`}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                        <Button size="sm" variant="default" onClick={() => startEditCal(entry)}>Edit</Button>
+                        <Button size="sm" variant="default" className="btn-danger" onClick={() => confirmAction('Delete Date', `Remove "${entry.title}"?`, () => deleteCalendarEntry(entry.id), 'confirm', 'Delete')}>Delete</Button>
                       </div>
                     </div>
-                    <Button size="sm" variant="default" onClick={() => confirmAction('Delete Item', `Remove "${item.title}"?`, () => deleteWeeklyItem(item.id), 'confirm', 'Delete')}>Delete</Button>
-                  </div>
-                ))}
+                  ))}
+                </div>
+
+                <div>
+                  <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Recurring Rhythm</h3>
+                  {content.weekly.map((item) => (
+                    <div key={item.id} className="admin-list-item">
+                      <div>
+                        <div style={{ fontWeight: 'bold' }}>{item.title}</div>
+                        <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
+                          {item.weekday !== undefined ? DAYS.find((d) => d.value === item.weekday)?.label : item.label} · {item.text}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                        <Button size="sm" variant="default" onClick={() => startEditWeek(item)}>Edit</Button>
+                        <Button size="sm" variant="default" className="btn-danger" onClick={() => confirmAction('Delete Item', `Remove "${item.title}"?`, () => deleteWeeklyItem(item.id), 'confirm', 'Delete')}>Delete</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
+          {/* EXECUTIVES TAB */}
           {tab === 'executives' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add Executive</h3>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
+                  {editingExecId ? 'Edit Executive' : 'Add Executive'}
+                </h3>
                 <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
+                  <div className="admin-grid-2">
                     <Field label="Role"><TextInput type="text" value={newExec.role} onChange={(v) => setNewExec({ ...newExec, role: v })} placeholder="President" /></Field>
                     <Field label="Full Name"><TextInput type="text" value={newExec.name} onChange={(v) => setNewExec({ ...newExec, name: v })} placeholder="John Doe" /></Field>
                   </div>
                   <Field label="Photo URL (Optional)"><TextInput type="text" value={newExec.photoUrl || ''} onChange={(v) => setNewExec({ ...newExec, photoUrl: v })} placeholder="https://..." /></Field>
                   <Field label="LinkedIn URL (Optional)"><TextInput type="text" value={newExec.linkedin || ''} onChange={(v) => setNewExec({ ...newExec, linkedin: v })} placeholder="https://linkedin.com/in/..." /></Field>
-                  <div><Button variant="primary" onClick={() => confirmAction('Add Executive', `Add ${newExec.name}?`, () => addExecutive(newExec))}>Add Executive</Button></div>
+                  <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                    <Button variant="primary" onClick={() => confirmAction(editingExecId ? 'Save Changes' : 'Add Executive', `Are you sure?`, saveExecutive)}>
+                      {editingExecId ? 'Save Changes' : 'Add Executive'}
+                    </Button>
+                    {editingExecId && (
+                      <Button variant="default" onClick={() => { setEditingExecId(null); setNewExec({ role: '', name: '', linkedin: '', photoUrl: '' }); }}>Cancel</Button>
+                    )}
+                  </div>
                 </div>
               </div>
               <div>
@@ -278,13 +375,17 @@ const uploadCSV = async () => {
                       <Badge tone="neutral" kind="tag">{exec.role}</Badge>
                       <span style={{ fontWeight: 'bold' }}>{exec.name}</span>
                     </div>
-                    <Button size="sm" variant="default" onClick={() => confirmAction('Remove Executive', `Remove ${exec.name}?`, () => deleteExecutive(exec.id), 'confirm', 'Remove')}>Remove</Button>
+                    <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                      <Button size="sm" variant="default" onClick={() => startEditExec(exec)}>Edit</Button>
+                      <Button size="sm" variant="default" className="btn-danger" onClick={() => confirmAction('Remove Executive', `Remove ${exec.name}?`, () => deleteExecutive(exec.id), 'confirm', 'Remove')}>Remove</Button>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
+          {/* PROJECTS TAB */}
           {tab === 'projects' && (
             <div>
               <p style={{ marginTop: 0, color: 'var(--muted)', marginBottom: 'var(--sp-4)' }}>Select which projects appear in the Showcase Marquee on the home page.</p>
@@ -304,12 +405,15 @@ const uploadCSV = async () => {
             </div>
           )}
 
+          {/* PARTNERS TAB */}
           {tab === 'partners' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add Sponsor / Partner</h3>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
+                  {editingPartnerId ? 'Edit Sponsor / Partner' : 'Add Sponsor / Partner'}
+                </h3>
                 <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 'var(--sp-3)' }}>
+                  <div className="admin-grid-3">
                     <Field label="Name"><TextInput type="text" value={newPartner.name} onChange={(v) => setNewPartner({ ...newPartner, name: v })} placeholder="Acme Ltd" /></Field>
                     <Field label="Type">
                       <select className="amees-input" value={newPartner.type} onChange={(e) => setNewPartner({ ...newPartner, type: e.target.value as 'Sponsor' | 'Partner' })}>
@@ -331,7 +435,14 @@ const uploadCSV = async () => {
                     </div>
                   )}
                   <Field label="Website URL (Optional)"><TextInput type="text" value={newPartner.websiteUrl} onChange={(v) => setNewPartner({ ...newPartner, websiteUrl: v })} placeholder="https://..." /></Field>
-                  <div><Button variant="primary" onClick={() => confirmAction('Add Sponsor', `Add "${newPartner.name}"?`, addPartner)}>Add Sponsor</Button></div>
+                  <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                    <Button variant="primary" onClick={() => confirmAction(editingPartnerId ? 'Save Changes' : 'Add Sponsor', `Are you sure?`, savePartner)}>
+                      {editingPartnerId ? 'Save Changes' : 'Add Sponsor'}
+                    </Button>
+                    {editingPartnerId && (
+                      <Button variant="default" onClick={() => { setEditingPartnerId(null); setNewPartner({ name: '', type: 'Sponsor', tier: '', logoUrl: '', websiteUrl: '' }); }}>Cancel</Button>
+                    )}
+                  </div>
                 </div>
               </div>
               <div>
@@ -345,7 +456,10 @@ const uploadCSV = async () => {
                         <Badge tone="info" kind="tag">{partner.type}</Badge>
                         {partner.tier && <Badge tone="neutral" kind="tag">{partner.tier}</Badge>}
                       </div>
-                      <Button size="sm" variant="default" onClick={() => confirmAction('Remove Sponsor', `Remove "${partner.name}"?`, () => deletePartner(partner.id), 'confirm', 'Remove')}>Remove</Button>
+                      <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                        <Button size="sm" variant="default" onClick={() => startEditPartner(partner)}>Edit</Button>
+                        <Button size="sm" variant="default" className="btn-danger" onClick={() => confirmAction('Remove Sponsor', `Remove "${partner.name}"?`, () => deletePartner(partner.id), 'confirm', 'Remove')}>Remove</Button>
+                      </div>
                     </div>
                   ))
                 }
@@ -353,6 +467,7 @@ const uploadCSV = async () => {
             </div>
           )}
 
+          {/* OPPORTUNITIES TAB */}
           {tab === 'opportunities' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
@@ -360,7 +475,7 @@ const uploadCSV = async () => {
                   {editingOppId ? 'Edit Opportunity' : 'Add Opportunity'}
                 </h3>
                 <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--sp-3)' }}>
+                  <div className="admin-grid-2">
                     <Field label="Name"><TextInput value={newOpp.name} onChange={(v) => setNewOpp({ ...newOpp, name: v })} placeholder="Google Summer of Code" /></Field>
                     <Field label="Type">
                       <select className="amees-input" value={newOpp.type} onChange={(e) => setNewOpp({ ...newOpp, type: e.target.value })}>
@@ -372,12 +487,12 @@ const uploadCSV = async () => {
                   <Field label="Tags (Comma separated, e.g. EEE, Level 300, Group)"><TextInput value={newOpp.tags} onChange={(v) => setNewOpp({ ...newOpp, tags: v })} /></Field>
                   <Field label="External Link (Optional)"><TextInput value={newOpp.externalLink} onChange={(v) => setNewOpp({ ...newOpp, externalLink: v })} placeholder="https://..." /></Field>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
+                  <div className="admin-grid-2">
                     <Field label="Opens On (Date & Time)">
-                      <input type="datetime-local" className="amees-input" value={newOpp.startDate} onChange={(e) => setNewOpp({ ...newOpp, startDate: e.target.value })} style={{ padding: 'var(--sp-2)', fontFamily: 'var(--font)', border: 'var(--bw-sm) solid var(--line)', background: 'var(--bg)', color: 'var(--fg)' }} />
+                      <input type="datetime-local" className="amees-input" value={newOpp.startDate} onChange={(e) => setNewOpp({ ...newOpp, startDate: e.target.value })} style={{ padding: 'var(--sp-2)', fontFamily: 'var(--font)', border: 'var(--bw-sm) solid var(--line)', background: 'var(--bg)', color: 'var(--fg)', width: '100%' }} />
                     </Field>
                     <Field label="Closes On (Date & Time)">
-                      <input type="datetime-local" className="amees-input" value={newOpp.endDate} onChange={(e) => setNewOpp({ ...newOpp, endDate: e.target.value })} style={{ padding: 'var(--sp-2)', fontFamily: 'var(--font)', border: 'var(--bw-sm) solid var(--line)', background: 'var(--bg)', color: 'var(--fg)' }} />
+                      <input type="datetime-local" className="amees-input" value={newOpp.endDate} onChange={(e) => setNewOpp({ ...newOpp, endDate: e.target.value })} style={{ padding: 'var(--sp-2)', fontFamily: 'var(--font)', border: 'var(--bw-sm) solid var(--line)', background: 'var(--bg)', color: 'var(--fg)', width: '100%' }} />
                     </Field>
                   </div>
 
@@ -386,9 +501,7 @@ const uploadCSV = async () => {
                       {editingOppId ? 'Save Changes' : 'Add Opportunity'}
                     </Button>
                     {editingOppId && (
-                      <Button variant="default" onClick={() => { setEditingOppId(null); setNewOpp({ name: '', type: 'IT', description: '', externalLink: '', startDate: '', endDate: '', tags: '' }); }}>
-                        Cancel
-                      </Button>
+                      <Button variant="default" onClick={() => { setEditingOppId(null); setNewOpp({ name: '', type: 'IT', description: '', externalLink: '', startDate: '', endDate: '', tags: '' }); }}>Cancel</Button>
                     )}
                   </div>
                 </div>
@@ -407,7 +520,7 @@ const uploadCSV = async () => {
                       </div>
                       <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
                         <Button size="sm" variant="default" onClick={() => startEditOpp(opp)}>Edit</Button>
-                        <Button size="sm" variant="default" onClick={() => confirmAction('Remove Opportunity', `Remove "${opp.name}"?`, () => deleteOpportunity(opp.id), 'confirm', 'Remove')}>Remove</Button>
+                        <Button size="sm" variant="default" className="btn-danger" onClick={() => confirmAction('Remove Opportunity', `Remove "${opp.name}"?`, () => deleteOpportunity(opp.id), 'confirm', 'Remove')}>Remove</Button>
                       </div>
                     </div>
                   ))
@@ -416,53 +529,53 @@ const uploadCSV = async () => {
             </div>
           )}
 
+          {/* STUDENTS TAB */}
           {tab === 'students' && (
-          <div style={{ display: 'grid', gap: 'var(--sp-6)', gridTemplateColumns: '1fr 1fr' }}>
-            
-            {/* Manual Add */}
-            <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-              <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add Single Student</h3>
-              <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
-                <Field label="Full Name"><TextInput value={newStudent.name} onChange={(v) => setNewStudent({ ...newStudent, name: v })} /></Field>
-                <Field label="Matric Number"><TextInput value={newStudent.matric} onChange={(v) => setNewStudent({ ...newStudent, matric: v })} /></Field>
-                <Field label="Email"><TextInput type="email" value={newStudent.email} onChange={(v) => setNewStudent({ ...newStudent, email: v })} /></Field>
-                <Field label="Level">
-                  <select className="amees-input" value={newStudent.level} onChange={(e) => setNewStudent({ ...newStudent, level: e.target.value })}>
-                    {['100', '200', '300', '400', '500'].map((l) => <option key={l} value={l}>{l}</option>)}
-                  </select>
-                </Field>
-                <Button variant="primary" onClick={addStudent}>Add Student</Button>
+            <div className="admin-students-grid">
+              <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add Single Student</h3>
+                <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
+                  <Field label="Full Name"><TextInput value={newStudent.name} onChange={(v) => setNewStudent({ ...newStudent, name: v })} /></Field>
+                  <Field label="Matric Number"><TextInput value={newStudent.matric} onChange={(v) => setNewStudent({ ...newStudent, matric: v })} /></Field>
+                  <Field label="Email"><TextInput type="email" value={newStudent.email} onChange={(v) => setNewStudent({ ...newStudent, email: v })} /></Field>
+                  <Field label="Level">
+                    <select className="amees-input" value={newStudent.level} onChange={(e) => setNewStudent({ ...newStudent, level: e.target.value })}>
+                      {['100', '200', '300', '400', '500'].map((l) => <option key={l} value={l}>{l}</option>)}
+                    </select>
+                  </Field>
+                  <Button variant="primary" onClick={addStudent}>Add Student</Button>
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Bulk CSV Upload</h3>
+                <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', marginBottom: 'var(--sp-3)' }}>
+                  Format: <code>Name, Matric, Email, Level</code> (one per line, no header row).
+                </p>
+                <textarea
+                  value={csvText}
+                  onChange={(e) => setCsvText(e.target.value)}
+                  placeholder="Ada Lovelace, 12345, ada@lcu.edu.ng, 300&#10;Tunde, 67890, tunde@lcu.edu.ng, 200"
+                  style={{ width: '100%', height: '150px', padding: 'var(--sp-2)', fontFamily: 'monospace', marginBottom: 'var(--sp-3)', border: 'var(--bw-sm) solid var(--line)', background: 'var(--bg)', color: 'var(--fg)' }}
+                />
+                <Button variant="primary" onClick={uploadCSV}>Upload CSV</Button>
               </div>
             </div>
+          )}
 
-            {/* Bulk CSV */}
-            <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-              <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Bulk CSV Upload</h3>
-              <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', marginBottom: 'var(--sp-3)' }}>
-                Format: <code>Name, Matric, Email, Level</code> (one per line, no header row).
-              </p>
-              <textarea
-                value={csvText}
-                onChange={(e) => setCsvText(e.target.value)}
-                placeholder="Ada Lovelace, 12345, ada@lcu.edu.ng, 300&#10;Tunde, 67890, tunde@lcu.edu.ng, 200"
-                style={{ width: '100%', height: '150px', padding: 'var(--sp-2)', fontFamily: 'monospace', marginBottom: 'var(--sp-3)' }}
-              />
-              <Button variant="primary" onClick={uploadCSV}>Upload CSV</Button>
-            </div>
-
-          </div>
-        )}
-
+          {/* ARCHIVE TAB */}
           {tab === 'archive' && (
             <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
               <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
-                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Add a study file link</h3>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>
+                  {editingArchiveId ? 'Edit Study File' : 'Add a study file link'}
+                </h3>
                 <div style={{ display: 'grid', gap: 'var(--sp-3)' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--sp-3)' }}>
+                  <div className="admin-grid-2">
                     <Field label="Title"><TextInput type="text" value={newArchive.title} onChange={(v) => setNewArchive({ ...newArchive, title: v })} placeholder="Control Systems I — lecture slides" /></Field>
                     <Field label="Course code"><TextInput type="text" value={newArchive.course} onChange={(v) => setNewArchive({ ...newArchive, course: v })} placeholder="MCE 301" /></Field>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--sp-3)' }}>
+                  <div className="admin-grid-3">
                     <Field label="Level">
                       <select className="amees-input" value={newArchive.level} onChange={(e) => setNewArchive({ ...newArchive, level: e.target.value })}>
                         {['100', '200', '300', '400', '500'].map((l) => <option key={l} value={l}>{l}</option>)}
@@ -475,8 +588,17 @@ const uploadCSV = async () => {
                       </select>
                     </Field>
                   </div>
-                  <Field label="Google Drive share link"><TextInput type="url" value={newArchive.fileUrl} onChange={(v) => setNewArchive({ ...newArchive, fileUrl: v })} placeholder="https://drive.google.com/file/d/…/view" /></Field>
-                  <div><Button variant="primary" onClick={() => confirmAction('Add archive link', `Add "${newArchive.title}"?`, addArchiveFile)}>Add link</Button></div>
+                  <Field label="Google Drive share link">
+                    <TextInput type="url" value={newArchive.fileUrl} onChange={(v) => setNewArchive({ ...newArchive, fileUrl: v })} placeholder="https://drive.google.com/file/d/…/view" disabled={!!editingArchiveId} />
+                  </Field>
+                  <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                    <Button variant="primary" onClick={() => confirmAction(editingArchiveId ? 'Save Changes' : 'Add archive link', `Are you sure?`, saveArchiveFile)}>
+                      {editingArchiveId ? 'Save Changes' : 'Add link'}
+                    </Button>
+                    {editingArchiveId && (
+                      <Button variant="default" onClick={() => { setEditingArchiveId(null); setNewArchive({ title: '', course: '', level: '100', year: String(new Date().getFullYear()), kind: 'PDF', fileUrl: '' }); }}>Cancel</Button>
+                    )}
+                  </div>
                 </div>
               </div>
               <div>
@@ -490,7 +612,8 @@ const uploadCSV = async () => {
                       </div>
                       <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
                         {f.fileUrl && <Button as="a" href={f.fileUrl} target="_blank" rel="noopener noreferrer" size="sm" variant="default">Open</Button>}
-                        <Button size="sm" variant="default" onClick={() => confirmAction('Remove link', `Remove "${f.title}"?`, () => deleteArchiveFile(f.id), 'confirm', 'Remove')}>Remove</Button>
+                        <Button size="sm" variant="default" onClick={() => startEditArchive(f)}>Edit</Button>
+                        <Button size="sm" variant="default" className="btn-danger" onClick={() => confirmAction('Remove link', `Remove "${f.title}"?`, () => deleteArchiveFile(f.id), 'confirm', 'Remove')}>Remove</Button>
                       </div>
                     </div>
                   ))
@@ -499,6 +622,7 @@ const uploadCSV = async () => {
             </div>
           )}
 
+          {/* GENERAL SETTINGS TAB */}
           {tab === 'general' && (
             <div className="admin-form-grid">
               <Field label="Home Page Marquee Mode">

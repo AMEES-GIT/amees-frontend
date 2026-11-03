@@ -52,8 +52,9 @@ export interface WeeklyItem {
 /** A one-off calendar entry. */
 export interface CalendarEntry {
   id: string;
-  day: IsoDay;
+  day: IsoDay; // The API sends 'day' (YYYY-MM-DD)
   title: string;
+  description?: string; 
   type: CalendarType;
 }
 

@@ -7,6 +7,7 @@ import { RequireAuth } from './components/admin/RequireAuth';
 import { HomePage } from './pages/HomePage';
 import { EventsPage } from './pages/EventsPage';
 import { CalendarPage } from './pages/CalendarPage';
+import { CalendarEventPage } from './pages/CalendarEventPage';
 import { ArchivePage } from './pages/ArchivePage';
 import { WorkbenchPage } from './pages/WorkbenchPage';
 import { ToolboxPage } from './pages/ToolboxPage';
@@ -33,7 +34,7 @@ const FooterRunner = lazy(() =>
 
 type Theme = 'light' | 'dark';
 
-const KNOWN_EXTRA = ['project', 'search', 'login', 'admin'] as const;
+const KNOWN_EXTRA = ['project', 'event', 'search', 'login', 'admin'] as const;
 
 function pageFromPath(): PageId {
   const path = window.location.pathname.replace(/^\/|\/$/g, '');
@@ -49,6 +50,11 @@ function projectIdFromPath(): string | null {
   return parts[0] === 'project' && parts[1] ? parts[1] : null;
 }
 
+function eventIdFromPath(): string | null {
+  const parts = window.location.pathname.replace(/^\/|\/$/g, '').split('/');
+  return parts[0] === 'event' && parts[1] ? parts[1] : null;
+}
+
 function readTheme(): Theme {
   return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 }
@@ -57,6 +63,7 @@ export default function App() {
   const content = useContent();
   const [page, setPage] = useState<PageId>(pageFromPath);
   const [projectId, setProjectId] = useState<string | null>(projectIdFromPath);
+  const [eventId, setEventId] = useState<string | null>(eventIdFromPath);
 
   const [theme, setTheme] = useState<Theme>(readTheme);
   const [query, setQuery] = useState('');
@@ -65,7 +72,7 @@ export default function App() {
     () =>
       HEADER_NAV.some((n) => n.key === 'home')
         ? HEADER_NAV
-        : [{ key: 'home', label: 'Home', href: '#home' }, ...HEADER_NAV],
+        : [{ key: 'home', label: 'Home', href: '/' }, ...HEADER_NAV],
     [],
   );
 
@@ -74,6 +81,7 @@ export default function App() {
     const onPop = () => {
       setPage(pageFromPath());
       setProjectId(projectIdFromPath());
+      setEventId(eventIdFromPath());
       window.scrollTo(0, 0);
     };
     window.addEventListener('popstate', onPop);
@@ -100,7 +108,7 @@ export default function App() {
         if (!raw || raw === 'home') {
           window.history.pushState({}, '', '/');
         } else {
-          const target = raw.startsWith('project/') ? `/${raw}` : `/${raw.split('/')[0]}`;
+          const target = raw.startsWith('project/') || raw.startsWith('event/') ? `/${raw}` : `/${raw.split('/')[0]}`;
           window.history.pushState({}, '', target);
         }
         window.dispatchEvent(new PopStateEvent('popstate'));
@@ -171,6 +179,8 @@ export default function App() {
           <EventsPage onNavigate={onNavigate} />
         ) : page === 'calendar' ? (
           <CalendarPage />
+        ) : page === 'event' && eventId ? (
+          <CalendarEventPage eventId={eventId} onNavigate={onNavigate} />
         ) : page === 'archive' ? (
           <ArchivePage />
         ) : page === 'workbench' ? (

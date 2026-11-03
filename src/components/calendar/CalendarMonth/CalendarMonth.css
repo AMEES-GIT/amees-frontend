@@ -169,3 +169,32 @@
     border-radius: 50%; /* Exception: dots are round */
   }
 }
+
+/* Base styles */
+.amees-cal__mobile-view { display: none; }
+.amees-cal__day--selected { background: var(--panel-2); box-shadow: 0 0 0 2px var(--fill); }
+
+/* Mobile view logic */
+@media (max-width: 768px) {
+  .amees-cal__chip { display: none; } /* Hide text chips */
+  .amees-cal__dots { display: flex; justify-content: center; gap: 2px; }
+  
+  .amees-cal__mobile-view {
+    display: block;
+    margin-top: var(--sp-4);
+    padding: var(--sp-3);
+    background: var(--panel-2);
+    border: var(--bw-sm) solid var(--line);
+    border-radius: 4px;
+  }
+  .amees-cal__mobile-date { margin: 0 0 var(--sp-2); font-family: var(--font); }
+  .amees-cal__mobile-empty { color: var(--muted); font-size: var(--fs-sm); margin: 0; }
+  .amees-cal__mobile-list { display: grid; gap: var(--sp-2); }
+  .amees-cal__mobile-item {
+    padding: var(--sp-2);
+    border-left: 4px solid var(--fill);
+    background: var(--bg);
+  }
+  .amees-cal__mobile-item b { display: block; margin-bottom: 2px; }
+  .amees-cal__mobile-item p { margin: 0; font-size: var(--fs-sm); color: var(--muted); }
+}

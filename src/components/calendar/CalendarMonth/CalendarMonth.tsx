@@ -1,61 +1,55 @@
+import { useState, useEffect } from 'react';
 import { Button } from '../../primitives/Button';
 import './CalendarMonth.css';
 
 export interface CalendarEvent {
-  /** ISO date string (YYYY-MM-DD) in WAT. */
+  id: string;
   date: string;
   title: string;
-  /** Visual type. 'special' = green, 'holiday' = purple, 'default' = blue. */
+  description?: string;
   type?: 'default' | 'special' | 'holiday';
 }
 
 export interface CalendarMonthProps {
-  /** 0-indexed month (0 = January, 11 = December). */
   year: number;
-  /** 0-indexed month. */
   month: number;
   events: readonly CalendarEvent[];
-  /** ISO string or Date for "now". Used to highlight the current day. */
   now: string | Date;
-  /** Optional range to highlight (e.g. WIRED bootcamp window). */
   highlightRange?: { start: string; end: string };
   onPrev?: () => void;
   onNext?: () => void;
   onToday?: () => void;
+  onEventClick?: (id: string) => void;
   className?: string;
 }
 
 function getMonthName(year: number, month: number): string {
-  const d = new Date(year, month, 1);
-  return d.toLocaleString('en-GB', { month: 'long', year: 'numeric' });
+  return new Date(year, month, 1).toLocaleString('en-GB', { month: 'long', year: 'numeric' });
 }
 
 function dateKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export function CalendarMonth({
-  year,
-  month,
-  events,
-  now,
-  highlightRange,
-  onPrev,
-  onNext,
-  onToday,
-  className,
-}: CalendarMonthProps) {
+export function CalendarMonth({ year, month, events, now, highlightRange, onPrev, onNext, onToday, onEventClick, className }: CalendarMonthProps) {
   const todayDate = new Date(now);
   const todayKey = dateKey(todayDate);
+  
+  // Mobile selection state
+  const [selectedDate, setSelectedDate] = useState<string>(todayKey);
 
-  // Date math for the grid
+  // When navigating months, default the selected date to the 1st of that month
+  useEffect(() => {
+    if (todayDate.getFullYear() === year && todayDate.getMonth() === month) {
+      setSelectedDate(todayKey);
+    } else {
+      setSelectedDate(dateKey(new Date(year, month, 1)));
+    }
+  }, [year, month, todayKey]);
+
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  // Monday-first offset (0 = Monday, 6 = Sunday)
-  const offset = (firstDay.getDay() + 6) % 7;
+  const offset = (firstDay.getDay() + 6) % 7; // Monday-first
   const totalCells = Math.ceil((offset + daysInMonth) / 7) * 7;
 
   const cells = Array.from({ length: totalCells }, (_, i) => {
@@ -72,10 +66,13 @@ export function CalendarMonth({
       isInRange = cellKey >= highlightRange.start && cellKey <= highlightRange.end;
     }
 
-    return { dayNum: isCurrentMonth ? dayNum : null, dayEvents, isToday, isInRange };
+    return { dayNum: isCurrentMonth ? dayNum : null, cellKey, dayEvents, isToday, isInRange };
   });
 
   const dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  // Events for the mobile view
+  const selectedEvents = events.filter(e => e.date === selectedDate);
 
   return (
     <div className={['amees-cal', className].filter(Boolean).join(' ')}>
@@ -89,9 +86,7 @@ export function CalendarMonth({
       </div>
 
       <div className="amees-cal__grid">
-        {dows.map(d => (
-          <div key={d} className="amees-cal__dow">{d}</div>
-        ))}
+        {dows.map(d => <div key={d} className="amees-cal__dow">{d}</div>)}
         
         {cells.map((cell, i) => (
           <div
@@ -101,7 +96,11 @@ export function CalendarMonth({
               cell.dayNum === null && 'amees-cal__day--off',
               cell.isInRange && 'amees-cal__day--in-range',
               cell.isToday && 'amees-cal__day--today',
+              cell.cellKey === selectedDate && 'amees-cal__day--selected'
             ].filter(Boolean).join(' ')}
+            onClick={() => {
+              if (cell.dayNum !== null) setSelectedDate(cell.cellKey);
+            }}
           >
             {cell.dayNum && (
               <>
@@ -112,16 +111,19 @@ export function CalendarMonth({
                       key={j} 
                       className={`amees-cal__chip amees-cal__chip--${ev.type || 'default'}`}
                       title={ev.title}
+                      onClick={(e) => {
+                        if (onEventClick) {
+                          e.stopPropagation(); // Prevent day selection
+                          onEventClick(ev.id);
+                        }
+                      }}
                     >
                       {ev.title}
                     </div>
                   ))}
-                  {/* Mobile dots fallback (hidden >480px, shown <480px) */}
                   {cell.dayEvents.length > 0 && (
                     <div className="amees-cal__dots">
-                      {cell.dayEvents.map((_, j) => (
-                         <span key={j} className="amees-cal__dot" />
-                      ))}
+                      {cell.dayEvents.map((_, j) => <span key={j} className="amees-cal__dot" />)}
                     </div>
                   )}
                 </div>
@@ -129,6 +131,29 @@ export function CalendarMonth({
             )}
           </div>
         ))}
+      </div>
+
+      {/* Mobile Daily View */}
+      <div className="amees-cal__mobile-view">
+        <h4 className="amees-cal__mobile-date">
+          {new Date(selectedDate).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+        </h4>
+        {selectedEvents.length === 0 ? (
+          <p className="amees-cal__mobile-empty">No events on this day.</p>
+        ) : (
+          <div className="amees-cal__mobile-list">
+            {selectedEvents.map(ev => (
+              <div 
+                key={ev.id} 
+                className={`amees-cal__mobile-item amees-cal__mobile-item--${ev.type || 'default'}`}
+                onClick={() => onEventClick && onEventClick(ev.id)}
+              >
+                <b>{ev.title}</b>
+                {ev.description && <p>{ev.description}</p>}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="amees-cal__legend">

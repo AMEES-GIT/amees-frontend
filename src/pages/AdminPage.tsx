@@ -44,7 +44,6 @@ export function AdminPage() {
   const [tab, setTab] = useState<AdminTab>('event');
   const [status, setStatus] = useState<SaveState>('saved');
   
-  // Toast State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const showToast = (message: string, type: 'success' | 'error' = 'success') => setToast({ message, type });
 
@@ -56,14 +55,22 @@ export function AdminPage() {
   
   // States for Events/Calendar
   const [newCalDate, setNewCalDate] = useState('');
+  const [newCalStartTime, setNewCalStartTime] = useState('15:00');
+  const [newCalEndTime, setNewCalEndTime] = useState('17:00');
   const [newCalTitle, setNewCalTitle] = useState('');
   const [newCalDesc, setNewCalDesc] = useState('');
+  const [newCalJoin, setNewCalJoin] = useState('');
+  const [newCalReg, setNewCalReg] = useState('');
   const [editingCalId, setEditingCalId] = useState<string | null>(null);
 
   // States for Weekly Rhythm
   const [newWeekTitle, setNewWeekTitle] = useState('');
   const [newWeekText, setNewWeekText] = useState('');
   const [newWeekDay, setNewWeekDay] = useState('2');
+  const [newWeekStartTime, setNewWeekStartTime] = useState('15:00');
+  const [newWeekEndTime, setNewWeekEndTime] = useState('17:00');
+  const [newWeekJoin, setNewWeekJoin] = useState('');
+  const [newWeekReg, setNewWeekReg] = useState('');
   const [editingWeekId, setEditingWeekId] = useState<string | null>(null);
 
   // States for Executives
@@ -109,7 +116,6 @@ export function AdminPage() {
     if (!getValidToken()) window.location.hash = 'login';
   }, []);
 
-  // Fetch students on tab change
   useEffect(() => {
     if (tab === 'students') searchStudents('');
   }, [tab]);
@@ -142,7 +148,15 @@ export function AdminPage() {
   
   // --- EVENTS & CALENDAR ---
   const saveCalendarEntry = async () => {
-    const payload = { title: newCalTitle, description: newCalDesc, type: 'special' };
+    const payload = { 
+      title: newCalTitle, 
+      description: newCalDesc, 
+      type: 'special',
+      startTime: newCalStartTime,
+      endTime: newCalEndTime,
+      joinUrl: newCalJoin,
+      registrationUrl: newCalReg
+    };
     try {
       const url = editingCalId ? `/calendar/${editingCalId}` : '/calendar';
       const method = editingCalId ? 'PUT' : 'POST';
@@ -151,28 +165,56 @@ export function AdminPage() {
       const res = await adminFetch(url, { method, body: JSON.stringify(body) });
       if (res.ok) {
         refresh();
-        setNewCalDate(''); setNewCalTitle(''); setNewCalDesc(''); setEditingCalId(null);
+        setNewCalDate(''); setNewCalTitle(''); setNewCalDesc(''); setNewCalJoin(''); setNewCalReg(''); setEditingCalId(null);
         showToast('Calendar event saved');
       }
     } catch {}
   };
-  const startEditCal = (e: any) => { setEditingCalId(e.id); setNewCalTitle(e.title); setNewCalDesc(e.description || ''); setNewCalDate(e.day); window.scrollTo(0,0); };
+  const startEditCal = (e: any) => { 
+    setEditingCalId(e.id); 
+    setNewCalTitle(e.title); 
+    setNewCalDesc(e.description || ''); 
+    setNewCalDate(e.day); 
+    setNewCalStartTime(e.startTime || '15:00');
+    setNewCalEndTime(e.endTime || '17:00');
+    setNewCalJoin(e.joinUrl || '');
+    setNewCalReg(e.registrationUrl || '');
+    window.scrollTo(0,0); 
+  };
   const deleteCalendarEntry = async (id: string) => { try { const res = await adminFetch(`/calendar/${id}`, { method: 'DELETE' }); if (res.ok) { refresh(); showToast('Event deleted'); } } catch {} };
 
   const saveWeeklyItem = async () => {
-    const payload = { title: newWeekTitle, text: newWeekText, weekday: Number(newWeekDay) === -1 ? null : Number(newWeekDay) };
+    const payload = { 
+      title: newWeekTitle, 
+      text: newWeekText, 
+      weekday: Number(newWeekDay) === -1 ? null : Number(newWeekDay),
+      startTime: newWeekStartTime,
+      endTime: newWeekEndTime,
+      joinUrl: newWeekJoin,
+      registrationUrl: newWeekReg
+    };
     try {
       const url = editingWeekId ? `/weekly/${editingWeekId}` : '/weekly';
       const method = editingWeekId ? 'PUT' : 'POST';
       const res = await adminFetch(url, { method, body: JSON.stringify(payload) });
       if (res.ok) {
         refresh();
-        setNewWeekTitle(''); setNewWeekText(''); setNewWeekDay('2'); setEditingWeekId(null);
+        setNewWeekTitle(''); setNewWeekText(''); setNewWeekDay('2'); setNewWeekJoin(''); setNewWeekReg(''); setEditingWeekId(null);
         showToast('Recurring item saved');
       }
     } catch {}
   };
-  const startEditWeek = (w: any) => { setEditingWeekId(w.id); setNewWeekTitle(w.title); setNewWeekText(w.text); setNewWeekDay(String(w.weekday ?? -1)); window.scrollTo(0,0); };
+  const startEditWeek = (w: any) => { 
+    setEditingWeekId(w.id); 
+    setNewWeekTitle(w.title); 
+    setNewWeekText(w.text); 
+    setNewWeekDay(String(w.weekday ?? -1)); 
+    setNewWeekStartTime(w.startTime || '15:00');
+    setNewWeekEndTime(w.endTime || '17:00');
+    setNewWeekJoin(w.joinUrl || '');
+    setNewWeekReg(w.registrationUrl || '');
+    window.scrollTo(0,0); 
+  };
   const deleteWeeklyItem = async (id: string) => { try { const res = await adminFetch(`/weekly/${id}`, { method: 'DELETE' }); if (res.ok) { refresh(); showToast('Item deleted'); } } catch {} };
 
   // --- EXECUTIVES ---
@@ -253,7 +295,7 @@ export function AdminPage() {
       if (res.ok) { 
         showToast('Student added successfully!'); 
         setNewStudent({ name: '', matric: '', email: '', level: '100' }); 
-        searchStudents(studentSearch); // Refresh list
+        searchStudents(studentSearch); 
       } 
       else { const data = await res.json(); showToast(data.error, 'error'); }
     } catch {}
@@ -289,6 +331,10 @@ export function AdminPage() {
               <Field label="Theme"><TextInput value={formData.theme} onChange={(v) => setFormData({ ...formData, theme: v })} /></Field>
               <Field label="Subtitle"><TextInput value={formData.subtitle} onChange={(v) => setFormData({ ...formData, subtitle: v })} /></Field>
               <Field label="Venue"><TextInput value={formData.venue} onChange={(v) => setFormData({ ...formData, venue: v })} /></Field>
+              
+              <Field label="Join URL (Live Link)"><TextInput value={formData.joinUrl || ''} onChange={(v) => setFormData({ ...formData, joinUrl: v })} placeholder="https://zoom.us/j/..." /></Field>
+              <Field label="Registration URL"><TextInput value={formData.registrationUrl || ''} onChange={(v) => setFormData({ ...formData, registrationUrl: v })} placeholder="https://forms.gle/..." /></Field>
+              
               <div><Button variant="primary" onClick={() => confirmAction('Save Event', 'Update the featured event?', saveEvent)}>Save Event</Button></div>
             </div>
           )}
@@ -306,15 +352,23 @@ export function AdminPage() {
                     <Field label="Date">
                       <TextInput type="text" value={newCalDate} onChange={setNewCalDate} placeholder="YYYY-MM-DD" disabled={!!editingCalId} />
                     </Field>
+                    <Field label="Start Time"><TextInput type="text" value={newCalStartTime} onChange={setNewCalStartTime} placeholder="15:00" /></Field>
+                    <Field label="End Time"><TextInput type="text" value={newCalEndTime} onChange={setNewCalEndTime} placeholder="17:00" /></Field>
+                  </div>
+                  <div className="admin-grid-2">
                     <Field label="Event Title"><TextInput type="text" value={newCalTitle} onChange={setNewCalTitle} placeholder="Hackathon Finals" /></Field>
                     <Field label="Description (Optional)"><TextInput type="text" value={newCalDesc} onChange={setNewCalDesc} placeholder="Brief details..." /></Field>
+                  </div>
+                  <div className="admin-grid-2">
+                    <Field label="Join URL (Live Link)"><TextInput type="text" value={newCalJoin} onChange={setNewCalJoin} placeholder="https://zoom.us/j/..." /></Field>
+                    <Field label="Registration URL"><TextInput type="text" value={newCalReg} onChange={setNewCalReg} placeholder="https://forms.gle/..." /></Field>
                   </div>
                   <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
                     <Button variant="primary" onClick={() => confirmAction(editingCalId ? 'Save Changes' : 'Add Date', `Are you sure?`, saveCalendarEntry)}>
                       {editingCalId ? 'Save Changes' : 'Add One-off Event'}
                     </Button>
                     {editingCalId && (
-                      <Button variant="default" onClick={() => { setEditingCalId(null); setNewCalDate(''); setNewCalTitle(''); setNewCalDesc(''); }}>Cancel</Button>
+                      <Button variant="default" onClick={() => { setEditingCalId(null); setNewCalDate(''); setNewCalTitle(''); setNewCalDesc(''); setNewCalJoin(''); setNewCalReg(''); }}>Cancel</Button>
                     )}
                   </div>
                 </div>
@@ -331,13 +385,21 @@ export function AdminPage() {
                       <Select options={DAYS} value={newWeekDay} onChange={setNewWeekDay} />
                     </Field>
                   </div>
-                  <Field label="Short Description"><TextInput type="text" value={newWeekText} onChange={setNewWeekText} placeholder="Quick-fire engineering questions" /></Field>
+                  <div className="admin-grid-3">
+                    <Field label="Start Time"><TextInput type="text" value={newWeekStartTime} onChange={setNewWeekStartTime} placeholder="15:00" /></Field>
+                    <Field label="End Time"><TextInput type="text" value={newWeekEndTime} onChange={setNewWeekEndTime} placeholder="17:00" /></Field>
+                    <Field label="Short Description"><TextInput type="text" value={newWeekText} onChange={setNewWeekText} placeholder="Details..." /></Field>
+                  </div>
+                  <div className="admin-grid-2">
+                    <Field label="Join URL (Live Link)"><TextInput type="text" value={newWeekJoin} onChange={setNewWeekJoin} placeholder="https://zoom.us/j/..." /></Field>
+                    <Field label="Registration URL"><TextInput type="text" value={newWeekReg} onChange={setNewWeekReg} placeholder="https://forms.gle/..." /></Field>
+                  </div>
                   <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
                     <Button variant="primary" onClick={() => confirmAction(editingWeekId ? 'Save Changes' : 'Add Item', `Are you sure?`, saveWeeklyItem)}>
                       {editingWeekId ? 'Save Changes' : 'Add Recurring Item'}
                     </Button>
                     {editingWeekId && (
-                      <Button variant="default" onClick={() => { setEditingWeekId(null); setNewWeekTitle(''); setNewWeekText(''); setNewWeekDay('2'); }}>Cancel</Button>
+                      <Button variant="default" onClick={() => { setEditingWeekId(null); setNewWeekTitle(''); setNewWeekText(''); setNewWeekDay('2'); setNewWeekJoin(''); setNewWeekReg(''); }}>Cancel</Button>
                     )}
                   </div>
                 </div>
@@ -350,7 +412,7 @@ export function AdminPage() {
                     <div key={entry.id} className="admin-list-item">
                       <div>
                         <div style={{ fontWeight: 'bold' }}>{entry.title}</div>
-                        <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>{entry.day} {entry.description && `· ${entry.description}`}</div>
+                        <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>{entry.day} · {entry.startTime} to {entry.endTime}</div>
                       </div>
                       <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
                         <Button size="sm" variant="default" onClick={() => startEditCal(entry)}>Edit</Button>
@@ -361,13 +423,13 @@ export function AdminPage() {
                 </div>
 
                 <div>
-                  <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Recurring Events</h3>
+                  <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Recurring Rhythm</h3>
                   {content.weekly.map((item) => (
                     <div key={item.id} className="admin-list-item">
                       <div>
                         <div style={{ fontWeight: 'bold' }}>{item.title}</div>
                         <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)' }}>
-                          {item.weekday !== undefined ? DAYS.find((d) => Number(d.value) === item.weekday)?.label : item.label} · {item.text}
+                          {item.weekday !== undefined ? DAYS.find((d) => Number(d.value) === item.weekday)?.label : item.label} · {item.startTime} to {item.endTime}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
@@ -608,7 +670,6 @@ export function AdminPage() {
                 </div>
               </div>
 
-              {/* Student List / Search */}
               <div style={{ marginTop: 'var(--sp-4)' }}>
                 <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Registered Students</h3>
                 <div style={{ marginBottom: 'var(--sp-3)' }}>
@@ -713,14 +774,15 @@ export function AdminPage() {
           {/* GENERAL SETTINGS TAB */}
           {tab === 'general' && (
             <div className="admin-form-grid">
-              <Field label="Home Page Marquee Mode">
+              <Field label="Home Page Hero Mode">
                 <Select 
                   options={[
                     { value: 'caution', label: 'Caution Tape (Event Countdown)' }, 
+                    { value: 'event_handler', label: 'Event Handler (Auto Countdown / Live)' },
                     { value: 'showcase', label: 'Showcase Marquee (Student Projects)' }
                   ]} 
                   value={marqueeMode} 
-                  onChange={(v) => setMarqueeMode(v as 'caution' | 'showcase')} 
+                  onChange={(v) => setMarqueeMode(v as 'caution' | 'showcase' | 'event_handler')} 
                 />
               </Field>
               <Field label="Footer Tagline"><Textarea value={footerTagline} onChange={setFooterTagline} /></Field>

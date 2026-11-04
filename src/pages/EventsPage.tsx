@@ -7,6 +7,7 @@ import { DotList } from '../components/containers/DotList';
 import { Button } from '../components/primitives/Button';
 import { CalendarMonth } from '../components/calendar/CalendarMonth';
 import { RegistrationForm } from '../components/home/RegistrationForm';
+import { AmeesLive, type LiveEvent } from '../components/home/LiveWindow/LiveWindow';
 import { useNow } from '../lib/useNow';
 import { eventState } from '../lib/eventState';
 import { fmtDay, fmtYear, fmtTime, watIsoDate, watMonth, monthLabel } from '../lib/format';
@@ -34,23 +35,92 @@ export function EventsPage({ onNavigate }: EventsPageProps) {
   const content = useContent();
   const f = useFeatured();
   if (!f) {
-  return (
-    <Wrap>
-      <Block>
-        <PageHeader
-          kicker={content.pages.events.kicker}
-          title={content.pages.events.title}
-          lede="No featured event is scheduled right now. Check back soon."
-        />
-      </Block>
-    </Wrap>
-  );
-}
+    return (
+      <Wrap>
+        <Block>
+          <PageHeader
+            kicker={content.pages.events.kicker}
+            title={content.pages.events.title}
+            lede="No featured event is scheduled right now. Check back soon."
+          />
+        </Block>
+      </Wrap>
+    );
+  }
+  
   const now = useNow(60_000);
+  const nowTime = now.getTime();
   const state = eventState(now, f.start, f.end);
   const name = `${f.title} ${f.version}`;
   const canRegister = f.registrationOpen && state !== 'after';
   const intro = content.pages.events;
+
+  // --- FIND LIVE EVENT ---
+  let liveEvent: LiveEvent | null = null;
+
+  // 1. Check Featured Event
+  if (nowTime >= f.start.getTime() && nowTime <= f.end.getTime()) {
+    liveEvent = {
+      title: f.title,
+      subtitle: f.subtitle,
+      theme: f.theme,
+      venue: f.venue,
+      start: f.start.toISOString(),
+      end: f.end.toISOString(),
+      joinUrl: (f as any).joinUrl,
+      registrationUrl: (f as any).registrationUrl,
+    };
+  }
+
+  // 2. Check Calendar Entries (One-off)
+  if (!liveEvent) {
+    const activeCal = content.calendarEntries.find(e => {
+      const start = new Date(e.day);
+      const end = e.endDate ? new Date(e.endDate) : new Date(start.getTime() + 2 * 60 * 60 * 1000);
+      return nowTime >= start.getTime() && nowTime <= end.getTime();
+    });
+    if (activeCal) {
+      liveEvent = {
+        title: activeCal.title,
+        subtitle: activeCal.description,
+        start: activeCal.day,
+        end: activeCal.endDate || new Date(new Date(activeCal.day).getTime() + 2 * 60 * 60 * 1000).toISOString(),
+        joinUrl: (activeCal as any).joinUrl,
+        registrationUrl: (activeCal as any).registrationUrl,
+      };
+    }
+  }
+
+  // 3. Check Weekly Rhythm
+  if (!liveEvent) {
+    const today = now.getDay();
+    const activeWeekly = content.weekly.find(w => {
+      if (w.weekday !== today || !w.startTime || !w.endTime) return false;
+      const [h1, m1] = w.startTime.split(':').map(Number);
+      const [h2, m2] = w.endTime.split(':').map(Number);
+      
+      const start = new Date(now); start.setHours(h1, m1, 0, 0);
+      const end = new Date(now); end.setHours(h2, m2, 0, 0);
+      
+      return nowTime >= start.getTime() && nowTime <= end.getTime();
+    });
+    
+    if (activeWeekly) {
+      const [h1, m1] = activeWeekly.startTime!.split(':').map(Number);
+      const [h2, m2] = activeWeekly.endTime!.split(':').map(Number);
+      const start = new Date(now); start.setHours(h1, m1, 0, 0);
+      const end = new Date(now); end.setHours(h2, m2, 0, 0);
+      
+      liveEvent = {
+        title: activeWeekly.title,
+        subtitle: activeWeekly.text,
+        start: start.toISOString(),
+        end: end.toISOString(),
+        joinUrl: (activeWeekly as any).joinUrl,
+        registrationUrl: (activeWeekly as any).registrationUrl,
+      };
+    }
+  }
 
   // Calendar state
   const initialCal = useMemo(() => watMonth(state === 'before' ? f.start : now), [state, f.start, now]);
@@ -108,6 +178,13 @@ export function EventsPage({ onNavigate }: EventsPageProps) {
         />
       </Block>
 
+      {/* RENDER LIVE WINDOW IF ANY EVENT IS CURRENTLY HAPPENING */}
+      {liveEvent && (
+        <Block>
+          <AmeesLive event={liveEvent} />
+        </Block>
+      )}
+
       <Block>
         <Window
           className="events-hero"
@@ -116,7 +193,6 @@ export function EventsPage({ onNavigate }: EventsPageProps) {
         >
           <RowList rows={factRows} />
           
-          {/* CTAs moved to the bottom, standard size */}
           <Row className="mt-4">
             {canRegister && (
               <Button variant="primary" onClick={goToRegister}>
@@ -196,7 +272,7 @@ export function EventsPage({ onNavigate }: EventsPageProps) {
           <Window title="Later this year">
             <DotList
               items={content.upcoming.map((e) => (
-                <span>
+                <span key={e.id}>
                   <b>{e.title}</b>: {e.text}
                 </span>
               ))}

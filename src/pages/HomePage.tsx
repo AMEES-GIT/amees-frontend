@@ -17,6 +17,7 @@ import { fmtDay } from '../lib/format';
 import { useContent, useFeatured } from '../content/contentProvider';
 import { weeklyRows } from '../content/selectors';
 import type { PageId } from './types';
+import { AmeesLive } from '../components/home/LiveWindow/LiveWindow';
 import './home.css';
 
 interface HomePageProps {
@@ -54,7 +55,6 @@ function EventHero({ onNavigate }: HomePageProps) {
   const f = useFeatured();
   const now = useNow(1000);
   
-  // Handle empty database gracefully
   if (!f) {
     return (
       <div style={{ padding: 'var(--sp-6) 0', textAlign: 'center' }}>
@@ -124,7 +124,6 @@ function EventDetails({ onNavigate }: HomePageProps) {
   const f = useFeatured();
   const now = useNow(60_000);
   
-  // If no event, or the event has passed, hide details
   if (!f || now.getTime() >= f.end.getTime()) return null;
 
   return (
@@ -161,6 +160,7 @@ function EventDetails({ onNavigate }: HomePageProps) {
 
 export function HomePage({ onNavigate }: HomePageProps) {
   const { archive, quickLinks, upcoming, sponsorPitch, projects, activeMarquee } = useContent();
+  const f = useFeatured();
 
   const archiveRows = archive.slice(0, 3).map((f) => ({
     lead: f.ext,
@@ -169,7 +169,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
   }));
   const archiveIsSample = archive.slice(0, 3).some((f) => f.sample);
 
-  // Determine which marquee to show based on the content flag
   const showcaseItems = projects?.projects
     ?.filter(p => p.showcased)
     .map(p => ({
@@ -183,8 +182,22 @@ export function HomePage({ onNavigate }: HomePageProps) {
         <EventHero onNavigate={onNavigate} />
       </Wrap>
 
-      {/* Swap between CautionTape and ShowcaseMarquee based on the activeMarquee flag */}
-      {activeMarquee === 'showcase' && showcaseItems.length > 0 ? (
+      {activeMarquee === 'event_handler' && f ? (
+        <Wrap>
+          <Block>
+            <AmeesLive event={{
+              title: f.title,
+              subtitle: f.subtitle,
+              theme: f.theme,
+              venue: f.venue,
+              start: f.start.toISOString(),
+              end: f.end.toISOString(),
+              joinUrl: f.joinUrl || undefined,
+              registrationUrl: f.registrationUrl || undefined,
+            }} />
+          </Block>
+        </Wrap>
+      ) : activeMarquee === 'showcase' && showcaseItems.length > 0 ? (
         <ShowcaseMarquee items={showcaseItems} />
       ) : (
         <CautionTape />

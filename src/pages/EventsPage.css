@@ -1,17 +1,23 @@
-/* Make the event title in the top window slightly larger */
-.events-hero .amees-window__title {
-  font-size: 26px;
-  letter-spacing: var(--ls-caps-sm);
-}
-
-/* Make the "EVENTS" kicker text bigger and stand out more */
+/* Main Page Header */
 .events-header .amees-page-head__kicker {
   font-size: var(--fs-lg); 
   letter-spacing: var(--ls-caps);
   margin-bottom: var(--sp-1);
 }
 
+/* Featured Event Window Title */
+.events-hero .amees-window__title {
+  font-size: 26px;
+  letter-spacing: var(--ls-caps-sm);
+}
+
 /* Spacing for the CTA buttons */
 .mt-4 {
   margin-top: var(--sp-4);
+}
+
+/* General Layout Spacing */
+.events-grid {
+  display: grid;
+  gap: var(--sp-4);
 }

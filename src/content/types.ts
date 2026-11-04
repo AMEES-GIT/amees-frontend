@@ -34,6 +34,9 @@ export interface FeaturedEvent {
   registrationOpen: boolean;
   tracks: Track[];
   steps: Step[];
+
+  joinUrl?: string | null;
+  registrationUrl?: string | null;
 }
 
 /** A recurring or standing item in the weekly rhythm. */
@@ -47,6 +50,11 @@ export interface WeeklyItem {
   label?: string;
   /** Calendar chip colour, used only when weekday is set. */
   type?: CalendarType;
+
+  startTime?: string | null;   
+  endTime?: string | null;      
+  joinUrl?: string | null;   
+  registrationUrl?: string | null;
 }
 
 /** A one-off calendar entry. */
@@ -56,6 +64,12 @@ export interface CalendarEntry {
   title: string;
   description?: string; 
   type: CalendarType;
+
+  endDate?: IsoDateTime | null; 
+  startTime?: string | null;    // ADDED
+  endTime?: string | null;      // ADDED
+  joinUrl?: string | null;     
+  registrationUrl?: string | null;
 }
 
 export interface UpcomingEvent {
@@ -95,8 +109,7 @@ export interface ExternalLink {
 }
 
 /** 
- * UPDATED: New schema for opportunities. 
- * Matches the Prisma model and the new Admin tab.
+ * New schema for opportunities. 
  */
 export interface Opportunity {
   id: string;
@@ -106,7 +119,7 @@ export interface Opportunity {
   externalLink?: string | null;
   startDate: IsoDateTime;
   endDate: IsoDateTime;
-  tags?: string[]; // ADDED: e.g. ["EEE", "Level 300", "Group"]
+  tags?: string[]; // e.g. ["EEE", "Level 300", "Group"]
 }
 
 export interface ExecutiveMember {
@@ -190,7 +203,7 @@ export interface SiteContent {
   upcoming: UpcomingEvent[];
   quickLinks: QuickLink[];
   opportunities: Opportunity[];
-  activeMarquee?: 'caution' | 'showcase';
+  activeMarquee?: 'caution' | 'showcase' | 'event_handler';
   membershipFormUrl: string;
   projectSubmissionUrl: string;
 

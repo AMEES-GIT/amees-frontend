@@ -1,0 +1,291 @@
+.amees-live {
+  --state: var(--c-bad);
+  --scope-bg: #12093A;
+  --scope-line: #6CF2C2;
+  --scope-grid: #2A2370;
+
+  position: relative;
+  border: var(--bw) solid var(--line);
+  background: var(--panel-2);
+  box-shadow: 6px 6px 0 var(--shadow);
+  margin-bottom: var(--sp-6);
+}
+
+.amees-live[data-state="upcoming"] { --state: var(--c-warn); }
+.amees-live[data-state="ending"] { --state: var(--c-warn); }
+.amees-live[data-state="ended"] { --state: var(--muted); }
+
+.amees-live__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  background: var(--bar);
+  color: var(--bar-fg);
+  padding: var(--sp-2) var(--sp-3);
+  font: 700 var(--fs-sm)/1.2 var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.amees-live__air {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.amees-live__led {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  background: var(--state);
+  box-shadow: 0 0 0 0 var(--state);
+}
+
+.amees-live[data-state="live"] .amees-live__led,
+.amees-live[data-state="ending"] .amees-live__led {
+  animation: live-led 1.2s steps(2, jump-none) infinite;
+}
+
+@keyframes live-led {
+  0% { opacity: 1; box-shadow: 0 0 0 0 transparent; }
+  50% { opacity: .35; box-shadow: 0 0 0 5px color-mix(in srgb, var(--state) 40%, transparent); }
+  100% { opacity: 1; }
+}
+
+.amees-live__mid {
+  opacity: 0.9;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.amees-live__tape {
+  overflow: hidden;
+  border-bottom: var(--bw) solid var(--line);
+  background: var(--yellow);
+  color: #1B0F4B;
+  font: 700 12px/1 var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+  position: relative;
+}
+
+.amees-live__tape::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  background: repeating-linear-gradient(-45deg, #1B0F4B 0 10px, transparent 10px 20px);
+}
+
+.amees-live__tape-run {
+  display: inline-flex;
+  padding: 8px 0;
+  position: relative;
+  animation: tape-run 22s linear infinite;
+}
+
+.amees-live__tape-run span { padding-right: 2.4em; }
+
+@keyframes tape-run { to { transform: translateX(-50%); } }
+
+.amees-live[data-state="live"] .amees-live__tape { background: #6FE0A5; }
+.amees-live[data-state="upcoming"] .amees-live__tape,
+.amees-live[data-state="ended"] .amees-live__tape { background: var(--gray); }
+
+.amees-live__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: var(--sp-5);
+  padding: var(--sp-4);
+}
+
+@media (max-width: 768px) {
+  .amees-live__body { grid-template-columns: 1fr; padding: var(--sp-3); }
+}
+
+.amees-live__kick {
+  font: 700 12px/1 var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--blue);
+}
+
+.amees-live__title {
+  font: 700 clamp(26px, 5vw, 38px)/1.05 var(--font);
+  text-transform: uppercase;
+  margin: var(--sp-2) 0 var(--sp-3);
+  overflow-wrap: anywhere;
+}
+
+.amees-live__facts {
+  display: grid;
+  gap: 6px;
+  font-size: var(--fs-md);
+  list-style: none;
+  padding: 0;
+}
+
+.amees-live__facts li {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: var(--sp-2);
+}
+
+.amees-live__facts b {
+  font: 700 12px/1.9 var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.amees-live__status {
+  margin-top: var(--sp-3);
+  font: 700 var(--fs-md)/1.4 var(--font);
+  color: var(--state);
+}
+
+.amees-live[data-state="ended"] .amees-live__status { color: var(--muted); }
+.amees-live[data-state="live"] .amees-live__status { color: var(--c-ok); }
+
+.amees-live__scope {
+  border: var(--bw) solid var(--line);
+  background: var(--scope-bg);
+  position: relative;
+}
+
+.amees-live__scope canvas {
+  display: block;
+  width: 100%;
+  height: 132px;
+}
+
+.amees-live__scope-tag {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font: 700 11px/1 var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--scope-line);
+}
+
+.amees-live__scope-tag--r {
+  left: auto;
+  right: 8px;
+  color: #fff;
+  opacity: 0.7;
+}
+
+.amees-live__timer {
+  display: grid;
+  gap: 8px;
+  margin-top: var(--sp-3);
+}
+
+.amees-live__timer-lab {
+  font: 700 12px/1 var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.amees-live__digits {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.amees-live__digits .d {
+  min-width: 2ch;
+  padding: 6px 8px;
+  text-align: center;
+  border: var(--bw) solid var(--line);
+  background: var(--bar);
+  color: var(--bar-fg);
+  font: 700 clamp(26px, 6vw, 34px)/1 var(--font);
+  font-variant-numeric: tabular-nums;
+}
+
+.amees-live__digits .c {
+  font: 700 26px/1 var(--font);
+  color: var(--muted);
+}
+
+.amees-live__timer-left {
+  font: 400 var(--fs-sm)/1.4 var(--font);
+  color: var(--muted);
+}
+
+.amees-live__rule {
+  margin-top: var(--sp-3);
+  position: relative;
+  height: 30px;
+  border: var(--bw) solid var(--line);
+  background: var(--panel);
+}
+
+.amees-live__rule-ticks {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(90deg, var(--line) 0 2px, transparent 2px var(--tick, 10%)),
+    repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px calc(var(--tick, 10%) / 5));
+  background-size: 100% 55%, 100% 28%;
+  background-repeat: no-repeat;
+  background-position: 0 100%, 0 100%;
+  opacity: 0.55;
+}
+
+.amees-live__rule-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--pct, 0%);
+  background: color-mix(in srgb, var(--fill) 28%, transparent);
+}
+
+.amees-live__rule-needle {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  left: var(--pct, 0%);
+  width: 4px;
+  margin-left: -2px;
+  background: var(--state);
+  border: 1px solid var(--line);
+}
+
+.amees-live__rule-labels {
+  display: flex;
+  justify-content: space-between;
+  font: 700 11px/1 var(--font);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.amees-live__footer {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  align-items: center;
+  padding: var(--sp-3) var(--sp-4);
+  border-top: var(--bw-sm) dashed var(--line);
+  background: var(--panel);
+}
+
+.amees-live__note {
+  margin-left: auto;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+
+@media (max-width: 700px) {
+  .amees-live__footer .amees-btn { flex: 1 1 100%; }
+  .amees-live__note { margin-left: 0; }
+}

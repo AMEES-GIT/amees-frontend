@@ -67,26 +67,30 @@ export function EventsPage({ onNavigate }: EventsPageProps) {
       venue: f.venue,
       start: f.start.toISOString(),
       end: f.end.toISOString(),
-      joinUrl: (f as any).joinUrl,
-      registrationUrl: (f as any).registrationUrl,
+      joinUrl: f.joinUrl || undefined,
+      registrationUrl: f.registrationUrl || undefined,
     };
   }
 
   // 2. Check Calendar Entries (One-off)
   if (!liveEvent) {
     const activeCal = content.calendarEntries.find(e => {
-      const start = new Date(e.day);
-      const end = e.endDate ? new Date(e.endDate) : new Date(start.getTime() + 2 * 60 * 60 * 1000);
-      return nowTime >= start.getTime() && nowTime <= end.getTime();
+      const startStr = `${e.day}T${e.startTime || '00:00'}:00`;
+      const endStr = e.endDate || `${e.day}T${e.endTime || '23:59'}:00`;
+      const start = new Date(startStr).getTime();
+      const end = new Date(endStr).getTime();
+      return nowTime >= start && nowTime <= end;
     });
+
     if (activeCal) {
       liveEvent = {
         title: activeCal.title,
         subtitle: activeCal.description,
-        start: activeCal.day,
-        end: activeCal.endDate || new Date(new Date(activeCal.day).getTime() + 2 * 60 * 60 * 1000).toISOString(),
-        joinUrl: (activeCal as any).joinUrl,
-        registrationUrl: (activeCal as any).registrationUrl,
+        venue: activeCal.venue || undefined,
+        start: new Date(`${activeCal.day}T${activeCal.startTime || '00:00'}:00`).toISOString(),
+        end: activeCal.endDate || new Date(`${activeCal.day}T${activeCal.endTime || '23:59'}:00`).toISOString(),
+        joinUrl: activeCal.joinUrl || undefined,
+        registrationUrl: activeCal.registrationUrl || undefined,
       };
     }
   }
@@ -114,10 +118,11 @@ export function EventsPage({ onNavigate }: EventsPageProps) {
       liveEvent = {
         title: activeWeekly.title,
         subtitle: activeWeekly.text,
+        venue: activeWeekly.venue || undefined,
         start: start.toISOString(),
         end: end.toISOString(),
-        joinUrl: (activeWeekly as any).joinUrl,
-        registrationUrl: (activeWeekly as any).registrationUrl,
+        joinUrl: activeWeekly.joinUrl || undefined,
+        registrationUrl: activeWeekly.registrationUrl || undefined,
       };
     }
   }

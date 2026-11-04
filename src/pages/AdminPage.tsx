@@ -71,6 +71,7 @@ export function AdminPage() {
   const [newWeekEndTime, setNewWeekEndTime] = useState('17:00');
   const [newWeekJoin, setNewWeekJoin] = useState('');
   const [newWeekReg, setNewWeekReg] = useState('');
+  const [newWeekLabel, setNewWeekLabel] = useState('Wk'); // ADDED
   const [editingWeekId, setEditingWeekId] = useState<string | null>(null);
 
   // States for Executives
@@ -154,6 +155,7 @@ export function AdminPage() {
       type: 'special',
       startTime: newCalStartTime,
       endTime: newCalEndTime,
+      venue: '', // Added placeholder since we don't have a venue input for one-off events yet
       joinUrl: newCalJoin,
       registrationUrl: newCalReg
     };
@@ -188,10 +190,11 @@ export function AdminPage() {
       title: newWeekTitle, 
       text: newWeekText, 
       weekday: Number(newWeekDay) === -1 ? null : Number(newWeekDay),
-      startTime: newWeekStartTime,
-      endTime: newWeekEndTime,
-      joinUrl: newWeekJoin,
-      registrationUrl: newWeekReg
+      startTime: newWeekDay === '-1' ? null : newWeekStartTime,
+      endTime: newWeekDay === '-1' ? null : newWeekEndTime,
+      joinUrl: newWeekDay === '-1' ? null : newWeekJoin,
+      registrationUrl: newWeekDay === '-1' ? null : newWeekReg,
+      label: newWeekDay === '-1' ? newWeekLabel : null // ADDED
     };
     try {
       const url = editingWeekId ? `/weekly/${editingWeekId}` : '/weekly';
@@ -199,7 +202,7 @@ export function AdminPage() {
       const res = await adminFetch(url, { method, body: JSON.stringify(payload) });
       if (res.ok) {
         refresh();
-        setNewWeekTitle(''); setNewWeekText(''); setNewWeekDay('2'); setNewWeekJoin(''); setNewWeekReg(''); setEditingWeekId(null);
+        setNewWeekTitle(''); setNewWeekText(''); setNewWeekDay('2'); setNewWeekJoin(''); setNewWeekReg(''); setNewWeekLabel('Wk'); setEditingWeekId(null);
         showToast('Recurring item saved');
       }
     } catch {}
@@ -213,6 +216,7 @@ export function AdminPage() {
     setNewWeekEndTime(w.endTime || '17:00');
     setNewWeekJoin(w.joinUrl || '');
     setNewWeekReg(w.registrationUrl || '');
+    setNewWeekLabel(w.label || 'Wk'); // ADDED
     window.scrollTo(0,0); 
   };
   const deleteWeeklyItem = async (id: string) => { try { const res = await adminFetch(`/weekly/${id}`, { method: 'DELETE' }); if (res.ok) { refresh(); showToast('Item deleted'); } } catch {} };
@@ -385,21 +389,36 @@ export function AdminPage() {
                       <Select options={DAYS} value={newWeekDay} onChange={setNewWeekDay} />
                     </Field>
                   </div>
-                  <div className="admin-grid-3">
-                    <Field label="Start Time"><TextInput type="text" value={newWeekStartTime} onChange={setNewWeekStartTime} placeholder="15:00" /></Field>
-                    <Field label="End Time"><TextInput type="text" value={newWeekEndTime} onChange={setNewWeekEndTime} placeholder="17:00" /></Field>
-                    <Field label="Short Description"><TextInput type="text" value={newWeekText} onChange={setNewWeekText} placeholder="Details..." /></Field>
-                  </div>
-                  <div className="admin-grid-2">
-                    <Field label="Join URL (Live Link)"><TextInput type="text" value={newWeekJoin} onChange={setNewWeekJoin} placeholder="https://zoom.us/j/..." /></Field>
-                    <Field label="Registration URL"><TextInput type="text" value={newWeekReg} onChange={setNewWeekReg} placeholder="https://forms.gle/..." /></Field>
-                  </div>
+
+                  <Field label="Short Description"><TextInput type="text" value={newWeekText} onChange={setNewWeekText} placeholder="Quick-fire engineering questions" /></Field>
+
+                  {/* Only show time and URL fields if a specific day is selected */}
+                  {newWeekDay !== '-1' && (
+                    <>
+                      <div className="admin-grid-3">
+                        <Field label="Start Time"><TextInput type="text" value={newWeekStartTime} onChange={setNewWeekStartTime} placeholder="15:00" /></Field>
+                        <Field label="End Time"><TextInput type="text" value={newWeekEndTime} onChange={setNewWeekEndTime} placeholder="17:00" /></Field>
+                      </div>
+                      <div className="admin-grid-2">
+                        <Field label="Join URL (Live Link)"><TextInput type="text" value={newWeekJoin} onChange={setNewWeekJoin} placeholder="https://zoom.us/j/..." /></Field>
+                        <Field label="Registration URL"><TextInput type="text" value={newWeekReg} onChange={setNewWeekReg} placeholder="https://forms.gle/..." /></Field>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Show a label field if no specific day is selected */}
+                  {newWeekDay === '-1' && (
+                    <Field label="Label (Shown in weekly list)">
+                      <TextInput type="text" value={newWeekLabel} onChange={setNewWeekLabel} placeholder="Wk" maxLength={4} />
+                    </Field>
+                  )}
+
                   <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
                     <Button variant="primary" onClick={() => confirmAction(editingWeekId ? 'Save Changes' : 'Add Item', `Are you sure?`, saveWeeklyItem)}>
                       {editingWeekId ? 'Save Changes' : 'Add Recurring Item'}
                     </Button>
                     {editingWeekId && (
-                      <Button variant="default" onClick={() => { setEditingWeekId(null); setNewWeekTitle(''); setNewWeekText(''); setNewWeekDay('2'); setNewWeekJoin(''); setNewWeekReg(''); }}>Cancel</Button>
+                      <Button variant="default" onClick={() => { setEditingWeekId(null); setNewWeekTitle(''); setNewWeekText(''); setNewWeekDay('2'); setNewWeekJoin(''); setNewWeekReg(''); setNewWeekLabel('Wk'); }}>Cancel</Button>
                     )}
                   </div>
                 </div>

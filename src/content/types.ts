@@ -51,6 +51,8 @@ export interface WeeklyItem {
   /** Calendar chip colour, used only when weekday is set. */
   type?: CalendarType;
 
+  venue?: string | null;
+
   startTime?: string | null;   
   endTime?: string | null;      
   joinUrl?: string | null;   
@@ -64,6 +66,8 @@ export interface CalendarEntry {
   title: string;
   description?: string; 
   type: CalendarType;
+
+  venue?: string | null;
 
   endDate?: IsoDateTime | null; 
   startTime?: string | null;    // ADDED

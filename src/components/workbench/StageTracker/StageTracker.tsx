@@ -1,16 +1,15 @@
 import './StageTracker.css';
 
 export const STAGES = [
-  'Registered',
-  'Project picked',
-  'Team formed',
-  'Learning',
-  'Building',
-  'Demo',
+  'Concept',
+  'Proof of Concept',
+  'Prototype',
+  'Testing',
+  'Final',
 ];
 
 export interface StageTrackerProps {
-  /** The index of the current stage (0 to 5). */
+  /** The index of the current stage (0 to 4). */
   current: number;
   className?: string;
 }
@@ -43,12 +42,9 @@ export function StageTracker({ current, className }: StageTrackerProps) {
             >
               {stage}
             </span>
-            {/* Connecting line */}
             {i < STAGES.length - 1 && (
               <div
-                className={`amees-stg__line ${
-                  i < current ? 'amees-stg__line--done' : ''
-                }`}
+                className={`amees-stg__line ${i < current ? 'amees-stg__line--done' : ''}`}
                 aria-hidden="true"
               />
             )}

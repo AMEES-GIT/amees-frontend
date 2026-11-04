@@ -29,7 +29,12 @@ export function ProjectProfilePage({ projectId, onNavigate }: ProjectProfilePage
     );
   }
 
-  const { workbenchData } = project;
+  // SAFE EXTRACTION: Fallback to empty objects/arrays if the student hasn't filled them out yet
+  const wb = project.workbenchData || {};
+  const pitch = wb.pitch || { problem: '', solution: '', ask: '' };
+  const milestones = wb.milestones || [];
+  const tests = wb.tests || [];
+  const parts = wb.parts || [];
 
   return (
     <Wrap>
@@ -54,23 +59,31 @@ export function ProjectProfilePage({ projectId, onNavigate }: ProjectProfilePage
             <Window title="The Pitch" meta="From the Workbench">
               <div className="profile-pitch-box">
                 <h3 className="profile-pitch-title">The Problem</h3>
-                <p className="profile-pitch-text">{workbenchData.pitch.problem}</p>
+                <p className="profile-pitch-text">
+                  {pitch.problem || <span style={{ color: 'var(--muted)', fontStyle: 'italic' }}>Not provided yet.</span>}
+                </p>
                 
                 <h3 className="profile-pitch-title">The Solution</h3>
-                <p className="profile-pitch-text">{workbenchData.pitch.solution}</p>
+                <p className="profile-pitch-text">
+                  {pitch.solution || <span style={{ color: 'var(--muted)', fontStyle: 'italic' }}>Not provided yet.</span>}
+                </p>
                 
                 <h3 className="profile-pitch-title">What We Need</h3>
-                <p className="profile-pitch-text" style={{ marginBottom: 0 }}>{workbenchData.pitch.ask}</p>
+                <p className="profile-pitch-text" style={{ marginBottom: 0 }}>
+                  {pitch.ask || <span style={{ color: 'var(--muted)', fontStyle: 'italic' }}>Not provided yet.</span>}
+                </p>
               </div>
             </Window>
 
-            <Window title="Build Timeline" meta="Milestones">
-              <DotList 
-                items={workbenchData.milestones.map(m => (
-                  <span><b>{m.date}:</b> {m.title}</span>
-                ))} 
-              />
-            </Window>
+            {milestones.length > 0 && (
+              <Window title="Build Timeline" meta="Milestones">
+                <DotList 
+                  items={milestones.map((m, i) => (
+                    <span key={i}><b>{m.date}:</b> {m.title}</span>
+                  ))} 
+                />
+              </Window>
+            )}
           </div>
 
           {/* Sidebar Column */}
@@ -83,31 +96,35 @@ export function ProjectProfilePage({ projectId, onNavigate }: ProjectProfilePage
                 {project.stage}
               </Badge>
               <p style={{ fontFamily: 'var(--font)', fontSize: 'var(--fs-md)', color: 'var(--muted)', marginTop: 'var(--sp-4)' }}>
-                {workbenchData.goal}
+                {wb.goal || project.description}
               </p>
             </Window>
 
-            <Window title="Tests" meta={`${workbenchData.tests.filter(t => t.pass).length} / ${workbenchData.tests.length} passed`}>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 'var(--sp-2)' }}>
-                {workbenchData.tests.map(t => (
-                  <li key={t.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)' }}>
-                    <span>{t.name}</span>
-                    <Badge kind="stat" tone={t.pass ? 'ok' : 'bad'}>{t.pass ? 'Pass' : 'Fail'}</Badge>
-                  </li>
-                ))}
-              </ul>
-            </Window>
+            {tests.length > 0 && (
+              <Window title="Tests" meta={`${tests.filter(t => t.pass).length} / ${tests.length} passed`}>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 'var(--sp-2)' }}>
+                  {tests.map((t, i) => (
+                    <li key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)' }}>
+                      <span>{t.name}</span>
+                      <Badge kind="stat" tone={t.pass ? 'ok' : 'bad'}>{t.pass ? 'Pass' : 'Fail'}</Badge>
+                    </li>
+                  ))}
+                </ul>
+              </Window>
+            )}
 
-            <Window title="Bill of Materials">
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 'var(--sp-2)' }}>
-                {workbenchData.parts.map(p => (
-                  <li key={p.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)' }}>
-                    <span>{p.name}</span>
-                    <span style={{ color: p.status === 'Owned' ? 'var(--c-ok)' : 'var(--c-warn)', fontWeight: 'bold' }}>{p.status}</span>
-                  </li>
-                ))}
-              </ul>
-            </Window>
+            {parts.length > 0 && (
+              <Window title="Bill of Materials">
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 'var(--sp-2)' }}>
+                  {parts.map((p, i) => (
+                    <li key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)' }}>
+                      <span>{p.name}</span>
+                      <span style={{ color: p.status === 'Owned' ? 'var(--c-ok)' : 'var(--c-warn)', fontWeight: 'bold' }}>{p.status}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Window>
+            )}
           </div>
 
         </div>

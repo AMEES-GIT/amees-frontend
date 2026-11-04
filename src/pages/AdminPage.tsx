@@ -361,7 +361,7 @@ export function AdminPage() {
                 </div>
 
                 <div>
-                  <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Recurring Rhythm</h3>
+                  <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Recurring Events</h3>
                   {content.weekly.map((item) => (
                     <div key={item.id} className="admin-list-item">
                       <div>

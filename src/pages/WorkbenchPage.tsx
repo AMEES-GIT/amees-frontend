@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Wrap, Block, Row } from '../components/containers/Layout';
+import { Wrap, Block } from '../components/containers/Layout';
 import { PageHeader } from '../components/containers/PageHeader';
 import { Window } from '../components/containers/Window';
 import { Button } from '../components/primitives/Button';
 import { TextInput } from '../components/primitives/TextInput';
-import { Select } from '../components/primitives/Select'; 
+import { Select } from '../components/primitives/Select';
 import { ConfirmDialog } from '../components/containers/ConfirmDialog';
 import { Toast } from '../components/shell/Toast';
 import { useNow } from '../lib/useNow';
@@ -36,7 +36,7 @@ import { buildReport } from '../lib/workbench/export';
 import './WorkbenchPage.css';
 
 type Tab = 'overview' | 'team' | 'timeline' | 'tasks' | 'parts' | 'tests' | 'demo';
-const TRACKS = ['Embedded Systems', 'Control Systems', 'Electromechanics', 'Design', 'Other'];
+const CATEGORIES = ['Embedded Systems', 'Control Systems', 'Power & Energy', 'Software & IoT', 'Mechanical Design', 'Other'];
 const DAY = 86400000;
 
 export function WorkbenchPage() {
@@ -55,13 +55,11 @@ export function WorkbenchPage() {
   const [modal, setModal] = useState<{ open: boolean; action?: () => void }>({ open: false });
   const [timelineFilter, setTimelineFilter] = useState('all');
 
-  // Toast State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const showToast = (message: string, type: 'success' | 'error' = 'success') => setToast({ message, type });
 
   const pendingJoinRef = useRef<string | null>(null);
 
-  // 1. Handle URL Join Parameter on Mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const joinId = params.get('join');
@@ -71,10 +69,8 @@ export function WorkbenchPage() {
     }
   }, []);
 
-  // 2. Fetch Workbench Data & Process Pending Join
   useEffect(() => {
     if (!token) { setLoading(false); return; }
-    
     let isMounted = true;
 
     const initialize = async () => {
@@ -87,7 +83,6 @@ export function WorkbenchPage() {
             body: JSON.stringify({ projectId: pendingJoinRef.current })
           });
         }
-
         const res = await fetch(`${API_BASE}/api/student/workbench`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -98,7 +93,6 @@ export function WorkbenchPage() {
         if (data.student) {
           setStudent(data.student);
           setProjects(data.projects || []);
-          
           if (data.projects?.length > 0) {
             const targetId = pendingJoinRef.current && data.projects.find((p:any) => p.id === pendingJoinRef.current) 
               ? pendingJoinRef.current 
@@ -117,31 +111,22 @@ export function WorkbenchPage() {
         pendingJoinRef.current = null;
       }
     };
-
     initialize();
-    
     return () => { isMounted = false; };
   }, [token]);
 
   const project = projects.find(p => p.id === activeProjectId) || null;
 
-  // 3. Auto-Save Data (Debounced 1s)
   useEffect(() => {
     if (!project || !token) return;
-    
     const timeoutId = setTimeout(() => {
       const payloadProject = { ...project };
-      if (payloadProject.id === 'temp') {
-        delete payloadProject.id;
-      }
+      if (payloadProject.id === 'temp') delete payloadProject.id;
 
       fetch(`${API_BASE}/api/student/workbench`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ 
-          project: payloadProject,
-          studentName: student?.name || 'Unknown'
-        })
+        body: JSON.stringify({ project: payloadProject, studentName: student?.name || 'Unknown' })
       })
       .then(res => res.json())
       .then(data => {
@@ -152,7 +137,6 @@ export function WorkbenchPage() {
       })
       .catch(err => console.error('Auto-save failed', err));
     }, 1000);
-
     return () => clearTimeout(timeoutId);
   }, [project, token, student]);
 
@@ -214,19 +198,15 @@ export function WorkbenchPage() {
 
   const confirmDelete = (action: () => void) => setModal({ open: true, action });
 
-  // 4. Dynamic Heatmap Calculation
   const heatmapCounts = useMemo(() => {
     const counts = Array(56).fill(0);
     const entries = project?.workbenchData?.entries || project?.entries || [];
     if (!entries.length) return counts;
-    
     const today = new Date().setHours(0,0,0,0);
     entries.forEach((e: any) => {
       const entryDate = new Date(e.ts).setHours(0,0,0,0);
       const daysAgo = Math.floor((today - entryDate) / DAY);
-      if (daysAgo >= 0 && daysAgo < 56) {
-        counts[55 - daysAgo] += 1;
-      }
+      if (daysAgo >= 0 && daysAgo < 56) counts[55 - daysAgo] += 1;
     });
     return counts;
   }, [project]);
@@ -248,7 +228,7 @@ export function WorkbenchPage() {
         <Block><PageHeader className="wb-header" kicker={content.pages.workbench.kicker} title="New Project" lede="Create a project to start tracking your build." /></Block>
         <Block>
           <div style={{ maxWidth: 600, margin: '0 auto' }}>
-            <NewProjectForm categories={TRACKS} onSubmit={handleNewProject} onCancel={projects.length > 0 ? () => setIsCreatingProject(false) : handleSignOut} />
+            <NewProjectForm categories={CATEGORIES} onSubmit={handleNewProject} onCancel={projects.length > 0 ? () => setIsCreatingProject(false) : handleSignOut} />
           </div>
         </Block>
       </Wrap>
@@ -288,14 +268,17 @@ export function WorkbenchPage() {
     parts: wb.parts.map((p:any) => ({ name: p.name, qty: p.qty, status: p.status }))
   };
 
+  // PITCH VALIDATION: Check if problem and solution are provided
+  const hasPitch = (wb.pitch.problem || '').trim().length > 0 && (wb.pitch.solution || '').trim().length > 0;
+
   const handleSubmitProject = () => {
-    if (wb.stage < 5) {
-      showToast("You must reach the 'Demo' stage before submitting.", 'error');
+    if (!hasPitch) {
+      showToast("Please complete the Problem and Solution in the Pitch Editor before submitting.", 'error');
       return;
     }
     const newEntry = { 
       id: Date.now().toString(), ts: Date.now(), type: 'milestone', 
-      title: 'Project Submitted for Showcase', text: 'Submitted for review.'
+      title: 'Project Submitted for Showcase', text: 'Submitted to executive for review.'
     };
     updateWb({ entries: [newEntry, ...wb.entries] });
     showToast('Project submitted successfully!');
@@ -321,7 +304,6 @@ export function WorkbenchPage() {
   return (
     <Wrap>
       <Block>
-        {/* Project Library Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 'var(--sp-3)', marginBottom: 'var(--sp-4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)', flex: 1 }}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -342,16 +324,12 @@ export function WorkbenchPage() {
           </div>
         </div>
 
-        <PageHeader kicker={content.pages.workbench.kicker} title={wb.name} lede={`Track: ${wb.category} · Signed in as ${student?.name} (${myRole})`} />
+        <PageHeader kicker={content.pages.workbench.kicker} title={wb.name} lede={`Category: ${wb.category} · Signed in as ${student?.name} (${myRole})`} />
       </Block>
 
       <Block>
         <Window title="Project Stages">
           <StageTracker current={wb.stage} />
-          <Row className="wb-stage-actions">
-            <Button size="sm" onClick={() => updateWb({ stage: Math.max(0, wb.stage - 1) })}>← Back</Button>
-            <Button size="sm" variant="primary" onClick={() => updateWb({ stage: Math.min(5, wb.stage + 1) })}>Next Stage →</Button>
-          </Row>
         </Window>
       </Block>
 
@@ -473,12 +451,26 @@ export function WorkbenchPage() {
       {tab === 'demo' && (
         <div className="wb-grid">
            <div className="wb-span-full"><Window title="Checklist"><DemoChecklist checks={wb.checks} onToggle={(id) => updateWb({ checks: wb.checks.map((c: any) => c.id === id ? { ...c, checked: !c.checked } : c) })} onAdd={(label) => updateWb({ checks: [...wb.checks, { id: Date.now().toString(), label, checked: false }] })} onDelete={(id) => confirmDelete(() => updateWb({ checks: wb.checks.filter((c: any) => c.id !== id) }))} /></Window></div>
-           <div className="wb-span-full"><Window title="Pitch Editor"><PitchEditor value={wb.pitch} onChange={(f, v) => updateWb({ pitch: { ...wb.pitch, [f]: v } })} /></Window></div>
+           
+           <div className="wb-span-full">
+             <Window title="Pitch Editor">
+               <PitchEditor 
+                 value={wb.pitch} 
+                 stage={wb.stage}
+                 onStageChange={(newStage) => updateWb({ stage: newStage })}
+                 onChange={(f, v) => updateWb({ pitch: { ...wb.pitch, [f]: v } })} 
+               />
+             </Window>
+           </div>
            
            <div className="wb-span-full">
              <Window title="Submit to Showcase" tone="gray">
-               <p style={{ fontFamily: 'var(--font)', marginBottom: 'var(--sp-4)' }}>Ready to go public? Once you submit, We'll review your project and add it to the public Projects page.</p>
-               <Button variant="primary" onClick={handleSubmitProject}>Submit Project for Review →</Button>
+               <p style={{ fontFamily: 'var(--font)', marginBottom: 'var(--sp-4)' }}>
+                 Ready to go public? You must fill out the "Problem" and "Solution" in the Pitch Editor before submitting.
+               </p>
+               <Button variant="primary" onClick={handleSubmitProject} disabled={!hasPitch}>
+                 Submit Project for Review →
+               </Button>
              </Window>
            </div>
 

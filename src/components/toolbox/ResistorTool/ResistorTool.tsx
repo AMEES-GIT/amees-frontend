@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Window } from '../../containers/Window';
 import { Field } from '../../primitives/Field';
 import { TextInput } from '../../primitives/TextInput';
+import { Select } from '../../primitives/Select'; // <-- Imported Custom Select
 import { StatGrid, StatTile } from '../../primitives/StatTile';
 import { parseSI, fmtSI } from '../../../lib/toolbox/si';
 import { BAND_COLORS, MULTIPLIERS, TOLERANCES, decodeResistor, encodeResistor } from '../../../lib/toolbox/resistor';
@@ -52,20 +53,23 @@ export function ResistorTool() {
           <StatTile label="Range" value={`${fmtSI(decoded.value * (1 - decoded.tol/100), 'Ω')} to ${fmtSI(decoded.value * (1 + decoded.tol/100), 'Ω')}`} />
         </StatGrid>
 
-        <div style={{ display: 'grid', gap: 'var(--sp-3)', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))' }}>
+        <div style={{ display: 'grid', gap: 'var(--sp-3)', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
           {['Digit 1', 'Digit 2', 'Multiplier', 'Tolerance'].map((label, i) => {
             const opts = i === 2 ? MULTIPLIERS : i === 3 ? TOLERANCES : BAND_COLORS;
+            
+            // Convert to the format the custom Select expects
+            const selectOptions = opts.map((opt, idx) => ({ 
+              value: String(idx), 
+              label: opt.name 
+            }));
+
             return (
               <Field key={label} label={label}>
-                <select
-                  value={bands[i]}
-                  onChange={(e) => handleBandChange(i, e.target.value)}
-                  style={{ width: '100%', padding: 'var(--sp-2)', border: 'var(--bw) solid var(--line)', background: 'var(--panel-2)' }}
-                >
-                  {opts.map((opt, idx) => (
-                    <option key={opt.name} value={idx}>{opt.name}</option>
-                  ))}
-                </select>
+                <Select
+                  options={selectOptions}
+                  value={String(bands[i])}
+                  onChange={(val) => handleBandChange(i, val)}
+                />
               </Field>
             );
           })}

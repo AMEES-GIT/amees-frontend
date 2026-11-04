@@ -17,7 +17,7 @@ const LOADING_TEXTS = [
   'compiling firmware...',
   'tuning PID loops...',
   'charging capacitors...',
-  'checking tolerances...',
+  'applying Ohm\'s Law...',
   'routing PCB traces...',
   'verifying logic gates...',
   'initializing modules...',
@@ -42,10 +42,10 @@ export function LoadingOverlay({ open, minMs, ready, onDone }: LoadingOverlayPro
   useEffect(() => {
     if (!visible) return;
     
-    // Cycle every 800ms
+    // Cycle every 1000ms (1 second)
     const textTimer = setInterval(() => {
       setTextIndex(prev => (prev + 1) % LOADING_TEXTS.length);
-    }, 800);
+    }, 1000);
 
     return () => clearInterval(textTimer);
   }, [visible]);
@@ -78,7 +78,6 @@ export function LoadingOverlay({ open, minMs, ready, onDone }: LoadingOverlayPro
       <div className="amees-window" style={{ width: 320, maxWidth: '100%' }}>
         <div className="amees-window__titlebar">
           <span className="amees-window__title">AMEES.EXE</span>
-          {/* Here we use the dynamic text instead of "loading" */}
           <span className="amees-window__meta" style={{ textTransform: 'lowercase' }}>
             {LOADING_TEXTS[textIndex]}
           </span>

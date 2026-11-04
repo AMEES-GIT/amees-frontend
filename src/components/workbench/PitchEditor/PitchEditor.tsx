@@ -1,5 +1,7 @@
 import { Textarea } from '../../primitives/Textarea';
 import { Field } from '../../primitives/Field';
+import { Select } from '../../primitives/Select';
+import { STAGES } from '../StageTracker/StageTracker';
 import './PitchEditor.css';
 
 export interface PitchData {
@@ -13,18 +15,29 @@ export interface PitchData {
 
 export interface PitchEditorProps {
   value: PitchData;
+  stage: number;
+  onStageChange: (stage: number) => void;
   onChange: (field: keyof PitchData, val: string) => void;
   className?: string;
 }
 
-export function PitchEditor({ value, onChange, className }: PitchEditorProps) {
-  // Bulletproofing: Ensure value is an object
-  const safeValue = value || {
-    pitch: '', problem: '', solution: '', status: '', demo: '', ask: ''
-  };
+export function PitchEditor({ value, stage, onStageChange, onChange, className }: PitchEditorProps) {
+  const safeValue = value || { pitch: '', problem: '', solution: '', status: '', demo: '', ask: '' };
 
   return (
     <div className={['amees-pitch-editor', className].filter(Boolean).join(' ')}>
+      
+      {/* Stage Selector */}
+      <div style={{ marginBottom: 'var(--sp-4)', background: 'var(--panel-2)', padding: 'var(--sp-3)', border: 'var(--bw-sm) solid var(--line)' }}>
+        <Field label="Current Project Stage">
+          <Select 
+            options={STAGES.map((s, i) => ({ value: String(i), label: s }))}
+            value={String(stage)}
+            onChange={(v) => onStageChange(Number(v))}
+          />
+        </Field>
+      </div>
+
       <Field label="Elevator Pitch (The Hook)">
         <Textarea
           value={safeValue.pitch || ''}

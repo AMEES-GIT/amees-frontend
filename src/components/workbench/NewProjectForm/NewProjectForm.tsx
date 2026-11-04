@@ -16,7 +16,6 @@ export interface NewProjectData {
 }
 
 export interface NewProjectFormProps {
-  /** The list of options for the project category dropdown. */
   categories: readonly string[];
   defaultBudget?: number;
   onSubmit: (data: NewProjectData) => void;
@@ -72,12 +71,8 @@ export function NewProjectForm({
           <Textarea value={data.goal} onChange={v => handleChange('goal', v)} rows={2} maxLength={200} />
         </Field>
 
-        <Field label="Team Matric Numbers (comma separated)">
-          <TextInput 
-            value={data.team} 
-            onChange={v => handleChange('team', v)} 
-            placeholder="e.g. LCU/UG/24/00001, LCU/UG/24/12345" 
-          />
+        <Field label="Team first names (comma separated)">
+          <TextInput value={data.team} onChange={v => handleChange('team', v)} placeholder="Ada, Tunde" />
         </Field>
 
         <div className="amees-wb-newproj__actions">

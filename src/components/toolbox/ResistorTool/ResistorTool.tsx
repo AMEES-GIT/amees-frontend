@@ -2,19 +2,22 @@ import { useState } from 'react';
 import { Window } from '../../containers/Window';
 import { Field } from '../../primitives/Field';
 import { TextInput } from '../../primitives/TextInput';
-import { Select } from '../../primitives/Select'; // <-- Imported Custom Select
+import { Select } from '../../primitives/Select';
 import { StatGrid, StatTile } from '../../primitives/StatTile';
 import { parseSI, fmtSI } from '../../../lib/toolbox/si';
 import { BAND_COLORS, MULTIPLIERS, TOLERANCES, decodeResistor, encodeResistor } from '../../../lib/toolbox/resistor';
 import './ResistorTool.css';
 
 export function ResistorTool() {
-  // Default to Brown, Black, Red, Gold (1kΩ)
   const [bands, setBands] = useState([1, 0, 2, 6]);
   const [encodeVal, setEncodeVal] = useState('');
 
   const decoded = decodeResistor(bands);
   const encodedBands = encodeVal ? encodeResistor(parseSI(encodeVal)) : null;
+
+  // Which bands do we show? If user is typing a value, show the encoded ones;
+  // otherwise the manually-selected ones.
+  const displayedBands = encodedBands ?? bands;
 
   const handleBandChange = (index: number, val: string) => {
     const newBands = [...bands];
@@ -22,18 +25,17 @@ export function ResistorTool() {
     setBands(newBands);
   };
 
-  // SVG geometry
-  const bandX = [104, 134, 164, 222]; // positions for 4 bands
+  const bandX = [104, 134, 164, 222];
 
   return (
     <Window title="Resistor colour code" meta="decode / encode">
       <div style={{ display: 'grid', gap: 'var(--sp-4)' }}>
         
-        {/* SVG Resistor */}
+        {/* SVG Resistor — reacts to encodeVal */}
         <svg className="amees-res-svg" viewBox="0 0 320 80" width="100%" style={{ maxWidth: 400, height: 'auto', display: 'block', margin: '0 auto' }}>
           <line x1="10" y1="40" x2="310" y2="40" stroke="var(--line)" strokeWidth="5" />
           <rect x="64" y="14" width="192" height="52" rx="20" fill="#E8D3A8" stroke="var(--line)" strokeWidth="3" />
-          {bands.map((b, i) => (
+          {displayedBands.map((b, i) => (
             <rect 
               key={i} 
               x={bandX[i]} 
@@ -56,13 +58,7 @@ export function ResistorTool() {
         <div style={{ display: 'grid', gap: 'var(--sp-3)', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
           {['Digit 1', 'Digit 2', 'Multiplier', 'Tolerance'].map((label, i) => {
             const opts = i === 2 ? MULTIPLIERS : i === 3 ? TOLERANCES : BAND_COLORS;
-            
-            // Convert to the format the custom Select expects
-            const selectOptions = opts.map((opt, idx) => ({ 
-              value: String(idx), 
-              label: opt.name 
-            }));
-
+            const selectOptions = opts.map((opt, idx) => ({ value: String(idx), label: opt.name }));
             return (
               <Field key={label} label={label}>
                 <Select
@@ -86,7 +82,13 @@ export function ResistorTool() {
           )}
           {encodedBands && (
             <StatGrid>
-              <StatTile label="Bands" value={encodedBands.map((b, i) => (i === 2 ? MULTIPLIERS[b].name : i === 3 ? TOLERANCES[b].name : BAND_COLORS[b].name)).join(', ')} highlight />
+              <StatTile 
+                label="Bands" 
+                value={encodedBands.map((b, i) => 
+                  (i === 2 ? MULTIPLIERS[b].name : i === 3 ? TOLERANCES[b].name : BAND_COLORS[b].name)
+                ).join(', ')} 
+                highlight 
+              />
             </StatGrid>
           )}
         </div>

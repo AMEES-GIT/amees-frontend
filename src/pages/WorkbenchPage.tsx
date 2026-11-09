@@ -55,11 +55,14 @@ export function WorkbenchPage() {
   const [modal, setModal] = useState<{ open: boolean; action?: () => void }>({ open: false });
   const [timelineFilter, setTimelineFilter] = useState('all');
 
+  // Toast State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const showToast = (message: string, type: 'success' | 'error' = 'success') => setToast({ message, type });
 
   const pendingJoinRef = useRef<string | null>(null);
+  const initializedRef = useRef(false);
 
+  // 1. Handle URL Join Parameter on Mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const joinId = params.get('join');
@@ -69,13 +72,16 @@ export function WorkbenchPage() {
     }
   }, []);
 
+  // 2. Fetch Workbench Data & Process Pending Join
   useEffect(() => {
     if (!token) { setLoading(false); return; }
+    
     let isMounted = true;
 
     const initialize = async () => {
       setLoading(true);
       try {
+        // If there's a pending join link, execute it
         if (pendingJoinRef.current) {
           await fetch(`${API_BASE}/api/student/workbench/join`, {
             method: 'POST',
@@ -83,6 +89,7 @@ export function WorkbenchPage() {
             body: JSON.stringify({ projectId: pendingJoinRef.current })
           });
         }
+
         const res = await fetch(`${API_BASE}/api/student/workbench`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -93,7 +100,9 @@ export function WorkbenchPage() {
         if (data.student) {
           setStudent(data.student);
           setProjects(data.projects || []);
+          
           if (data.projects?.length > 0) {
+            // If we just joined a specific project, set it as active
             const targetId = pendingJoinRef.current && data.projects.find((p:any) => p.id === pendingJoinRef.current) 
               ? pendingJoinRef.current 
               : data.projects[0].id;
@@ -101,6 +110,7 @@ export function WorkbenchPage() {
           } else {
             setIsCreatingProject(true);
           }
+          initializedRef.current = true;
         } else {
           handleSignOut();
         }
@@ -111,22 +121,32 @@ export function WorkbenchPage() {
         pendingJoinRef.current = null;
       }
     };
+
     initialize();
+    
     return () => { isMounted = false; };
   }, [token]);
 
   const project = projects.find(p => p.id === activeProjectId) || null;
 
+  // 3. Auto-Save Data (Debounced 1s)
   useEffect(() => {
     if (!project || !token) return;
+    if (!initializedRef.current) return; // Don't save before initial load
+    
     const timeoutId = setTimeout(() => {
       const payloadProject = { ...project };
-      if (payloadProject.id === 'temp') delete payloadProject.id;
+      if (payloadProject.id === 'temp') {
+        delete payloadProject.id;
+      }
 
       fetch(`${API_BASE}/api/student/workbench`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ project: payloadProject, studentName: student?.name || 'Unknown' })
+        body: JSON.stringify({ 
+          project: payloadProject,
+          studentName: student?.name || 'Unknown'
+        })
       })
       .then(res => res.json())
       .then(data => {
@@ -137,6 +157,7 @@ export function WorkbenchPage() {
       })
       .catch(err => console.error('Auto-save failed', err));
     }, 1000);
+
     return () => clearTimeout(timeoutId);
   }, [project, token, student]);
 
@@ -152,14 +173,19 @@ export function WorkbenchPage() {
     setStudent(null);
     setProjects([]);
     setActiveProjectId(null);
+    initializedRef.current = false;
   };
 
   const handleNewProject = (data: NewProjectData) => {
+    // Strip commas from the formatted budget string to get a raw number
+    const cleanBudget = Number((data.budget || '0').replace(/,/g, '')) || 0;
+
     const newProj = {
       id: 'temp',
       name: data.name, 
       category: data.category, 
       goal: data.goal, 
+      budget: cleanBudget,
       team: [], 
       members: [],
       start: Date.now(), 
@@ -198,15 +224,19 @@ export function WorkbenchPage() {
 
   const confirmDelete = (action: () => void) => setModal({ open: true, action });
 
+  // 4. Dynamic Heatmap Calculation
   const heatmapCounts = useMemo(() => {
     const counts = Array(56).fill(0);
     const entries = project?.workbenchData?.entries || project?.entries || [];
     if (!entries.length) return counts;
+    
     const today = new Date().setHours(0,0,0,0);
     entries.forEach((e: any) => {
       const entryDate = new Date(e.ts).setHours(0,0,0,0);
       const daysAgo = Math.floor((today - entryDate) / DAY);
-      if (daysAgo >= 0 && daysAgo < 56) counts[55 - daysAgo] += 1;
+      if (daysAgo >= 0 && daysAgo < 56) {
+        counts[55 - daysAgo] += 1;
+      }
     });
     return counts;
   }, [project]);
@@ -235,12 +265,14 @@ export function WorkbenchPage() {
     );
   }
 
+  // Extract and sanitize the project data
   const rawWb = project.workbenchData || project;
   const wb = {
     ...rawWb,
     name: rawWb.name || project.title || '',
     category: rawWb.category || (project.tags && project.tags[0]) || 'Other',
     goal: rawWb.goal || project.description || '',
+    budget: rawWb.budget || 0,
     start: rawWb.start || project.createdAt || Date.now(),
     stage: typeof rawWb.stage === 'number' ? rawWb.stage : (Number(project.stage) || 0),
     tasks: rawWb.tasks || [],
@@ -268,10 +300,8 @@ export function WorkbenchPage() {
     parts: wb.parts.map((p:any) => ({ name: p.name, qty: p.qty, status: p.status }))
   };
 
-  // PITCH VALIDATION: Check if problem and solution are provided
-  const hasPitch = (wb.pitch.problem || '').trim().length > 0 && (wb.pitch.solution || '').trim().length > 0;
-
   const handleSubmitProject = () => {
+    const hasPitch = (wb.pitch.problem || '').trim().length > 0 && (wb.pitch.solution || '').trim().length > 0;
     if (!hasPitch) {
       showToast("Please complete the Problem and Solution in the Pitch Editor before submitting.", 'error');
       return;
@@ -294,9 +324,13 @@ export function WorkbenchPage() {
   };
 
   const TABS: { id: Tab, label: string }[] = [
-    { id: 'overview', label: 'Overview' }, { id: 'team', label: 'Team' },
-    { id: 'timeline', label: 'Timeline' }, { id: 'tasks', label: 'Tasks' }, 
-    { id: 'parts', label: 'Parts' }, { id: 'tests', label: 'Tests' }, { id: 'demo', label: 'Demo' },
+    { id: 'overview', label: 'Overview' }, 
+    { id: 'team', label: 'Team' },
+    { id: 'timeline', label: 'Timeline' },
+    { id: 'tasks', label: 'Tasks' }, 
+    { id: 'parts', label: 'Parts' },
+    { id: 'tests', label: 'Tests' }, 
+    { id: 'demo', label: 'Demo' },
   ];
 
   const joinUrl = `${window.location.origin}/workbench?join=${project.id || ''}`;
@@ -426,7 +460,11 @@ export function WorkbenchPage() {
              const newPart = { id: Date.now().toString(), name: d.name, qty: cleanQty || 0, cost: cleanCost || 0, status: d.status };
              updateWb({ parts: [...wb.parts, newPart], entries: autoLog(`Added part: ${d.name} (x${cleanQty})`) });
            }} />
-           <PartsPanel parts={wb.parts} budget={30000} onDelete={(id) => confirmDelete(() => updateWb({ parts: wb.parts.filter((p: any) => p.id !== id) }))} />
+           <PartsPanel 
+             parts={wb.parts} 
+             budget={wb.budget || 0} // <-- NOW USES PROJECT BUDGET
+             onDelete={(id) => confirmDelete(() => updateWb({ parts: wb.parts.filter((p: any) => p.id !== id) }))} 
+           />
         </Window>
       )}
 
@@ -468,7 +506,7 @@ export function WorkbenchPage() {
                <p style={{ fontFamily: 'var(--font)', marginBottom: 'var(--sp-4)' }}>
                  Ready to go public? You must fill out the "Problem" and "Solution" in the Pitch Editor before submitting.
                </p>
-               <Button variant="primary" onClick={handleSubmitProject} disabled={!hasPitch}>
+               <Button variant="primary" onClick={handleSubmitProject}>
                  Submit Project for Review →
                </Button>
              </Window>

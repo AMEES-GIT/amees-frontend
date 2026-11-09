@@ -22,10 +22,26 @@ export function PartsPanel({
   // Bulletproofing: Ensure parts is always an array
   const safeParts = Array.isArray(parts) ? parts : [];
 
-  const spend = safeParts.reduce((s, x) => s + (x.status !== 'Owned' ? Number(x.qty || 0) * Number(x.cost || 0) : 0), 0);
-  const need = safeParts.reduce((s, x) => s + (x.status === 'Needed' ? Number(x.qty || 0) * Number(x.cost || 0) : 0), 0);
-  const value = safeParts.reduce((s, x) => s + Number(x.qty || 0) * Number(x.cost || 0), 0);
-  const remain = budget - spend;
+  // Money still to be spent (Ordered + Needed)
+  const spend = safeParts.reduce(
+    (s, x) => s + (x.status !== 'Owned' ? Number(x.qty || 0) * Number(x.cost || 0) : 0), 
+    0
+  );
+  
+  // Money needed for future purchases (Needed only)
+  const need = safeParts.reduce(
+    (s, x) => s + (x.status === 'Needed' ? Number(x.qty || 0) * Number(x.cost || 0) : 0), 
+    0
+  );
+  
+  // Total project value (all parts, regardless of status)
+  const value = safeParts.reduce(
+    (s, x) => s + Number(x.qty || 0) * Number(x.cost || 0), 
+    0
+  );
+
+  // Budget remaining after accounting for ALL parts
+  const remain = budget - value;
 
   const columns: DataTableColumn<Part>[] = [
     { key: 'name', label: 'Part', render: r => <b>{r.name}</b> },

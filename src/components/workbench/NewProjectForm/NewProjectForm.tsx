@@ -12,7 +12,6 @@ export interface NewProjectData {
   category: string;
   budget: string;
   goal: string;
-  team: string;
 }
 
 export interface NewProjectFormProps {
@@ -35,7 +34,6 @@ export function NewProjectForm({
     category: categories[0] || '',
     budget: String(defaultBudget),
     goal: '',
-    team: '',
   });
 
   const handleChange = (key: keyof NewProjectData, val: string) => {
@@ -71,9 +69,9 @@ export function NewProjectForm({
           <Textarea value={data.goal} onChange={v => handleChange('goal', v)} rows={2} maxLength={200} />
         </Field>
 
-        <Field label="Team first names (comma separated)">
-          <TextInput value={data.team} onChange={v => handleChange('team', v)} placeholder="Ada, Tunde" />
-        </Field>
+        <p style={{ fontFamily: 'var(--font)', fontSize: 'var(--fs-sm)', color: 'var(--muted)', margin: 'var(--sp-2) 0' }}>
+          After creating the project, you'll get an invite link to share with teammates.
+        </p>
 
         <div className="amees-wb-newproj__actions">
           <Button type="submit" variant="primary">Create project</Button>

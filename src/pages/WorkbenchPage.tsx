@@ -39,6 +39,10 @@ type Tab = 'overview' | 'team' | 'timeline' | 'tasks' | 'parts' | 'tests' | 'dem
 const CATEGORIES = ['Embedded Systems', 'Control Systems', 'Power & Energy', 'Software & IoT', 'Mechanical Design', 'Other'];
 const DAY = 86400000;
 
+// Single-use invite tokens are stored on the project's workbenchData blob so
+// they get persisted by the existing auto-save. The server MUST reject a join
+// if the submitted token no longer matches the stored one (and burn it on use).
+
 export function WorkbenchPage() {
   const content = useContent();
   const now = useNow(60000);
@@ -52,22 +56,31 @@ export function WorkbenchPage() {
 
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('overview');
-  const [modal, setModal] = useState<{ open: boolean; action?: () => void }>({ open: false });
+  const [modal, setModal] = useState<{
+    open: boolean;
+    action?: () => void | Promise<void>;
+    title?: string;
+    body?: string;
+    confirmLabel?: string;
+  }>({ open: false });
   const [timelineFilter, setTimelineFilter] = useState('all');
 
   // Toast State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const showToast = (message: string, type: 'success' | 'error' = 'success') => setToast({ message, type });
 
-  const pendingJoinRef = useRef<string | null>(null);
+  const pendingJoinRef = useRef<{ projectId: string; inviteToken: string | null } | null>(null);
   const initializedRef = useRef(false);
+  // Snapshot of each project's member count, used to detect "someone joined"
+  // so we can burn the invite token that was used.
+  const memberCountRef = useRef<Record<string, number>>({});
 
   // 1. Handle URL Join Parameter on Mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const joinId = params.get('join');
     if (joinId) {
-      pendingJoinRef.current = joinId;
+      pendingJoinRef.current = { projectId: joinId, inviteToken: params.get('invite') };
       window.history.replaceState({}, '', '/workbench');
     }
   }, []);
@@ -83,11 +96,22 @@ export function WorkbenchPage() {
       try {
         // If there's a pending join link, execute it
         if (pendingJoinRef.current) {
-          await fetch(`${API_BASE}/api/student/workbench/join`, {
+          const joinRes = await fetch(`${API_BASE}/api/student/workbench/join`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ projectId: pendingJoinRef.current })
+            body: JSON.stringify({
+              projectId: pendingJoinRef.current.projectId,
+              // Single-use: the server must validate + invalidate this token.
+              inviteToken: pendingJoinRef.current.inviteToken,
+            })
           });
+
+          if (!joinRes.ok) {
+            if (isMounted) {
+              showToast('That invite link is invalid or has already been used.', 'error');
+            }
+            pendingJoinRef.current = null;
+          }
         }
 
         const res = await fetch(`${API_BASE}/api/student/workbench`, {
@@ -99,13 +123,20 @@ export function WorkbenchPage() {
 
         if (data.student) {
           setStudent(data.student);
-          setProjects(data.projects || []);
+          const loadedProjects = data.projects || [];
+          setProjects(loadedProjects);
+
+          // Snapshot member counts so we can detect new joins later
+          memberCountRef.current = {};
+          loadedProjects.forEach((p: any) => {
+            memberCountRef.current[p.id] = p.members?.length || 0;
+          });
           
-          if (data.projects?.length > 0) {
-            // If we just joined a specific project, set it as active
-            const targetId = pendingJoinRef.current && data.projects.find((p:any) => p.id === pendingJoinRef.current) 
-              ? pendingJoinRef.current 
-              : data.projects[0].id;
+          if (loadedProjects.length > 0) {
+            const joinTarget = pendingJoinRef.current?.projectId;
+            const targetId = joinTarget && loadedProjects.some((p: any) => p.id === joinTarget)
+              ? joinTarget
+              : loadedProjects[0].id;
             setActiveProjectId(targetId);
           } else {
             setIsCreatingProject(true);
@@ -128,6 +159,26 @@ export function WorkbenchPage() {
   }, [token]);
 
   const project = projects.find(p => p.id === activeProjectId) || null;
+
+  // 2b. Burn the invite token whenever a new member shows up on a project we lead.
+  // (Runs before the early returns so it can't break hook ordering.)
+  useEffect(() => {
+    projects.forEach(p => {
+      const prevCount = memberCountRef.current[p.id];
+      const curCount = p.members?.length || 0;
+      const isProjectLead = (p.myRole || 'Lead') === 'Lead';
+      const inviteToken = p.workbenchData?.inviteToken ?? p.inviteToken;
+
+      if (prevCount !== undefined && curCount > prevCount && isProjectLead && inviteToken) {
+        setProjects(list => list.map(x => x.id === p.id
+          ? { ...x, workbenchData: { ...(x.workbenchData || x), inviteToken: null } }
+          : x));
+        showToast('That invite link has been used — it is no longer valid.');
+      }
+
+      memberCountRef.current[p.id] = curCount;
+    });
+  }, [projects]);
 
   // 3. Auto-Save Data (Debounced 1s)
   useEffect(() => {
@@ -174,6 +225,7 @@ export function WorkbenchPage() {
     setProjects([]);
     setActiveProjectId(null);
     initializedRef.current = false;
+    memberCountRef.current = {};
   };
 
   const handleNewProject = (data: NewProjectData) => {
@@ -195,15 +247,32 @@ export function WorkbenchPage() {
       parts: [], 
       tests: [], 
       checks: [], 
-      pitch: {}
+      pitch: {},
+      inviteToken: null,
     };
     setProjects([...projects, newProj]);
     setActiveProjectId(newProj.id);
     setIsCreatingProject(false);
   };
 
+  const confirmAction = (
+    action: () => void | Promise<void>,
+    opts?: { title?: string; body?: string; confirmLabel?: string }
+  ) => setModal({ open: true, action, ...opts });
+
   const deleteProject = async () => {
-    if (!project || !project.id || project.id === 'temp') return;
+    if (!project) return;
+
+    // Draft project that never reached the server: just discard locally.
+    if (project.id === 'temp') {
+      const remaining = projects.filter(p => p.id !== project.id);
+      setProjects(remaining);
+      if (remaining.length > 0) setActiveProjectId(remaining[0].id);
+      else { setIsCreatingProject(true); setActiveProjectId(null); }
+      showToast('Draft project discarded');
+      return;
+    }
+
     try {
       await fetch(`${API_BASE}/api/student/workbench/${project.id}`, {
         method: 'DELETE',
@@ -221,8 +290,6 @@ export function WorkbenchPage() {
       showToast('Failed to delete project', 'error');
     }
   };
-
-  const confirmDelete = (action: () => void) => setModal({ open: true, action });
 
   // 4. Dynamic Heatmap Calculation
   const heatmapCounts = useMemo(() => {
@@ -281,10 +348,13 @@ export function WorkbenchPage() {
     tests: rawWb.tests || [],
     checks: rawWb.checks || [],
     pitch: rawWb.pitch || {},
+    inviteToken: rawWb.inviteToken || null,
   };
 
   const myRole = project.myRole || 'Lead';
   const isLead = myRole === 'Lead';
+  const memberCount = project.members?.length || 0;
+  const hasTeammates = memberCount > 1;
   const teamNames = project.members?.map((m: any) => m.student.name) || [];
 
   const health = calculateHealth(wb, now.getTime());
@@ -323,6 +393,74 @@ export function WorkbenchPage() {
     setProjects(prev => prev.map(p => p.id === project.id ? { ...p, workbenchData: { ...wb, ...updates } } : p));
   };
 
+  // ---- Header actions -------------------------------------------------------
+
+  const handleDeleteClick = () => {
+    if (!isLead) return;
+    if (hasTeammates) {
+      showToast('Remove all teammates from the project before deleting it.', 'error');
+      return;
+    }
+    confirmAction(deleteProject, {
+      title: 'Delete project?',
+      body: 'This permanently deletes the project and everything in it. This cannot be undone.',
+      confirmLabel: 'Delete',
+    });
+  };
+
+  const handleLeaveClick = () => {
+    if (!project) return;
+    confirmAction(async () => {
+      try {
+        // Server should remove this student from the project's member list.
+        await fetch(`${API_BASE}/api/student/workbench/${project.id}/leave`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const remaining = projects.filter(p => p.id !== project.id);
+        setProjects(remaining);
+        if (remaining.length > 0) setActiveProjectId(remaining[0].id);
+        else { setIsCreatingProject(true); setActiveProjectId(null); }
+        showToast('You left the project');
+      } catch {
+        showToast('Failed to leave project', 'error');
+      }
+    }, {
+      title: 'Leave project?',
+      body: `You will lose access to "${wb.name}" unless the Lead invites you back.`,
+      confirmLabel: 'Leave',
+    });
+  };
+
+  // ---- Single-use invites ---------------------------------------------------
+
+  const inviteUrl = wb.inviteToken
+    ? `${window.location.origin}/workbench?join=${project.id}&invite=${encodeURIComponent(wb.inviteToken)}`
+    : '';
+
+  const generateInvite = async () => {
+    if (!isLead || !project.id || project.id === 'temp') return;
+    try {
+      const res = await fetch(`${API_BASE}/api/student/workbench/${project.id}/invite`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      updateWb({ inviteToken: data.inviteToken });
+      memberCountRef.current[project.id] = memberCount;
+      showToast('New single-use invite link generated');
+    } catch {
+      showToast('Failed to generate invite link', 'error');
+    }
+  };
+
+  const copyInvite = () => {
+    if (!isLead || !inviteUrl) return;
+    navigator.clipboard.writeText(inviteUrl);
+    showToast('Invite link copied — it can only be used once.');
+  };
+
   const TABS: { id: Tab, label: string }[] = [
     { id: 'overview', label: 'Overview' }, 
     { id: 'team', label: 'Team' },
@@ -332,8 +470,6 @@ export function WorkbenchPage() {
     { id: 'tests', label: 'Tests' }, 
     { id: 'demo', label: 'Demo' },
   ];
-
-  const joinUrl = `${window.location.origin}/workbench?join=${project.id || ''}`;
 
   return (
     <Wrap>
@@ -353,7 +489,20 @@ export function WorkbenchPage() {
           </div>
           <div style={{ display: 'flex', gap: 'var(--sp-2)', paddingBottom: '2px' }}>
             <Button onClick={() => setIsCreatingProject(true)}>+ New Project</Button>
-            <Button variant="default" className="btn-danger" onClick={() => confirmDelete(deleteProject)}>Delete</Button>
+            {isLead ? (
+              <Button
+                variant="default"
+                className="btn-danger"
+                onClick={handleDeleteClick}
+                title={hasTeammates ? 'Remove all teammates before deleting this project' : 'Delete this project'}
+              >
+                Delete
+              </Button>
+            ) : (
+              <Button variant="default" className="btn-danger" onClick={handleLeaveClick}>
+                Leave
+              </Button>
+            )}
             <Button variant="default" onClick={handleSignOut}>Sign out</Button>
           </div>
         </div>
@@ -382,13 +531,31 @@ export function WorkbenchPage() {
       {tab === 'team' && (
         <Window title="Project Team" meta={isLead ? "You are the Lead" : "View only"}>
           <div style={{ display: 'grid', gap: 'var(--sp-4)' }}>
-            <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-3)', borderRadius: '4px' }}>
-              <h4 style={{ margin: '0 0 var(--sp-2)' }}>Invite Link</h4>
-              <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
-                <TextInput value={joinUrl} onChange={() => {}} disabled />
-                <Button onClick={() => navigator.clipboard.writeText(joinUrl)}>Copy</Button>
+            {isLead && (
+              <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-3)', borderRadius: '4px' }}>
+                <h4 style={{ margin: '0 0 var(--sp-2)' }}>Invite a Teammate</h4>
+                {wb.inviteToken ? (
+                  <>
+                    <div style={{ display: 'flex', gap: 'var(--sp-2)' }}>
+                      <TextInput value={inviteUrl} onChange={() => {}} disabled />
+                      <Button onClick={copyInvite}>Copy</Button>
+                    </div>
+                    <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', margin: 'var(--sp-2) 0' }}>
+                      This link can only be used <strong>once</strong>. Generate a fresh link for each teammate.
+                    </p>
+                    <Button variant="default" onClick={generateInvite}>Regenerate link</Button>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--muted)', margin: '0 0 var(--sp-2)' }}>
+                      Invite links are single-use. Generate one, share it with a teammate, then generate a new link for the next person.
+                    </p>
+                    <Button onClick={generateInvite}>Generate invite link</Button>
+                  </>
+                )}
               </div>
-            </div>
+            )}
+
             <div>
               <h4 style={{ margin: '0 0 var(--sp-2)' }}>Members</h4>
               {project.members?.map((m: any) => (
@@ -404,9 +571,13 @@ export function WorkbenchPage() {
                           const newMembers = project.members.map((x: any) => x.id === m.id ? { ...x, role: val } : x);
                           setProjects(prev => prev.map(p => p.id === project.id ? { ...p, members: newMembers } : p));
                         }} />
-                        <Button variant="default" className="btn-danger" onClick={() => confirmDelete(() => {
+                        <Button variant="default" className="btn-danger" onClick={() => confirmAction(() => {
                           const newMembers = project.members.filter((x: any) => x.id !== m.id);
                           setProjects(prev => prev.map(p => p.id === project.id ? { ...p, members: newMembers } : p));
+                        }, {
+                          title: 'Remove teammate?',
+                          body: `Remove ${m.student.name} from this project? They can be re-invited later.`,
+                          confirmLabel: 'Remove',
                         })}>Remove</Button>
                       </>
                     ) : <span style={{ fontWeight: 'bold', padding: '0 var(--sp-2)' }}>{m.role}</span>}
@@ -427,7 +598,7 @@ export function WorkbenchPage() {
           <div style={{ marginTop: 'var(--sp-4)' }}>
             <Timeline entries={wb.entries} filter={timelineFilter} onFilterChange={setTimelineFilter} projectStart={wb.start} now={now.getTime()}
               onResolveBlocker={(id) => updateWb({ entries: wb.entries.map((e: any) => e.id === id ? { ...e, resolved: !e.resolved } : e) })}
-              onDeleteEntry={(id) => confirmDelete(() => updateWb({ entries: wb.entries.filter((e: any) => e.id !== id) }))}
+              onDeleteEntry={(id) => confirmAction(() => updateWb({ entries: wb.entries.filter((e: any) => e.id !== id) }))}
             />
           </div>
         </div></div>
@@ -446,7 +617,7 @@ export function WorkbenchPage() {
                   return idx >= 0 && idx <= 2 ? { ...t, col: cols[idx] } : t;
                 })});
               }}
-              onDelete={(id) => confirmDelete(() => updateWb({ tasks: wb.tasks.filter((t: any) => t.id !== id) }))}
+              onDelete={(id) => confirmAction(() => updateWb({ tasks: wb.tasks.filter((t: any) => t.id !== id) }))}
             />
           </div>
         </div></div>
@@ -463,7 +634,7 @@ export function WorkbenchPage() {
            <PartsPanel 
              parts={wb.parts} 
              budget={wb.budget || 0} // <-- NOW USES PROJECT BUDGET
-             onDelete={(id) => confirmDelete(() => updateWb({ parts: wb.parts.filter((p: any) => p.id !== id) }))} 
+             onDelete={(id) => confirmAction(() => updateWb({ parts: wb.parts.filter((p: any) => p.id !== id) }))} 
            />
         </Window>
       )}
@@ -482,13 +653,13 @@ export function WorkbenchPage() {
                updateWb({ tests: [...wb.tests, newTest], entries: autoLog(`Logged test: ${d.name} - ${isPass ? 'Passed' : 'Failed'}`, 'test') });
              }
            }} />
-           <TestsPanel tests={wb.tests} onDelete={(id) => confirmDelete(() => updateWb({ tests: wb.tests.filter((t: any) => t.id !== id) }))} />
+           <TestsPanel tests={wb.tests} onDelete={(id) => confirmAction(() => updateWb({ tests: wb.tests.filter((t: any) => t.id !== id) }))} />
         </Window>
       )}
 
       {tab === 'demo' && (
         <div className="wb-grid">
-           <div className="wb-span-full"><Window title="Checklist"><DemoChecklist checks={wb.checks} onToggle={(id) => updateWb({ checks: wb.checks.map((c: any) => c.id === id ? { ...c, checked: !c.checked } : c) })} onAdd={(label) => updateWb({ checks: [...wb.checks, { id: Date.now().toString(), label, checked: false }] })} onDelete={(id) => confirmDelete(() => updateWb({ checks: wb.checks.filter((c: any) => c.id !== id) }))} /></Window></div>
+           <div className="wb-span-full"><Window title="Checklist"><DemoChecklist checks={wb.checks} onToggle={(id) => updateWb({ checks: wb.checks.map((c: any) => c.id === id ? { ...c, checked: !c.checked } : c) })} onAdd={(label) => updateWb({ checks: [...wb.checks, { id: Date.now().toString(), label, checked: false }] })} onDelete={(id) => confirmAction(() => updateWb({ checks: wb.checks.filter((c: any) => c.id !== id) }))} /></Window></div>
            
            <div className="wb-span-full">
              <Window title="Pitch Editor">
@@ -521,7 +692,15 @@ export function WorkbenchPage() {
         </div>
       )}
 
-      <ConfirmDialog open={modal.open} title="Confirm Action" body="Are you sure you want to delete this?" confirmLabel="Delete" type="confirm" onCancel={() => setModal({ open: false })} onConfirm={() => { modal.action?.(); setModal({ open: false }); }} />
+      <ConfirmDialog
+        open={modal.open}
+        title={modal.title || 'Confirm Action'}
+        body={modal.body || 'Are you sure?'}
+        confirmLabel={modal.confirmLabel || 'Confirm'}
+        type="confirm"
+        onCancel={() => setModal({ open: false })}
+        onConfirm={() => { modal.action?.(); setModal({ open: false }); }}
+      />
       
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </Wrap>

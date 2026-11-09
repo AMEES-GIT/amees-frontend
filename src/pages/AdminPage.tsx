@@ -16,7 +16,7 @@ import { getValidToken, getAdminEmail, getAdminRole, clearToken } from '../lib/a
 import { API_BASE } from '../lib/apiBase';
 import './AdminPage.css';
 
-type AdminTab = 'event' | 'events' | 'executives' | 'projects' | 'partners' | 'opportunities' | 'archive' | 'general' | 'students';
+type AdminTab = 'event' | 'events' | 'executives' | 'projects' | 'partners' | 'opportunities' | 'archive' | 'general' | 'students' | 'emails';
 const API_URL = `${API_BASE}/api/admin`;
 
 async function adminFetch(path: string, options: RequestInit = {}): Promise<Response> {
@@ -71,7 +71,7 @@ export function AdminPage() {
   const [newWeekEndTime, setNewWeekEndTime] = useState('17:00');
   const [newWeekJoin, setNewWeekJoin] = useState('');
   const [newWeekReg, setNewWeekReg] = useState('');
-  const [newWeekLabel, setNewWeekLabel] = useState('Wk'); // ADDED
+  const [newWeekLabel, setNewWeekLabel] = useState('Wk');
   const [editingWeekId, setEditingWeekId] = useState<string | null>(null);
 
   // States for Executives
@@ -95,6 +95,27 @@ export function AdminPage() {
   const [csvText, setCsvText] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
   const [studentList, setStudentList] = useState<any[]>([]);
+
+  // States for Emails
+  const [emailData, setEmailData] = useState({
+    templateType: 'informal',
+    recipients: '',
+    subject: '',
+    kicker: '',
+    bodyContent: '',
+    ctaLabel: '',
+    ctaUrl: '',
+    date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+    refNumber: 'AMEES/EXEC/2026/014',
+    recipientName: '',
+    recipientOrg: '',
+    senderName: 'The AMEES Executive',
+    senderRole: 'Executive Council',
+    closingText: 'We look forward to welcoming you.',
+    enclosures: '',
+    details: [{ label: 'When', value: '' }, { label: 'Where', value: '' }, { label: 'Who', value: '' }]
+  });
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   const [marqueeMode, setMarqueeMode] = useState(content.activeMarquee || 'caution');
   const [footerTagline, setFooterTagline] = useState(content.footer.tagline);
@@ -141,6 +162,7 @@ export function AdminPage() {
     { id: 'opportunities', label: 'Opportunities' }, 
     { id: 'students', label: 'Students' }, 
     { id: 'archive', label: 'Archive links' },
+    { id: 'emails', label: 'Send Emails' },
     { id: 'general', label: 'Site Settings' },
   ];
 
@@ -155,7 +177,7 @@ export function AdminPage() {
       type: 'special',
       startTime: newCalStartTime,
       endTime: newCalEndTime,
-      venue: '', // Added placeholder since we don't have a venue input for one-off events yet
+      venue: '',
       joinUrl: newCalJoin,
       registrationUrl: newCalReg
     };
@@ -194,7 +216,7 @@ export function AdminPage() {
       endTime: newWeekDay === '-1' ? null : newWeekEndTime,
       joinUrl: newWeekDay === '-1' ? null : newWeekJoin,
       registrationUrl: newWeekDay === '-1' ? null : newWeekReg,
-      label: newWeekDay === '-1' ? newWeekLabel : null // ADDED
+      label: newWeekDay === '-1' ? newWeekLabel : null
     };
     try {
       const url = editingWeekId ? `/weekly/${editingWeekId}` : '/weekly';
@@ -216,7 +238,7 @@ export function AdminPage() {
     setNewWeekEndTime(w.endTime || '17:00');
     setNewWeekJoin(w.joinUrl || '');
     setNewWeekReg(w.registrationUrl || '');
-    setNewWeekLabel(w.label || 'Wk'); // ADDED
+    setNewWeekLabel(w.label || 'Wk');
     window.scrollTo(0,0); 
   };
   const deleteWeeklyItem = async (id: string) => { try { const res = await adminFetch(`/weekly/${id}`, { method: 'DELETE' }); if (res.ok) { refresh(); showToast('Item deleted'); } } catch {} };
@@ -319,6 +341,53 @@ export function AdminPage() {
     } catch {}
   };
 
+  // --- EMAILS ---
+  const sendEmail = async () => {
+    if (!emailData.recipients.trim() || !emailData.subject.trim() || !emailData.bodyContent.trim()) {
+      showToast('Recipients, subject, and body content are required.', 'error');
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const res = await adminFetch('/emails/send', {
+        method: 'POST',
+        body: JSON.stringify({
+          templateType: emailData.templateType,
+          recipients: emailData.recipients,
+          subject: emailData.subject,
+          data: {
+            ...emailData,
+            details: emailData.details.filter(d => d.value.trim() !== '')
+          }
+        }),
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        showToast(`Sent to ${data.sent} recipients successfully!`);
+        setEmailData({ ...emailData, recipients: '', subject: '', bodyContent: '' });
+      } else {
+        showToast(data.error || 'Failed to send email.', 'error');
+      }
+    } catch {
+      showToast('Network error while sending.', 'error');
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const confirmSendEmail = () => {
+    setConfirmDialog({
+      open: true,
+      title: 'Send Email',
+      body: `Are you sure you want to send this email to ${emailData.recipients.split(/[\n,]+/).filter(e => e.trim()).length} recipients?`,
+      type: 'success',
+      confirmLabel: 'Send',
+      action: sendEmail
+    });
+  };
+
   const confirmAction = (title: string, body: string, action: () => void, type: 'success'|'confirm' = 'success', confirmLabel = 'Confirm') => setConfirmDialog({ open: true, title, body, action, type, confirmLabel });
 
   const DAYS = [{ label: 'Every Monday', value: '1' }, { label: 'Every Tuesday', value: '2' }, { label: 'Every Wednesday', value: '3' }, { label: 'Every Thursday', value: '4' }, { label: 'Every Friday', value: '5' }, { label: 'Every Saturday', value: '6' }, { label: 'Every Sunday', value: '0' }, { label: 'Not a specific day', value: '-1' }];
@@ -392,7 +461,6 @@ export function AdminPage() {
 
                   <Field label="Short Description"><TextInput type="text" value={newWeekText} onChange={setNewWeekText} placeholder="Quick-fire engineering questions" /></Field>
 
-                  {/* Only show time and URL fields if a specific day is selected */}
                   {newWeekDay !== '-1' && (
                     <>
                       <div className="admin-grid-3">
@@ -406,7 +474,6 @@ export function AdminPage() {
                     </>
                   )}
 
-                  {/* Show a label field if no specific day is selected */}
                   {newWeekDay === '-1' && (
                     <Field label="Label (Shown in weekly list)">
                       <TextInput type="text" value={newWeekLabel} onChange={setNewWeekLabel} placeholder="Wk" maxLength={4} />
@@ -786,6 +853,124 @@ export function AdminPage() {
                     </div>
                   ))
                 }
+              </div>
+            </div>
+          )}
+
+          {/* EMAILS TAB */}
+          {tab === 'emails' && (
+            <div style={{ display: 'grid', gap: 'var(--sp-6)' }}>
+              
+              <div style={{ background: 'var(--panel-2)', padding: 'var(--sp-4)', border: 'var(--bw-sm) solid var(--line)' }}>
+                <h3 style={{ margin: '0 0 var(--sp-3) 0', fontFamily: 'var(--font)', textTransform: 'uppercase' }}>Compose Email</h3>
+                
+                <div style={{ display: 'grid', gap: 'var(--sp-4)' }}>
+                  
+                  <div className="admin-grid-2">
+                    <Field label="Template Type">
+                      <Select 
+                        options={[
+                          { value: 'informal', label: 'Informal (General Announcement)' },
+                          { value: 'semi', label: 'Semi-Formal (Exec Notice)' },
+                          { value: 'formal', label: 'Formal (External Invitation)' },
+                          { value: 'live', label: 'Live Event Alert' },
+                        ]}
+                        value={emailData.templateType}
+                        onChange={(v) => setEmailData({ ...emailData, templateType: v })}
+                      />
+                    </Field>
+                    <Field label="Recipients (CSV or Newlines)">
+                      <Textarea 
+                        value={emailData.recipients}
+                        onChange={(v) => setEmailData({ ...emailData, recipients: v })}
+                        rows={2}
+                        placeholder="test1@email.com, test2@email.com"
+                      />
+                    </Field>
+                  </div>
+
+                  <Field label="Subject Line">
+                    <TextInput 
+                      value={emailData.subject}
+                      onChange={(v) => setEmailData({ ...emailData, subject: v })}
+                      placeholder="WIRED 1.0 starts tomorrow!"
+                    />
+                  </Field>
+
+                  <Field label="Body Paragraphs">
+                    <Textarea 
+                      value={emailData.bodyContent}
+                      onChange={(v) => setEmailData({ ...emailData, bodyContent: v })}
+                      rows={4}
+                      placeholder="Type your message here..."
+                    />
+                  </Field>
+
+                  <div className="admin-grid-2">
+                    <Field label="CTA Label (Optional)">
+                      <TextInput 
+                        value={emailData.ctaLabel}
+                        onChange={(v) => setEmailData({ ...emailData, ctaLabel: v })}
+                        placeholder="Save my seat"
+                      />
+                    </Field>
+                    <Field label="CTA URL (Optional)">
+                      <TextInput 
+                        value={emailData.ctaUrl}
+                        onChange={(v) => setEmailData({ ...emailData, ctaUrl: v })}
+                        placeholder="https://amees.com.ng/events"
+                      />
+                    </Field>
+                  </div>
+
+                  {/* Dynamic Fields based on Template */}
+                  {emailData.templateType === 'formal' && (
+                    <div style={{ background: 'var(--bg)', padding: 'var(--sp-3)', border: '1px dashed var(--line)' }}>
+                      <h4 style={{ margin: '0 0 var(--sp-2)' }}>Formal Letter Details</h4>
+                      <div className="admin-grid-2">
+                        <Field label="Recipient Name"><TextInput value={emailData.recipientName} onChange={(v) => setEmailData({ ...emailData, recipientName: v })} /></Field>
+                        <Field label="Recipient Org"><TextInput value={emailData.recipientOrg} onChange={(v) => setEmailData({ ...emailData, recipientOrg: v })} /></Field>
+                      </div>
+                      <div className="admin-grid-2" style={{ marginTop: 'var(--sp-2)' }}>
+                        <Field label="Sender Name"><TextInput value={emailData.senderName} onChange={(v) => setEmailData({ ...emailData, senderName: v })} /></Field>
+                        <Field label="Sender Role"><TextInput value={emailData.senderRole} onChange={(v) => setEmailData({ ...emailData, senderRole: v })} /></Field>
+                      </div>
+                    </div>
+                  )}
+
+                  {(emailData.templateType === 'semi' || emailData.templateType === 'informal' || emailData.templateType === 'live') && (
+                    <div style={{ background: 'var(--bg)', padding: 'var(--sp-3)', border: '1px dashed var(--line)' }}>
+                      <h4 style={{ margin: '0 0 var(--sp-2)' }}>Event Details (Used in formatting)</h4>
+                      <div style={{ display: 'grid', gap: 'var(--sp-2)' }}>
+                        {emailData.details.map((d, i) => (
+                          <div key={i} className="admin-grid-2">
+                            <Field label={`Label ${i+1}`}>
+                              <TextInput value={d.label} onChange={(v) => {
+                                const newDetails = [...emailData.details];
+                                newDetails[i].label = v;
+                                setEmailData({ ...emailData, details: newDetails });
+                              }} />
+                            </Field>
+                            <Field label={`Value ${i+1}`}>
+                              <TextInput value={d.value} onChange={(v) => {
+                                const newDetails = [...emailData.details];
+                                newDetails[i].value = v;
+                                setEmailData({ ...emailData, details: newDetails });
+                              }} />
+                            </Field>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ marginTop: 'var(--sp-4)' }}>
+                    <Button variant="primary" onClick={confirmSendEmail} loading={sendingEmail}>
+                      Send Email
+                    </Button>
+                  </div>
+
+                </div>
               </div>
             </div>
           )}
